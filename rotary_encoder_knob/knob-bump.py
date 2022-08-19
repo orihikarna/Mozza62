@@ -6,18 +6,18 @@ from matplotlib import pyplot
 
 bump_r_mm = 0.6 # bump hight on surface
 bump_h_mm = 4.0 # bump cycle along the z-axis
-bump_th_deg = 30 # bump cycle along the circle
+bump_th_deg = 15 # bump cycle along the circle
 
 # number of divisions
 z_num = 80
 t_num = 20
-dth_deg = 2
+dth_deg = 1
 
 # knob hight
 knob_h_mm = 12
 # knob radius
-knob_r_top_mm = 16
-knob_r_btm_mm = 20
+knob_r_top_mm = 15
+knob_r_btm_mm = 18
 
 def calc_bezier_point( pnts, t ):
     num_pnts = len( pnts )
@@ -32,16 +32,16 @@ def calc_bezier_point( pnts, t ):
 
 top_anchors = np.array( [
     [1, 0],
-    [0.9, 1],
-    [0.8, 1],
-    [0.7, 1],
-    [0.6, 1],
-    [0.5, 1],
-    [0.4, 0],
-    [0.3, -1],
-    [0.2, -1],
-    [0.1, -1],
-    [0.0, -1],
+    [0.9, 0.75],
+    [0.8, 1.5],
+    [0.7, 1.5],
+    [0.6, 1.5],
+    [0.5, 1.0],
+    [0.4, 0.5],
+    [0.3, 0.25],
+    [0.2, 0],
+    [0.1, 0],
+    [0.0, 0],
 ] )
 
 top_points = [calc_bezier_point( top_anchors, t ) for t in np.linspace( 0, 1, t_num )]
@@ -52,7 +52,7 @@ def get_bump_pos( zt_idx, th_deg ):
     if zt_idx == -1:
         return [0, 0, 0]
     if zt_idx == z_num + t_num:
-        return [0, 0, knob_h_mm - 1]
+        return [0, 0, knob_h_mm]
     if zt_idx > z_num + t_num:
         return None
 
@@ -60,7 +60,7 @@ def get_bump_pos( zt_idx, th_deg ):
         rz = zt_idx / z_num
         z_mm = knob_h_mm * rz
         r_mm = knob_r_top_mm + (knob_r_btm_mm - knob_r_top_mm) * (1 - rz**3)
-        bump_h  = np.sin( (2 * np.pi) * (z_mm / bump_h_mm) ) * (1 - 0.0 * rz)
+        bump_h  = np.sin( (2 * np.pi) * (z_mm / bump_h_mm) )
         bump_th = np.cos( (2 * np.pi) * (th_deg / bump_th_deg) )
         bump = bump_th * bump_h * bump_r_mm
         r_mm += bump
