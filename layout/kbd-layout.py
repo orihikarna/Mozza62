@@ -1,5 +1,4 @@
 import json
-import math
 import numpy as np
 import os
 import sys
@@ -30,8 +29,8 @@ def vec2_find_intersection( p0, t0, p1, t1, tolerance = 1 ):
 
 def vec2_rotate( vec, angle ):
     th = np.deg2rad( angle )
-    co = math.cos( th )
-    si = math.sin( th )
+    co = np.cos( th )
+    si = np.sin( th )
     nxvec = co * vec[0] - si * vec[1]
     nyvec = si * vec[0] + co * vec[1]
     return (nxvec, nyvec)
@@ -125,7 +124,7 @@ class keyboard_layout:
         L = scale * unit
         Th = thickness / unit
 
-        image = Image.new( 'RGBA', (math.ceil( size[0] ), math.ceil( size[1] )), ( 255, 255, 255, 255 ) )
+        image = Image.new( 'RGBA', (int( np.ceil( size[0] ) ), int( np.ceil( size[1] ) )), ( 255, 255, 255, 255 ) )
         draw = ImageDraw.Draw( image )
         for key in self.keys:
             ctr = key.getCenterPos()
@@ -319,7 +318,7 @@ def make_kbd_layout( unit_w, unit_h, paper_size, output_type ):
     angle_M_Comm = -16
     # print( f'angle_M_Comm = {angle_M_Comm:.6f}' )
     dy_Cln = 0.17
-    dy_Entr = 0.5
+    dy_Entr = 0.55
 
     angle_Index_Thmb = 80
     dangles_Thmb = [-20, -20, 0]
@@ -327,7 +326,7 @@ def make_kbd_layout( unit_w, unit_h, paper_size, output_type ):
     dys_Thmb = [-0.1, 0.1, 0]
 
     ## Middle finger: Comm(,)
-    dx_Comm_8 = 3 * math.tan( np.deg2rad( angle_M_Comm / 2 * keyh ) )
+    dx_Comm_8 = 3 * np.tan( np.deg2rad( angle_M_Comm / 2 * keyh ) )
     dx_I_8 = 0
     dx_Comm_K = dx_K_I = (dx_Comm_8 - dx_I_8) / 2
 
@@ -339,16 +338,29 @@ def make_kbd_layout( unit_w, unit_h, paper_size, output_type ):
     org_N = org_M + vec2( -1, 0 ) @ mat2_rot( angle_Index )
 
     dx_M_7 = -dx_Comm_8
-    dx_U_7 = -math.sin( np.deg2rad( angle_M_Comm ) ) * keyh
+    dx_U_7 = -np.sin( np.deg2rad( angle_M_Comm ) ) * keyh
     dx_J_U = dx_U_7 * 0.8
     dx_M_J = dx_M_7 - (dx_J_U + dx_U_7)
     # print( f'dx_M_J={dx_M_J:.3f}, dx_J_U={dx_J_U:.3f}, dx_U_7={dx_U_7:.3f}')
 
     ## Inner most
-    angle_Inner = angle_Index# + math.atan2( dx_M_J, np.rad2deg( (1 - dy_Entr) * keyh ) )
-    org_Inner = org_N \
+    angle_Inner1_Index = np.rad2deg( np.arctan2( dx_M_J, (1 - dy_Entr) * keyh ) )
+    angle_Inner1 = angle_Index + angle_Inner1_Index
+    _dy = keyh * (2 - np.cos( np.deg2rad( -angle_Inner1_Index ) ) - dy_Entr)
+    _dx = keyh * np.sin( np.deg2rad( -angle_Inner1_Index ) ) + dx_M_J
+    angle_Inner2_Index = np.rad2deg( np.arctan2( _dx, _dy ) )
+    angle_Inner2 = angle_Index + angle_Inner2_Index
+    print( f'{angle_Inner1_Index}' )
+    print( f'dx_M_J = {dx_M_J}' )
+    print( f'_dx = {_dx}' )
+    print( f'_dy = {_dy}' )
+    print( f'{angle_Inner2_Index}' )
+    org_Inner1 = org_N \
         + vec2( -0.5, (+0.5 - dy_Entr) * keyh ) @ mat2_rot( angle_Index ) \
-        + vec2( -0.5, -keyh/2 ) @ mat2_rot( angle_Inner )
+        + vec2( -0.5, -keyh/2 ) @ mat2_rot( angle_Inner1 )
+    org_Inner2 = org_Inner1 \
+        + vec2( +0.5, -keyh/2 ) @ mat2_rot( angle_Inner1 ) \
+        + vec2( -0.5, -keyh/2 ) @ mat2_rot( angle_Inner2 )
 
     ## Ring finger: Dot
     angle_Dot = angle_Comm
@@ -360,26 +372,23 @@ def make_kbd_layout( unit_w, unit_h, paper_size, output_type ):
     if angle_Dot_Scln == 0:
         dy_Scln = 0.5 * keyh
     else:
-        dy_Scln = keyh + dx_Dot_L / math.sin( np.deg2rad( angle_Dot_Scln ) )
-    if False:
-        dy_Scln *= ratio
-        angle_Dot_Scln = math.asin( dx_Dot_L / (dy_Scln - keyh) ) * rad2deg
+        dy_Scln = keyh + dx_Dot_L / np.sin( np.deg2rad( angle_Dot_Scln ) )
     print( f'angle_Dot_Scln={angle_Dot_Scln}, dx_Dot_L={dx_Dot_L}, dy_Scln={dy_Scln}')
     # Scln(;)
     angle_PinkyTop = angle_Dot - angle_Dot_Scln
     tr_Dot = org_Dot + vec2( +0.5, -0.5 * keyh ) @ mat2_rot( angle_Dot )
     org_Scln = tr_Dot + vec2( +0.5, dy_Scln - 0.5 * keyh) @ mat2_rot( angle_PinkyTop )
-    dx_Scln_P = dy_Scln * math.tan( np.deg2rad( angle_Dot_Scln ) )
+    dx_Scln_P = dy_Scln * np.tan( np.deg2rad( angle_Dot_Scln ) )
     # Cln(:), RBrc(])
     org_Cln = org_Scln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
     org_RBrc = org_Cln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
 
     ## Pinky finger: bottom
-    angle_Pinky_Btm_Top = np.rad2deg( math.atan2( dy_Cln, 1 ) )# 1 == keyw
+    angle_Pinky_Btm_Top = np.rad2deg( np.arctan2( dy_Cln, 1 ) )# 1 == keyw
     angle_PinkyBtm = angle_PinkyTop + angle_Pinky_Btm_Top
     print( f'angle_PinkyBtm = {angle_PinkyBtm}' )
-    keyw_Slsh = 1.25 + 0.1
-    keyw_Bsls = 1.5 + 0.12
+    keyw_Slsh = 1.25 #+ 0.1
+    keyw_Bsls = 1.5 #+ 0.12
     # Slsh(/)
     br_Dot = org_Dot + vec2( +0.5, +0.5 * keyh ) @ mat2_rot( angle_Dot )
     bl_Scln = org_Scln + vec2( -0.5, +0.5 * keyh ) @ mat2_rot( angle_PinkyTop )
@@ -405,9 +414,9 @@ def make_kbd_layout( unit_w, unit_h, paper_size, output_type ):
     maker.add_col( angle_PinkyTop, org_RBrc, [dx_Scln_P], col_Brac[1:], col_Gui[1:] )
 
     # add the thumb row
-    keyw12 = (1.25 * 19.05 - (19.05 - unit_w)) / 19.05
+    keyw12 = 1.25
+    # keyw12 = (1.25 * 19.05 - (19.05 - unit_w)) / 19.05
     keyws = [keyw12, keyw12, 1]
-    # keyw12 = 1.25
     keyw = keyw12
 
     angle_Thmb = angle_Index_Thmb + angle_Index
@@ -419,7 +428,8 @@ def make_kbd_layout( unit_w, unit_h, paper_size, output_type ):
         org_Thmb += vec2( -keyw / 2 - dys_Thmb[idx], +0.5 * keyh ) @ mat2_rot( angle_Thmb )
 
     # the inner most key (Enter, Del)
-    maker.add_col( angle_Inner, org_Inner, [dx_M_J], col_IR, col_IL )
+    maker.add_col( angle_Inner1, org_Inner1, [0], col_IR[0:1], col_IL[0:1] )
+    maker.add_col( angle_Inner2, org_Inner2, [0], col_IR[1:2], col_IL[1:2] )
 
     return maker.data
 
