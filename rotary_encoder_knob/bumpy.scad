@@ -1,8 +1,9 @@
-height = 12;
-top_radius = 15;
-btm_radius = 18;
-axis_r = 3.2;
-w_thick = 2.0;
+knob_height = 12;
+knob_top_r = 16;
+knob_btm_r = 20;
+axis_top_r = 3.2;
+axis_btm_r = 3.7;
+wall_thick = 2.0;
 delta = 0.1;
 
 // h_top, h_btm
@@ -12,15 +13,15 @@ module axis( h_top, h_btm ) {
   difference() {
     union() {
       // axis outer
-      cylinder( h_axis + 0.6 * axis_r, axis_r + w_thick, axis_r + w_thick );
+      cylinder( h_axis + 0.6 * axis_btm_r, r = axis_btm_r + wall_thick );
       // axis supporr walls
       intersection() {
-        cylinder( height - delta, btm_radius - 1, top_radius - 1 );
+        cylinder( knob_height - delta, knob_btm_r - 1, knob_top_r - 1 );
         union() {
           for (i = [0:3]) {
             rotate( [0, 0, 120 * i] )
-              translate( [btm_radius/2, 0, height/2] )
-                cube( [btm_radius, w_thick, height], true );
+              translate( [knob_btm_r/2, 0, knob_height/2] )
+                cube( [knob_btm_r, wall_thick, knob_height], true );
           }
         }
       }
@@ -32,31 +33,31 @@ module axis( h_top, h_btm ) {
         difference() {
           union() {
             // top cylinder
-            cylinder( h_top + delta, axis_r, axis_r );
+            cylinder( h_top + delta, axis_top_r, axis_top_r );
             // top hat
-            translate( [0, 0, h_top + 0 * delta] ) {
-              cylinder( axis_r * 0.8, axis_r, 0 );
+            translate( [0, 0, h_top] ) {
+              cylinder( axis_top_r * 0.7, axis_top_r, 0 );
             }
           }
-          translate( [axis_r/2, -(h_top * 2 + 2 * delta) / 2, 0] )
+          translate( [axis_top_r/2 + 0.05, -(h_top * 2 + 2 * delta) / 2, 0] )
             cube( h_top * 2 + 2 * delta );
         }
       // bottom hat
       translate( [0, 0, h_btm + 1 * delta] ) {
-        cylinder( axis_r * 0.8, axis_r, 0 );
+        cylinder( axis_btm_r, axis_btm_r, 0 );
       }
       // bottom part
-      cylinder( h_btm + 2 * delta, axis_r, axis_r );
+      cylinder( h_btm + 2 * delta, axis_btm_r, axis_btm_r );
     }
   }
 }
 
-sph_h = height - 1.6;
-sph_btm = btm_radius - 2.4;
+sph_h = knob_height - 1.0;
+sph_btm = knob_btm_r - 2.0;
 
 difference() {
   union() {
-    axis( 7.4, 2.0 );
+    axis( 7.2, 2.2 );
     difference() {
       import( "knob_surface.stl", 10 );
       scale( [sph_btm, sph_btm, sph_h] ) sphere( 1, $fn = 64 );
@@ -64,7 +65,7 @@ difference() {
   }
   // remove elephant foot
   translate( [0, 0, -delta] )
-    cylinder( 0.6, axis_r + 0.6, axis_r, $fn = 64 );
+    cylinder( 0.6, axis_btm_r + 0.6, axis_btm_r, $fn = 64 );
 
   if (false)
     translate( [0, 50, 0] )

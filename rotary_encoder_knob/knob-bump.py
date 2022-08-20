@@ -6,7 +6,7 @@ from matplotlib import pyplot
 
 bump_r_mm = 0.6 # bump hight on surface
 bump_h_mm = 4.0 # bump cycle along the z-axis
-bump_th_deg = 15 # bump cycle along the circle
+bump_th_deg = 30 # bump cycle along the circle
 
 # number of divisions
 z_num = 80
@@ -16,8 +16,8 @@ dth_deg = 1
 # knob hight
 knob_h_mm = 12
 # knob radius
-knob_r_top_mm = 15
-knob_r_btm_mm = 18
+knob_r_top_mm = 16
+knob_r_btm_mm = 20
 
 def calc_bezier_point( pnts, t ):
     num_pnts = len( pnts )
@@ -32,14 +32,14 @@ def calc_bezier_point( pnts, t ):
 
 top_anchors = np.array( [
     [1, 0],
-    [0.9, 0.75],
-    [0.8, 1.5],
-    [0.7, 1.5],
-    [0.6, 1.5],
-    [0.5, 1.0],
-    [0.4, 0.5],
-    [0.3, 0.25],
-    [0.2, 0],
+    [0.9, 1],
+    [0.8, 2.0],
+    [0.7, 2.0],
+    [0.6, 2.0],
+    [0.5, 2.0],
+    [0.4, 2.0],
+    [0.3, 1.5],
+    [0.2, 0.5],
     [0.1, 0],
     [0.0, 0],
 ] )
@@ -59,7 +59,7 @@ def get_bump_pos( zt_idx, th_deg ):
     if zt_idx < z_num:# side bumps
         rz = zt_idx / z_num
         z_mm = knob_h_mm * rz
-        r_mm = knob_r_top_mm + (knob_r_btm_mm - knob_r_top_mm) * (1 - rz**3)
+        r_mm = knob_r_top_mm + (knob_r_btm_mm - knob_r_top_mm) * (1 - rz**4)
         bump_h  = np.sin( (2 * np.pi) * (z_mm / bump_h_mm) )
         bump_th = np.cos( (2 * np.pi) * (th_deg / bump_th_deg) )
         bump = bump_th * bump_h * bump_r_mm
@@ -70,7 +70,7 @@ def get_bump_pos( zt_idx, th_deg ):
         # pt = calc_bezier_point( top_anchors, u )
         pt = top_points[t_idx]
         r_mm = knob_r_top_mm * pt[0]
-        z_mm = knob_h_mm + pt[1]
+        z_mm = knob_h_mm + pt[1] * 0.8
     th_rad = np.deg2rad( th_deg )
     x_mm = r_mm * np.cos( th_rad )
     y_mm = r_mm * np.sin( th_rad )
