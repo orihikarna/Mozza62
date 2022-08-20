@@ -2,8 +2,8 @@ knob_height = 12;
 knob_top_r = 16;
 knob_btm_r = 20;
 axis_top_r = 3.2;
-axis_btm_r = 3.7;
-wall_thick = 2.0;
+axis_btm_r = 3.3;
+wall_thick = 1.6;
 delta = 0.1;
 
 // h_top, h_btm
@@ -18,8 +18,8 @@ module axis( h_top, h_btm ) {
       intersection() {
         cylinder( knob_height - delta, knob_btm_r - 1, knob_top_r - 1 );
         union() {
-          for (i = [0:3]) {
-            rotate( [0, 0, 120 * i] )
+          for (i = [0:4]) {
+            rotate( [0, 0, 72 * i] )
               translate( [knob_btm_r/2, 0, knob_height/2] )
                 cube( [knob_btm_r, wall_thick, knob_height], true );
           }
@@ -39,7 +39,7 @@ module axis( h_top, h_btm ) {
               cylinder( axis_top_r * 0.7, axis_top_r, 0 );
             }
           }
-          translate( [axis_top_r/2 + 0.05, -(h_top * 2 + 2 * delta) / 2, 0] )
+          translate( [axis_top_r/2, -(h_top * 2 + 2 * delta) / 2, 0] )
             cube( h_top * 2 + 2 * delta );
         }
       // bottom hat
@@ -52,8 +52,8 @@ module axis( h_top, h_btm ) {
   }
 }
 
-sph_h = knob_height - 1.0;
-sph_btm = knob_btm_r - 2.0;
+sph_h   = knob_height - 1.0;
+sph_btm = knob_btm_r - 1.6;
 
 difference() {
   union() {

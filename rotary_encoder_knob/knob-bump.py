@@ -38,7 +38,7 @@ top_anchors = np.array( [
     [0.6, 2.0],
     [0.5, 2.0],
     [0.4, 2.0],
-    [0.3, 1.5],
+    [0.3, 1.0],
     [0.2, 0.5],
     [0.1, 0],
     [0.0, 0],
@@ -59,7 +59,7 @@ def get_bump_pos( zt_idx, th_deg ):
     if zt_idx < z_num:# side bumps
         rz = zt_idx / z_num
         z_mm = knob_h_mm * rz
-        r_mm = knob_r_top_mm + (knob_r_btm_mm - knob_r_top_mm) * (1 - rz**4)
+        r_mm = knob_r_top_mm + (knob_r_btm_mm - knob_r_top_mm) * (1 - rz**5)
         bump_h  = np.sin( (2 * np.pi) * (z_mm / bump_h_mm) )
         bump_th = np.cos( (2 * np.pi) * (th_deg / bump_th_deg) )
         bump = bump_th * bump_h * bump_r_mm
