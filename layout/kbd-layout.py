@@ -143,6 +143,7 @@ class keyboard_layout:
         image.save( path )
 
     def write_scad( self, path: str, unit_w: float ):
+        xctr = np.mean( list( map( lambda k: k.getCenterPos()[0], self.keys ) ) )
         with open( path, 'w' ) as fout:
             fout.write( f'key_w = {unit_w};\n' )
             fout.write( f'key_h = {unit_h};\n' )
@@ -150,6 +151,8 @@ class keyboard_layout:
             idx = 0
             for key in self.keys:
                 ctr = key.getCenterPos()
+                if ctr[0] < xctr:
+                    continue
                 w, h, rot = key.w, key.h, key.r
 
                 ctr *= unit_w
@@ -242,8 +245,9 @@ class key_layout_maker:
         self.xctr = xctr
         self.keyh = keyh
 
-    def add_col( self, angle, org, dxs, names1, names2, ydir = -1, keyw = 1 ):
-        keyh = self.keyh
+    def add_col( self, angle, org, dxs, names1, names2, ydir = -1, keyw = 1, keyh = -1 ):
+        if keyh < 0:
+            keyh = self.keyh
         for hand_idx, names in enumerate( [names1, names2]):
             # if hand_idx in [0]:# 0 = right
             if hand_idx in [1]:# 1 = left
@@ -300,12 +304,9 @@ def make_kbd_layout( unit_w, unit_h, paper_size, output_type ):
     maker.data.append( { "name" : kbd_name, "author" : "orihikarna" } ) # meta
 
     # Comma: the origin  
-    if output_type in ['png']:
+    if output_type in ['png', 'scad']:
         angle_Comm = 0
         org_Comm = vec2( 4.5, 4.3 )
-    elif output_type in ['scad']:
-        angle_Comm = 45
-        org_Comm = vec2( 5.6, 4.3 )
     elif output_type in ['kicad']:
         # angle_Comm = 0
         # angle_Comm = 16
@@ -315,14 +316,14 @@ def make_kbd_layout( unit_w, unit_h, paper_size, output_type ):
         return
 
     # parameters
-    angle_M_Comm = -16
+    angle_M_Comm = -20
     # print( f'angle_M_Comm = {angle_M_Comm:.6f}' )
-    dy_Cln = 0.17
-    dy_Entr = 0.55
+    dy_Cln = 0.35
+    dy_Entr = 0.5
 
     angle_Index_Thmb = 80
     dangles_Thmb = [-20, -20, 0]
-    delta_M_Thmb = vec2( -0.86, 2.22 )
+    delta_M_Thmb = vec2( -0.86, 2.00 )
     dys_Thmb = [-0.1, 0.1, 0]
 
     ## Middle finger: Comm(,)
@@ -350,11 +351,6 @@ def make_kbd_layout( unit_w, unit_h, paper_size, output_type ):
     _dx = keyh * np.sin( np.deg2rad( -angle_Inner1_Index ) ) + dx_M_J
     angle_Inner2_Index = np.rad2deg( np.arctan2( _dx, _dy ) )
     angle_Inner2 = angle_Index + angle_Inner2_Index
-    print( f'{angle_Inner1_Index}' )
-    print( f'dx_M_J = {dx_M_J}' )
-    print( f'_dx = {_dx}' )
-    print( f'_dy = {_dy}' )
-    print( f'{angle_Inner2_Index}' )
     org_Inner1 = org_N \
         + vec2( -0.5, (+0.5 - dy_Entr) * keyh ) @ mat2_rot( angle_Index ) \
         + vec2( -0.5, -keyh/2 ) @ mat2_rot( angle_Inner1 )
@@ -388,7 +384,7 @@ def make_kbd_layout( unit_w, unit_h, paper_size, output_type ):
     angle_PinkyBtm = angle_PinkyTop + angle_Pinky_Btm_Top
     print( f'angle_PinkyBtm = {angle_PinkyBtm}' )
     keyw_Slsh = 1.25 #+ 0.1
-    keyw_Bsls = 1.5 #+ 0.12
+    keyw_Bsls = 1.75 #+ 0.12
     # Slsh(/)
     br_Dot = org_Dot + vec2( +0.5, +0.5 * keyh ) @ mat2_rot( angle_Dot )
     bl_Scln = org_Scln + vec2( -0.5, +0.5 * keyh ) @ mat2_rot( angle_PinkyTop )
@@ -431,34 +427,37 @@ def make_kbd_layout( unit_w, unit_h, paper_size, output_type ):
     maker.add_col( angle_Inner1, org_Inner1, [0], col_IR[0:1], col_IL[0:1] )
     maker.add_col( angle_Inner2, org_Inner2, [0], col_IR[1:2], col_IL[1:2] )
 
+    # rotary encoder
+    angle_RotEnc = angle_Comm
+    org_RotEnc = org_Dot + vec2( -0.7, 1.7 ) @ mat2_rot( angle_Comm )
+    maker.add_col( angle_RotEnc, org_RotEnc, [0], {'RE_R'}, {'RE_L'}, keyw = 15.6 / unit_w, keyh = 13.6 / unit_h )
+
     return maker.data
 
 if __name__=='__main__':
 
     work_dir = './'
-    dst_path = os.path.join( work_dir, f'{kbd_name}-layout.json' )
-    dst_scad = os.path.join( work_dir, f'{kbd_name}-layout.scad' )
-    dst_png  = os.path.join( work_dir, f'{kbd_name}-layout.png' )
+    dst_path = os.path.join( work_dir, f'kbd-layout.json' )
+    dst_scad = os.path.join( work_dir, f'kbd-layout.scad' )
+    dst_png  = os.path.join( work_dir, f'kbd-layout.png' )
 
-    unit_w = 16.8 # 17.4
-    unit_h = 16.8
+    unit_w = 17.0
+    unit_h = 17.0
     # paper_size = vec2( 297, 210 )# A4
     # paper_size = vec2( 364, 257 )# B4
     paper_size = vec2( 330, 165 )
     thickness = 0.3# mm
 
-    output_type = 'png'
+    for output_type in ['png']:
+        data = make_kbd_layout( unit_w, unit_h, paper_size, output_type )
+        # write to json for keyboard layout editor
+        with open( dst_path, 'w' ) as fout:
+            json.dump( data, fout, indent = 4 )
 
-    data = make_kbd_layout( unit_w, unit_h, paper_size, output_type )
-    # write to json for keyboard layout editor
-    with open( dst_path, 'w' ) as fout:
-        json.dump( data, fout, indent = 4 )
-
-    kbd = keyboard_layout.load( dst_path )
-    # kbd.print()
-    if output_type == 'png':
-        kbd.write_png( dst_png, unit_w, thickness, paper_size )
-    if output_type == 'scad':
-        kbd.write_scad( dst_scad, unit_w )
-    if output_type == 'kicad':
-        kbd.write_kicad( sys.stdout, unit_w )
+        kbd = keyboard_layout.load( dst_path )
+        # kbd.print()
+        if output_type == 'png':
+            kbd.write_png( dst_png, unit_w, thickness, paper_size )
+            kbd.write_scad( dst_scad, unit_w )
+        if output_type == 'kicad':
+            kbd.write_kicad( sys.stdout, unit_w )
