@@ -247,7 +247,7 @@ class key_layout_maker:
         self.data = []
         self.xctr = xctr
 
-    def add_col( self, angle, org, dxs, names1, names2, ydir = -1, keyw = 1, keyh = 1 ):
+    def add_col( self, angle, org, dx, names1, names2, ydir = -1, keyw = 1, keyh = 1 ):
         for hand_idx, names in enumerate( [names1, names2]):
             # if hand_idx in [0]:# 0 = right
             if hand_idx in [1]:# 1 = left
@@ -269,7 +269,7 @@ class key_layout_maker:
                     continue
                 row.append( { "x" : x, "y" : y, "w" : keyw, "h" : keyh } )
                 row.append( name )
-                x = -keyw + dxs[min( idx, len( dxs ) - 1 )] * xsign
+                x = -keyw + dx * xsign
                 y = keyh * ydir
             self.data.append( row )
 
@@ -302,52 +302,70 @@ def make_kbd_layout( unit, paper_size, output_type ):
     maker = key_layout_maker( xctr )
     maker.data.append( { "name" : kbd_name, "author" : "orihikarna" } ) # meta
 
-    # Comma: the origin  
+    # Dot: the origin  
     if output_type in ['png', 'scad']:
-        angle_Comm = 0
-        org_Comm = vec2( 4.5, 4.3 )
+        angle_Dot = 12
+        org_Dot = vec2( 5.5, 4.3 )
     elif output_type in ['kicad']:
-        # angle_Comm = 0
-        # angle_Comm = 16
-        angle_Comm = 6.351954683901843
-        org_Comm = vec2( -4.9, 4.0 )
+        # angle_Dot = 0
+        # angle_Dot = 16
+        angle_Dot = 6.351954683901843
+        org_Dot = vec2( -3.9, 4.0 )
     else:
         return
 
-    ## Parameters
-    # index
-    angle_M_Comm = -20
+
+    ## Constants
     # pinky
-    dy_Cln = 0.40
+    keyw_Slsh = 22 / unit
+    keyw_Bsls = 27 / unit
+    # thumb
+    keyw12 = 22 / unit
+
+
+    ## Parameters
+    # pinky
+    angle_Dot_Scln = 20
+    dy_Cln = 0.42
+    # ring (Dot)
+    dx_angle_Dot = -10
+    # middle (Comm)
+    angle_Comm_Dot = -3
+    dx_angle_Comm = -10
     # index
-    dy_Entr = 0.4
+    angle_M_Comm = -19
+    dx_angle_M = 7
+    # index
+    dy_Entr = 0.45
     # thumb
     angle_Index_Thmb = 95
     dangles_Thmb = [-10, -10, 0]
     delta_M_Thmb = vec2( -0.9, 2.00 )
     dys_Thmb = [-0.1, -0.1, 0]
 
-    ## Middle finger: Comm(,)
-    dx_Comm_8 = 3 * np.tan( np.deg2rad( angle_M_Comm / 2 ) )
-    dx_I_8    = dx_Comm_8 * 1 / 3
-    dx_K_I    = dx_Comm_8 * 1 / 3
-    dx_Comm_K = dx_Comm_8 * 1 / 3
 
-    ## Index finger: M, N
+    ## Rules
+    # Ring finger: Dot
+    dx_Dot_L = np.tan( np.deg2rad( dx_angle_Dot ) )
+
+    # Middle finger: Comm(,)
+    angle_Comm = angle_Comm_Dot + angle_Dot
+    dx_Comm_K = np.tan( np.deg2rad( dx_angle_Comm ) )
+    org_Comm = org_Dot \
+         + vec2( -0.5, +0.5 ) @ mat2_rot( angle_Dot ) \
+         + vec2( -0.5, -0.5 ) @ mat2_rot( angle_Comm )
+
+    # Index finger: M, N
     angle_Index = angle_M_Comm + angle_Comm
+    dx_M_J = np.tan( np.deg2rad( dx_angle_M ) )
     org_M = org_Comm \
         + vec2( -0.5, +0.5 ) @ mat2_rot( angle_Comm ) \
         + vec2( -0.5, -0.5 ) @ mat2_rot( angle_Index )
     org_N = org_M + vec2( -1, 0 ) @ mat2_rot( angle_Index )
 
-    dx_M_7 = -dx_Comm_8
-    dx_U_7 = -np.sin( np.deg2rad( angle_M_Comm ) - np.arctan2( dx_I_8, 1 ) ) * np.linalg.norm( [1, dx_I_8 ] )
-    dx_M_J = (vec2( dx_Comm_K, 1 ) @ mat2_rot( angle_M_Comm ))[0]
-    dx_J_U = dx_M_7 - (dx_M_J + dx_U_7)
-
-    ## Inner most
+    # Inner most
     angle_Inner_Index = np.rad2deg( np.arcsin( dx_M_J / dy_Entr ) )
-    angle_Inner = angle_Index + angle_Inner_Index
+    angle_Inner = angle_Inner_Index + angle_Index
     org_Inner = org_N \
         + vec2( -0.5, -0.5 ) @ mat2_rot( angle_Index ) \
         + vec2( -0.5, 0.5 - dy_Entr ) @ mat2_rot( angle_Inner )
@@ -355,18 +373,8 @@ def make_kbd_layout( unit, paper_size, output_type ):
     _dy = 1 - dy_Entr * np.cos( np.deg2rad( angle_Inner_Index ) )
     dx_Entr_Pipe = - _dy * np.sin( np.deg2rad( angle_Inner_Index ) )
 
-    ## Ring finger: Dot
-    angle_Dot = angle_Comm
-    org_Dot = org_Comm + vec2( +1, 0 ) @ mat2_rot( angle_Dot )
-    dx_Dot_L = dx_Comm_8 / 3
-
-    ## Pinky finger: top
-    angle_Dot_Scln = -angle_M_Comm
-    if angle_Dot_Scln == 0:
-        dy_Scln = 0.5
-    else:
-        dy_Scln = 1 + dx_Dot_L / np.sin( np.deg2rad( angle_Dot_Scln ) )
-    print( f'angle_Dot_Scln={angle_Dot_Scln}, dx_Dot_L={dx_Dot_L}, dy_Scln={dy_Scln}')
+    # Pinky finger: top
+    dy_Scln = 1 + dx_Dot_L / np.sin( np.deg2rad( angle_Dot_Scln ) )
     # Scln(;)
     angle_PinkyTop = angle_Dot - angle_Dot_Scln
     tr_Dot = org_Dot + vec2( +0.5, -0.5 ) @ mat2_rot( angle_Dot )
@@ -376,12 +384,10 @@ def make_kbd_layout( unit, paper_size, output_type ):
     org_Cln = org_Scln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
     org_RBrc = org_Cln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
 
-    ## Pinky finger: bottom
+    # Pinky finger: bottom
     angle_Pinky_Btm_Top = np.rad2deg( np.arctan2( dy_Cln, 1 ) )
     angle_PinkyBtm = angle_PinkyTop + angle_Pinky_Btm_Top
     # Slsh(/)
-    keyw_Slsh = 22 / unit
-    keyw_Bsls = 27 / unit
     br_Dot = org_Dot + vec2( +0.5, +0.5 ) @ mat2_rot( angle_Dot )
     bl_Scln = org_Scln + vec2( -0.5, +0.5 ) @ mat2_rot( angle_PinkyTop )
     tl_Slsh = vec2_find_intersection( bl_Scln, vec2( 1, 0 ) @ mat2_rot( angle_PinkyBtm ),
@@ -390,42 +396,36 @@ def make_kbd_layout( unit, paper_size, output_type ):
     # Bsls(\)
     org_Bsls = org_Slsh + vec2( (keyw_Slsh + keyw_Bsls) / 2, 0 ) @ mat2_rot( angle_PinkyBtm )
 
-    ### add columns
-    dxs_Index = [dx_M_J, dx_J_U, dx_U_7]
-    maker.add_col( angle_Index, org_N, dxs_Index, col_N, col_B )
-    maker.add_col( angle_Index, org_M, dxs_Index, col_M, col_V )
-    maker.add_col( angle_Comm,  org_Comm, [dx_Comm_K, dx_K_I, dx_I_8], col_Comm, col_C )
-    maker.add_col( angle_Dot,   org_Dot,  [dx_Dot_L, dx_Dot_L, dx_Dot_L], col_Dot, col_X )
-    #
-    maker.add_col( angle_PinkyBtm, org_Slsh, [0], col_Scln[0:1], col_Z[0:1], keyw = keyw_Slsh )
-    maker.add_col( angle_PinkyTop, org_Scln, [dx_Scln_P], col_Scln[1:], col_Z[1:] )
-    #
-    maker.add_col( angle_PinkyTop, org_Cln,  [dx_Scln_P], col_Cln[1:], col_Tab[1:] )
-    #
-    maker.add_col( angle_PinkyBtm, org_Bsls, [0], col_Brac[0:1], col_Gui[0:1], keyw = keyw_Bsls )
-    maker.add_col( angle_PinkyTop, org_RBrc, [dx_Scln_P], col_Brac[1:], col_Gui[1:] )
-
-    # add the thumb row
-    keyw12 = 1.25
-    # keyw12 = (1.25 * 19.05 - (19.05 - unit)) / 19.05
+    # Thumbs row
     keyws = [keyw12, keyw12, keyw12]
-    keyw = keyw12
-
-    angle_Thmb = angle_Index_Thmb + angle_Index
+    angle_Thmb = angle_Index + angle_Index_Thmb
     org_Thmb = org_M + delta_M_Thmb @ mat2_rot( angle_Index )
     for idx, name in enumerate( thumbsR ):
-        maker.add_col( angle_Thmb + 180, org_Thmb, [0], [name], [thumbsL[idx]], keyw = keyws[idx] )
-        org_Thmb += vec2( +keyw / 2, +0.5 ) @ mat2_rot( angle_Thmb )
+        maker.add_col( angle_Thmb + 180, org_Thmb, 0, [name], [thumbsL[idx]], keyw = keyws[idx] )
+        org_Thmb += vec2( +keyws[idx] / 2, +0.5 ) @ mat2_rot( angle_Thmb )
         angle_Thmb += dangles_Thmb[idx]
-        org_Thmb += vec2( -keyw / 2 - dys_Thmb[idx], +0.5 ) @ mat2_rot( angle_Thmb )
+        org_Thmb += vec2( -keyws[idx] / 2 - dys_Thmb[idx], +0.5 ) @ mat2_rot( angle_Thmb )
 
-    # the inner most key (Enter, Del)
-    maker.add_col( angle_Inner, org_Inner, [dx_Entr_Pipe], col_IR, col_IL )
 
-    # rotary encoder
+    ### add columns
+    maker.add_col( angle_Index,  org_N,     dx_M_J,    col_N,    col_B )
+    maker.add_col( angle_Index,  org_M,     dx_M_J,    col_M,    col_V )
+    maker.add_col( angle_Comm,   org_Comm,  dx_Comm_K, col_Comm, col_C )
+    maker.add_col( angle_Dot,    org_Dot,   dx_Dot_L,  col_Dot,  col_X )
+    #
+    maker.add_col( angle_PinkyTop, org_Scln, dx_Scln_P, col_Scln[1:], col_Z[1:] )
+    maker.add_col( angle_PinkyTop, org_Cln,  dx_Scln_P, col_Cln[1:],  col_Tab[1:] )
+    maker.add_col( angle_PinkyTop, org_RBrc, dx_Scln_P, col_Brac[1:], col_Gui[1:] )
+    #
+    maker.add_col( angle_PinkyBtm, org_Slsh, 0, col_Scln[0:1], col_Z[0:1],   keyw = keyw_Slsh )
+    maker.add_col( angle_PinkyBtm, org_Bsls, 0, col_Brac[0:1], col_Gui[0:1], keyw = keyw_Bsls )
+    #
+    maker.add_col( angle_Inner, org_Inner, dx_Entr_Pipe, col_IR, col_IL )
+    #
+    # Rotary encoder
     angle_RotEnc = angle_Comm - 30
-    org_RotEnc = org_Dot + vec2( -0.6, 1.8 ) @ mat2_rot( angle_Comm )
-    maker.add_col( angle_RotEnc, org_RotEnc, [0], {'RE_R'}, {'RE_L'}, keyw = 13.7 / unit, keyh = 12.7 / unit )
+    org_RotEnc = org_Dot + vec2( -0.65, 1.75 ) @ mat2_rot( angle_Comm )
+    maker.add_col( angle_RotEnc, org_RotEnc, 0, {'RE_R'}, {'RE_L'}, keyw = 13.7 / unit, keyh = 12.7 / unit )
 
     return maker.data
 
