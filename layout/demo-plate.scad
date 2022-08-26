@@ -3,7 +3,7 @@ $fn = 24;
 include <kbd-layout.scad>
 //include <hermit-edgecuts.scad>
 
-key_hole = 14.2;
+key_hole = 14.3;
 center_key = 8;
 
 module round_square( xsize, ysize, radius ) {
@@ -86,7 +86,7 @@ difference() {
     linear_extrude( 10 ) {
       for (prm = key_pos_angles) {
         if (prm[5] == 31) {
-          key_rect( prm, -1 );
+          key_rect( prm, 0 );
         } else {
           key_square( prm, key_hole, 0.6 );
         }
@@ -98,7 +98,7 @@ difference() {
     linear_extrude( 10 ) {
       for (prm = key_pos_angles) {
         if (prm[5] == 31) {
-          key_rect( prm, 0 );
+          key_rect( prm, 1 );
         } else {
           key_square( prm, 15.6, 0.6 );
         }
