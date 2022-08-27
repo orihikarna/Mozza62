@@ -1,4 +1,5 @@
 import json
+from turtle import color
 import numpy as np
 import os
 import sys
@@ -128,17 +129,37 @@ class keyboard_layout:
         draw = ImageDraw.Draw( image )
         for key in self.keys:
             ctr = key.getCenterPos()
-            w, h, rot = key.w, key.h, key.r
+            w, h, rot, name = key.w, key.h, key.r, key.name
 
             ctr *= L
+            if name.startswith( '>' ):
+                egg_ctr = ctr
             dim = L * vec2( w - 2 * Th, h - 2 * Th )
-            key_image, rsz = get_key_image( (int( dim[0] ), int( dim[1] )), int( L/12 ), key.name, "DarkTurquoise" )
+            key_image, rsz = get_key_image( (int( dim[0] ), int( dim[1] )), int( L/12 ), name, "DarkTurquoise" )
             key_image = key_image.rotate( -rot )
             pos = ctr - vec2( rsz, rsz ) / 2
-            if key.name.startswith( 'RE' ):
+            if name.startswith( 'RE' ):
                 r = 41/2 * L / unit
-                draw.ellipse( (ctr[0] - r, ctr[1] - r, ctr[0] + r, ctr[1] + r), fill="gray" )
+                draw.ellipse( (ctr[0] - r, ctr[1] - r, ctr[0] + r, ctr[1] + r), fill='gray' )
             image.paste( key_image, (int( pos[0] ), int( pos[1] )), key_image )
+        if False:# egg
+            a = L * 5.4
+            b = L * 4.2
+            egg_ctr[0] -= L * 1.2
+            egg_ctr[1] -= L * 0.3
+            pnts = []
+            for th in np.linspace( -np.pi, +np.pi, 100 ):
+                x = egg_ctr[0] - a * np.cos( th )
+                y = egg_ctr[1] + b * np.sin( th ) * np.cos( 0.22 * th )
+                pnts.append( (x, y) )
+            draw.line( pnts, width=10, fill='black' )
+        if False:
+            a = L * 5.6
+            b = L * 3.8
+            egg_ctr[0] -= L * 1.4
+            egg_ctr[1] -= L * 0.3
+            draw.ellipse( (egg_ctr[0] - a, egg_ctr[1] - b, egg_ctr[0] + a, egg_ctr[1] + b), outline='green', width=10 )
+
 
         xsize = round( size[0] / anti_alias_scaling )
         ysize = round( size[1] / anti_alias_scaling )
@@ -304,7 +325,7 @@ def make_kbd_layout( unit, paper_size, output_type ):
 
     # Dot: the origin  
     if output_type in ['png', 'scad']:
-        angle_Dot = 12
+        angle_Dot = 0
         org_Dot = vec2( 5.5, 4.3 )
     elif output_type in ['kicad']:
         # angle_Dot = 0
@@ -317,8 +338,8 @@ def make_kbd_layout( unit, paper_size, output_type ):
 
     ## Constants
     # pinky
-    keyw_Slsh = 22 / unit
-    keyw_Bsls = 27 / unit
+    keyw_Slsh = 22.4 / unit
+    keyw_Bsls = 26.4 / unit
     # thumb
     keyw12 = 22 / unit
 
@@ -330,18 +351,18 @@ def make_kbd_layout( unit, paper_size, output_type ):
     # ring (Dot)
     dx_angle_Dot = -10
     # middle (Comm)
-    angle_Comm_Dot = -3
+    angle_Comm_Dot = -4
     dx_angle_Comm = -10
     # index
-    angle_M_Comm = -19
-    dx_angle_M = 7
+    angle_M_Comm = -18
+    dx_angle_M = 4
     # index
     dy_Entr = 0.45
     # thumb
-    angle_Index_Thmb = 95
+    angle_Index_Thmb = 94
     dangles_Thmb = [-10, -10, 0]
-    delta_M_Thmb = vec2( -0.9, 2.00 )
-    dys_Thmb = [-0.1, -0.1, 0]
+    delta_M_Thmb = vec2( -0.7, 2.0 )
+    dys_Thmb = [-0.1, +0.15, 0]
 
 
     ## Rules
@@ -397,7 +418,7 @@ def make_kbd_layout( unit, paper_size, output_type ):
     org_Bsls = org_Slsh + vec2( (keyw_Slsh + keyw_Bsls) / 2, 0 ) @ mat2_rot( angle_PinkyBtm )
 
     # Thumbs row
-    keyws = [keyw12, keyw12, keyw12]
+    keyws = [keyw12, keyw12, 1]
     angle_Thmb = angle_Index + angle_Index_Thmb
     org_Thmb = org_M + delta_M_Thmb @ mat2_rot( angle_Index )
     for idx, name in enumerate( thumbsR ):
@@ -423,8 +444,8 @@ def make_kbd_layout( unit, paper_size, output_type ):
     maker.add_col( angle_Inner, org_Inner, dx_Entr_Pipe, col_IR, col_IL )
     #
     # Rotary encoder
-    angle_RotEnc = angle_Comm - 30
-    org_RotEnc = org_Dot + vec2( -0.65, 1.75 ) @ mat2_rot( angle_Comm )
+    angle_RotEnc = angle_Index
+    org_RotEnc = org_Dot + vec2( -0.55, 1.75 ) @ mat2_rot( angle_Comm )
     maker.add_col( angle_RotEnc, org_RotEnc, 0, {'RE_R'}, {'RE_L'}, keyw = 13.7 / unit, keyh = 12.7 / unit )
 
     return maker.data

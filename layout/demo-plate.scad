@@ -3,7 +3,7 @@ $fn = 24;
 include <kbd-layout.scad>
 //include <hermit-edgecuts.scad>
 
-key_hole = 14.3;
+key_hole = 14.4;
 center_key = 8;
 
 module round_square( xsize, ysize, radius ) {
@@ -36,7 +36,7 @@ module key_square( prm, size, radius ) {
 }
 
 module plate_inflate() {
-  close = 6;
+  close = 12;
   offset( -close ) offset( +close ) {
     for (prm = key_pos_angles) {
       if (prm[5] == 31) {
