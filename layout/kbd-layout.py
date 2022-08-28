@@ -16,26 +16,6 @@ font = ImageFont.truetype( fontpath, size = 28 * anti_alias_scaling )
 def vec2( x, y ):
     return np.array( [x, y] )
 
-def vec2_find_intersection( p0, t0, p1, t1, tolerance = 1 ):
-    A = vec2( t0, t1 )
-    R = np.linalg.inv( A )
-    B = p1 - p0
-    k0, k1 = B @ R
-    q0 =  k0 * t0 + p0
-    q1 = -k1 * t1 + p1
-    dq = np.linalg.norm( q0 - q1 )
-    if dq > 1e-3:
-        print( 'ERROR |q0 - q1| = {}'.format( dq ) )
-    return (q1, k0, -k1)
-
-def vec2_rotate( vec, angle ):
-    th = np.deg2rad( angle )
-    co = np.cos( th )
-    si = np.sin( th )
-    nxvec = co * vec[0] - si * vec[1]
-    nyvec = si * vec[0] + co * vec[1]
-    return (nxvec, nyvec)
-
 def mat2_rot( deg ):
     th = deg / 180 * np.pi
     c = np.cos( th )
@@ -135,7 +115,7 @@ class keyboard_layout:
             if name.startswith( '>' ):
                 egg_ctr = ctr
             dim = L * vec2( w - 2 * Th, h - 2 * Th )
-            key_image, rsz = get_key_image( (int( dim[0] ), int( dim[1] )), int( L/12 ), name, "DarkTurquoise" )
+            key_image, rsz = get_key_image( (int( dim[0] ), int( dim[1] )), int( L/12 ), name, "violet" )
             key_image = key_image.rotate( -rot )
             pos = ctr - vec2( rsz, rsz ) / 2
             if name.startswith( 'RE' ):
@@ -325,7 +305,7 @@ def make_kbd_layout( unit, paper_size, output_type ):
 
     # Dot: the origin  
     if output_type in ['png', 'scad']:
-        angle_Dot = 0
+        angle_Dot = 6
         org_Dot = vec2( 5.5, 4.3 )
     elif output_type in ['kicad']:
         # angle_Dot = 0
@@ -338,31 +318,32 @@ def make_kbd_layout( unit, paper_size, output_type ):
 
     ## Constants
     # pinky
-    keyw_Slsh = 22.4 / unit
-    keyw_Bsls = 26.4 / unit
+    keyw_Slsh = 22.8 / unit
+    keyw_Bsls = 26.0 / unit
     # thumb
     keyw12 = 22 / unit
 
 
     ## Parameters
     # pinky
-    angle_Dot_Scln = 20
+    angle_Dot_Scln = -18
+    angle_Dot_Slsh = -3
     dy_Cln = 0.42
     # ring (Dot)
     dx_angle_Dot = -10
     # middle (Comm)
-    angle_Comm_Dot = -4
+    angle_Comm_Dot = -2
     dx_angle_Comm = -10
     # index
-    angle_M_Comm = -18
+    angle_M_Comm = -16
     dx_angle_M = 4
     # index
     dy_Entr = 0.45
     # thumb
-    angle_Index_Thmb = 94
+    delta_M_Thmb = vec2( -0.8, 2.0 )
+    angle_Index_Thmb = 92
     dangles_Thmb = [-10, -10, 0]
-    delta_M_Thmb = vec2( -0.7, 2.0 )
-    dys_Thmb = [-0.1, +0.15, 0]
+    dys_Thmb = [0, -0.125, 0]
 
 
     ## Rules
@@ -395,27 +376,32 @@ def make_kbd_layout( unit, paper_size, output_type ):
     dx_Entr_Pipe = - _dy * np.sin( np.deg2rad( angle_Inner_Index ) )
 
     # Pinky finger: top
-    dy_Scln = 1 + dx_Dot_L / np.sin( np.deg2rad( angle_Dot_Scln ) )
+    angle_PinkyTop = angle_Dot + angle_Dot_Scln
     # Scln(;)
-    angle_PinkyTop = angle_Dot - angle_Dot_Scln
-    tr_Dot = org_Dot + vec2( +0.5, -0.5 ) @ mat2_rot( angle_Dot )
-    org_Scln = tr_Dot + vec2( +0.5, dy_Scln - 0.5) @ mat2_rot( angle_PinkyTop )
-    dx_Scln_P = dy_Scln * np.tan( np.deg2rad( angle_Dot_Scln ) )
+    dy_Scln = 1 - dx_Dot_L / np.sin( np.deg2rad( angle_Dot_Scln ) )
+    org_Scln = org_Dot \
+        + vec2( +0.5, -0.5 ) @ mat2_rot( angle_Dot ) \
+        + vec2( +0.5, dy_Scln - 0.5) @ mat2_rot( angle_PinkyTop )
+    dx_Scln_P = dy_Scln * np.tan( np.deg2rad( -angle_Dot_Scln ) )
     # Cln(:), RBrc(])
     org_Cln = org_Scln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
     org_RBrc = org_Cln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
 
     # Pinky finger: bottom
-    angle_Pinky_Btm_Top = np.rad2deg( np.arctan2( dy_Cln, 1 ) )
-    angle_PinkyBtm = angle_PinkyTop + angle_Pinky_Btm_Top
+    angle_PinkyBtm = angle_Dot + angle_Dot_Slsh
     # Slsh(/)
     br_Dot = org_Dot + vec2( +0.5, +0.5 ) @ mat2_rot( angle_Dot )
-    bl_Scln = org_Scln + vec2( -0.5, +0.5 ) @ mat2_rot( angle_PinkyTop )
-    tl_Slsh = vec2_find_intersection( bl_Scln, vec2( 1, 0 ) @ mat2_rot( angle_PinkyBtm ),
-                                      br_Dot,  vec2( 1, 0 ) @ mat2_rot( angle_Dot + 90 ) )[0]
-    org_Slsh = tl_Slsh + vec2( keyw_Slsh / 2, +0.5 ) @ mat2_rot( angle_PinkyBtm )
+    bl_Cln = org_Cln + vec2( -0.5, +0.5 ) @ mat2_rot( angle_PinkyTop )
+    pt = (bl_Cln - br_Dot) @ mat2_rot( -angle_Dot )
+    _dy = pt[1] - np.tan( np.deg2rad( angle_Dot_Slsh ) ) * pt[0]
+    org_Slsh = org_Dot \
+        + vec2( +0.5, _dy + 0.5 ) @ mat2_rot( angle_Dot ) \
+        + vec2( keyw_Slsh * 0.5, 0.5 ) @ mat2_rot( angle_PinkyBtm )
+
     # Bsls(\)
-    org_Bsls = org_Slsh + vec2( (keyw_Slsh + keyw_Bsls) / 2, 0 ) @ mat2_rot( angle_PinkyBtm )
+    bl_RBrc = org_RBrc + vec2( -0.5, +0.5 ) @ mat2_rot( angle_PinkyTop )
+    _dy = ((bl_RBrc - org_Slsh) @ mat2_rot( -angle_PinkyBtm ))[1]
+    org_Bsls = org_Slsh + vec2( (keyw_Slsh + keyw_Bsls) * 0.5, 0.5 + _dy ) @ mat2_rot( angle_PinkyBtm )
 
     # Thumbs row
     keyws = [keyw12, keyw12, 1]
@@ -445,7 +431,7 @@ def make_kbd_layout( unit, paper_size, output_type ):
     #
     # Rotary encoder
     angle_RotEnc = angle_Index
-    org_RotEnc = org_Dot + vec2( -0.55, 1.75 ) @ mat2_rot( angle_Comm )
+    org_RotEnc = org_Dot + vec2( -0.62, 1.75 ) @ mat2_rot( angle_Comm )
     maker.add_col( angle_RotEnc, org_RotEnc, 0, {'RE_R'}, {'RE_L'}, keyw = 13.7 / unit, keyh = 12.7 / unit )
 
     return maker.data
