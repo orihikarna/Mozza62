@@ -98,10 +98,11 @@ class keyboard_layout:
         for name, q, r in keys:
             print( "    ['{}', {:.3f}, {:.3f}, {:.1f}],".format( name[-1], (q[0] - max_x), (q[1] - min_y), r ) )
 
-    def write_png( self, path: str, unit, thickness, paper_size ):
+    def write_png( self, path: str, unit, thickness, paper_size, outline ):
         # 2560 x 1600, 286mm x 179mm, MacBook size
         scale = 2560.0 / 286.0 / 2 * anti_alias_scaling
         size = scale * paper_size
+        paper_ctr = size / 2
         L = scale * unit
         Th = thickness / unit
 
@@ -112,6 +113,7 @@ class keyboard_layout:
             w, h, rot, name = key.w, key.h, key.r, key.name
 
             ctr *= L
+            ctr += paper_ctr
             if name.startswith( '>' ):
                 egg_ctr = ctr
             dim = L * vec2( w - 2 * Th, h - 2 * Th )
@@ -139,7 +141,11 @@ class keyboard_layout:
             egg_ctr[0] -= L * 1.4
             egg_ctr[1] -= L * 0.3
             draw.ellipse( (egg_ctr[0] - a, egg_ctr[1] - b, egg_ctr[0] + a, egg_ctr[1] + b), outline='green', width=10 )
-
+        pnts = []
+        for xy in outline:
+            pnt = xy * L + paper_ctr
+            pnts.append( (pnt[0], pnt[1]) )
+        draw.line( pnts, width=10, fill='black' )
 
         xsize = round( size[0] / anti_alias_scaling )
         ysize = round( size[1] / anti_alias_scaling )
@@ -244,9 +250,8 @@ class keyboard_layout:
         return kbd
 
 class key_layout_maker:
-    def __init__( self, xctr ):
+    def __init__( self ):
         self.data = []
-        self.xctr = xctr
 
     def add_col( self, angle, org, dx, names1, names2, ydir = -1, keyw = 1, keyh = 1 ):
         for hand_idx, names in enumerate( [names1, names2]):
@@ -257,7 +262,7 @@ class key_layout_maker:
             xsign = [+1, -1][hand_idx]
             prop = collections.OrderedDict()
             prop["r"]  = xsign * angle
-            prop["rx"] = xsign * org[0] + self.xctr
+            prop["rx"] = xsign * org[0]
             prop["ry"] = org[1]
             prop["x"] = -keyw / 2.0
             prop["y"] = -keyh / 2.0
@@ -274,7 +279,7 @@ class key_layout_maker:
                 y = keyh * ydir
             self.data.append( row )
 
-def make_kbd_layout( unit, paper_size, output_type ):
+def make_kbd_layout( unit, output_type ):
 
     # Left hand
     thumbsL = ["Alt", "Ctrl", "Lower"]
@@ -298,20 +303,18 @@ def make_kbd_layout( unit, paper_size, output_type ):
     col_Brac = ["_\nBsls", "]\n}", "[\n{"]
     thumbsR  = ["Space", "Shift", "Raise"]
 
-    xctr = (paper_size[0] / 2.0) / unit
-
-    maker = key_layout_maker( xctr )
+    maker = key_layout_maker()
     maker.data.append( { "name" : kbd_name, "author" : "orihikarna" } ) # meta
 
     # Dot: the origin  
     if output_type in ['png', 'scad']:
         angle_Dot = 6
-        org_Dot = vec2( 5.5, 4.3 )
+        org_Dot = vec2( 5.5, -0.5 )
     elif output_type in ['kicad']:
         # angle_Dot = 0
         # angle_Dot = 16
         angle_Dot = 6.351954683901843
-        org_Dot = vec2( -3.9, 4.0 )
+        org_Dot = vec2( -3.9, 0 )
     else:
         return
 
@@ -327,7 +330,7 @@ def make_kbd_layout( unit, paper_size, output_type ):
     ## Parameters
     # pinky
     angle_Dot_Scln = -18
-    angle_Dot_Slsh = -3
+    angle_Dot_Slsh = -4
     dy_Cln = 0.42
     # ring (Dot)
     dx_angle_Dot = -10
@@ -342,7 +345,7 @@ def make_kbd_layout( unit, paper_size, output_type ):
     # thumb
     delta_M_Thmb = vec2( -0.8, 2.0 )
     angle_Index_Thmb = 92
-    dangles_Thmb = [-10, -10, 0]
+    dangles_Thmb = [-9, -9, 0]
     dys_Thmb = [0, -0.125, 0]
 
 
@@ -434,7 +437,12 @@ def make_kbd_layout( unit, paper_size, output_type ):
     org_RotEnc = org_Dot + vec2( -0.62, 1.75 ) @ mat2_rot( angle_Comm )
     maker.add_col( angle_RotEnc, org_RotEnc, 0, {'RE_R'}, {'RE_L'}, keyw = 13.7 / unit, keyh = 12.7 / unit )
 
-    return maker.data
+    outline = []
+    outline.append( org_RBrc + vec2(             0.5 + 0.4, +0.5 + 0.4 ) @ mat2_rot( angle_PinkyTop ) )
+    outline.append( org_Bsls + vec2( keyw_Bsls * 0.5 + 0.4,  0.5 + 0.4 ) @ mat2_rot( angle_PinkyBtm ) )
+    outline.append( org_Thmb )
+    outline = np.array( outline )
+    return maker.data, outline
 
 if __name__=='__main__':
 
@@ -446,11 +454,11 @@ if __name__=='__main__':
     unit = 17.0
     # paper_size = vec2( 297, 210 )# A4
     # paper_size = vec2( 364, 257 )# B4
-    paper_size = vec2( 330, 165 )
+    paper_size = vec2( 350, 170 )
     thickness = 0.3# mm
 
     for output_type in ['png']:
-        data = make_kbd_layout( unit, paper_size, output_type )
+        data, outline = make_kbd_layout( unit, output_type )
         # write to json for keyboard layout editor
         with open( dst_path, 'w' ) as fout:
             json.dump( data, fout, indent = 4 )
@@ -458,7 +466,7 @@ if __name__=='__main__':
         kbd = keyboard_layout.load( dst_path )
         # kbd.print()
         if output_type == 'png':
-            kbd.write_png( dst_png, unit, thickness, paper_size )
+            kbd.write_png( dst_png, unit, thickness, paper_size, outline )
             kbd.write_scad( dst_scad, unit )
         if output_type == 'kicad':
             kbd.write_kicad( sys.stdout, unit )
