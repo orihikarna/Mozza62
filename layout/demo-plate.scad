@@ -105,4 +105,19 @@ difference() {
       }
     }
   }
+  // small ditches
+  if (true) {
+    for (idxs = [[0, 2], [3, 6], [7, 10], [11, 14], [15, 18], [19, 21], [22, 24], [25, 26], [29, 30], [2,31]]) {
+      hull() {
+        for (idx = idxs) {
+          prm = key_pos_angles[idx];
+          x = prm[0] - key_pos_angles[center_key][0];
+          y = prm[1] - key_pos_angles[center_key][1];
+          translate( [x, y, 0] )
+            cube( [0.4, 0.4, 0.4], true );
+        }
+      }
+    }
+  }
+
 }

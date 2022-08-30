@@ -338,8 +338,8 @@ def make_kbd_layout( unit, output_type ):
     angle_Comm_Dot = -2
     dx_angle_Comm = -10
     # index
-    angle_M_Comm = -16
-    dx_angle_M = 4
+    angle_M_Comm = -18
+    dx_angle_M = 7
     # index
     dy_Entr = 0.45
     # thumb
@@ -367,6 +367,8 @@ def make_kbd_layout( unit, output_type ):
         + vec2( -0.5, +0.5 ) @ mat2_rot( angle_Comm ) \
         + vec2( -0.5, -0.5 ) @ mat2_rot( angle_Index )
     org_N = org_M + vec2( -1, 0 ) @ mat2_rot( angle_Index )
+    #
+    org_6 = org_N + 3 * vec2( dx_M_J, -1 ) @ mat2_rot( angle_Index )
 
     # Inner most
     angle_Inner_Index = np.rad2deg( np.arcsin( dx_M_J / dy_Entr ) )
@@ -389,6 +391,9 @@ def make_kbd_layout( unit, output_type ):
     # Cln(:), RBrc(])
     org_Cln = org_Scln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
     org_RBrc = org_Cln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
+    #
+    org_Mnus = org_Cln + 2 * vec2( dx_Scln_P, -1 ) @ mat2_rot( angle_PinkyTop )
+    org_LBrc = org_RBrc + vec2( dx_Scln_P, -1 ) @ mat2_rot( angle_PinkyTop )
 
     # Pinky finger: bottom
     angle_PinkyBtm = angle_Dot + angle_Dot_Slsh
@@ -410,7 +415,11 @@ def make_kbd_layout( unit, output_type ):
     keyws = [keyw12, keyw12, 1]
     angle_Thmb = angle_Index + angle_Index_Thmb
     org_Thmb = org_M + delta_M_Thmb @ mat2_rot( angle_Index )
+    angle_Thmbs = []
+    org_Thmbs = []
     for idx, name in enumerate( thumbsR ):
+        angle_Thmbs.append( angle_Thmb + 180 )
+        org_Thmbs.append( org_Thmb )
         maker.add_col( angle_Thmb + 180, org_Thmb, 0, [name], [thumbsL[idx]], keyw = keyws[idx] )
         org_Thmb += vec2( +keyws[idx] / 2, +0.5 ) @ mat2_rot( angle_Thmb )
         angle_Thmb += dangles_Thmb[idx]
@@ -437,11 +446,49 @@ def make_kbd_layout( unit, output_type ):
     org_RotEnc = org_Dot + vec2( -0.62, 1.75 ) @ mat2_rot( angle_Comm )
     maker.add_col( angle_RotEnc, org_RotEnc, 0, {'RE_R'}, {'RE_L'}, keyw = 13.7 / unit, keyh = 12.7 / unit )
 
+    add_out = 0.4
     outline = []
-    outline.append( org_RBrc + vec2(             0.5 + 0.4, +0.5 + 0.4 ) @ mat2_rot( angle_PinkyTop ) )
-    outline.append( org_Bsls + vec2( keyw_Bsls * 0.5 + 0.4,  0.5 + 0.4 ) @ mat2_rot( angle_PinkyBtm ) )
-    outline.append( org_Thmb )
+    outline.append( org_RBrc + vec2(             0.5 + add_out, +0.5 + add_out ) @ mat2_rot( angle_PinkyTop ) )
+    outline.append( org_Bsls + vec2( keyw_Bsls * 0.5 + add_out,  0.5 + add_out ) @ mat2_rot( angle_PinkyBtm ) )
+    outline.append( org_Thmbs[2] + vec2( -0.5 - add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
+    outline.append( org_Thmbs[2] + vec2( +0.5 + add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
+
+    arc_pnts = []
+    arc_pnts.append( outline[-1] )
+    arc_pnts.append( org_6    + vec2( - 0.5 - add_out, -0.5 - add_out ) @ mat2_rot( angle_Index ) )
+    arc_pnts.append( org_Mnus + vec2( 0.5 + add_out, -0.5 - add_out ) @ mat2_rot( angle_PinkyTop ) )
+    arc_pnts.append( org_LBrc + vec2( 0.5 + add_out, -0.5 - add_out ) @ mat2_rot( angle_PinkyTop ) )
+    arc_pnts.append( outline[0] )
+    arc_prms = []
+    for pnt in arc_pnts:
+        vec = pnt - org_RotEnc
+        r = np.linalg.norm( vec )
+        th = np.arctan2( vec[1], vec[0] )
+        if th > 0:
+            th -= np.pi * 2
+        arc_prms.append( np.array( (r, th) ) )
+
+    def calc_bezier_point( pnts, t ):
+        num_pnts = len( pnts )
+        tmp = [np.array( [0, 0] ) for n in range( num_pnts )]
+        s = 1 - t
+        for n in range( num_pnts ):
+            tmp[n] = pnts[n]
+        for L in range( num_pnts - 1, 0, -1 ):
+            for n in range( L ):
+                tmp[n] = s * tmp[n] + t * tmp[n+1]
+        return tmp[0]
+
+    pnts = []
+    for t in np.linspace( 0, 1, 100 ):
+        r, th = calc_bezier_point( arc_prms, t )
+        pnt = r * np.cos( th ), r * np.sin( th )
+        pnt += org_RotEnc
+        pnts.append( pnt )
+        outline.append( pnt )
+
     outline = np.array( outline )
+
     return maker.data, outline
 
 if __name__=='__main__':

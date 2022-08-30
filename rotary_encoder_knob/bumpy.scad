@@ -1,8 +1,8 @@
 knob_height = 12;
 knob_top_r = 16;
 knob_btm_r = 20;
-axis_top_r = 3.2;
-axis_btm_r = 3.3;
+axis_top_r = 3.1;
+axis_btm_r = 3.2;
 wall_thick = 1.6;
 delta = 0.1;
 
@@ -39,7 +39,7 @@ module axis( h_top, h_btm ) {
               cylinder( axis_top_r * 0.7, axis_top_r, 0 );
             }
           }
-          translate( [axis_top_r/2, -(h_top * 2 + 2 * delta) / 2, 0] )
+          translate( [axis_top_r/2 + 0.15, -(h_top * 2 + 2 * delta) / 2, 0] )
             cube( h_top * 2 + 2 * delta );
         }
       // bottom hat
