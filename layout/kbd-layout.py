@@ -145,10 +145,10 @@ class keyboard_layout:
         for xy in outline:
             pnt = xy * L + paper_ctr
             pnts.append( (pnt[0], pnt[1]) )
-        draw.line( pnts, width=10, fill='black' )
+        # draw.line( pnts, width=10, fill='black' )
 
-        xsize = round( size[0] / anti_alias_scaling )
-        ysize = round( size[1] / anti_alias_scaling )
+        xsize = int( round( size[0] / anti_alias_scaling ) )
+        ysize = int( round( size[1] / anti_alias_scaling ) )
         image = image.resize( (xsize, ysize), Image.ANTIALIAS )
         image.save( path )
 
@@ -339,19 +339,21 @@ def make_kbd_layout( unit, output_type ):
     dx_angle_Comm = -10
     # index
     angle_M_Comm = -18
-    dx_angle_M = 7
+    dx_angle_M = 6
     # index
     dy_Entr = 0.45
     # thumb
-    delta_M_Thmb = vec2( -0.8, 2.0 )
-    angle_Index_Thmb = 92
-    dangles_Thmb = [-9, -9, 0]
-    dys_Thmb = [0, -0.125, 0]
+    delta_M_Thmb = vec2( -0.7, 2.1 )
+    angle_Index_Thmb = 78
+    dangles_Thmb = [-10, -10, 0]
+    dys_Thmb = [-0.12, -0.12-0.125, 0]
 
 
     ## Rules
     # Ring finger: Dot
     dx_Dot_L = np.tan( np.deg2rad( dx_angle_Dot ) )
+    #
+    org_9 = org_Dot + 3 * vec2( dx_Dot_L, -1 ) @ mat2_rot( angle_Dot )
 
     # Middle finger: Comm(,)
     angle_Comm = angle_Comm_Dot + angle_Dot
@@ -359,6 +361,8 @@ def make_kbd_layout( unit, output_type ):
     org_Comm = org_Dot \
          + vec2( -0.5, +0.5 ) @ mat2_rot( angle_Dot ) \
          + vec2( -0.5, -0.5 ) @ mat2_rot( angle_Comm )
+    #
+    org_8 = org_Comm + 3 * vec2( dx_Comm_K, -1 ) @ mat2_rot( angle_Comm )
 
     # Index finger: M, N
     angle_Index = angle_M_Comm + angle_Comm
@@ -378,7 +382,9 @@ def make_kbd_layout( unit, output_type ):
         + vec2( -0.5, 0.5 - dy_Entr ) @ mat2_rot( angle_Inner )
 
     _dy = 1 - dy_Entr * np.cos( np.deg2rad( angle_Inner_Index ) )
-    dx_Entr_Pipe = - _dy * np.sin( np.deg2rad( angle_Inner_Index ) )
+    dx_Entr_Yen = - _dy * np.sin( np.deg2rad( angle_Inner_Index ) )
+    #
+    org_Yen = org_Inner + vec2( dx_Entr_Yen, -1 ) @ mat2_rot( angle_Inner )
 
     # Pinky finger: top
     angle_PinkyTop = angle_Dot + angle_Dot_Scln
@@ -439,34 +445,45 @@ def make_kbd_layout( unit, output_type ):
     maker.add_col( angle_PinkyBtm, org_Slsh, 0, col_Scln[0:1], col_Z[0:1],   keyw = keyw_Slsh )
     maker.add_col( angle_PinkyBtm, org_Bsls, 0, col_Brac[0:1], col_Gui[0:1], keyw = keyw_Bsls )
     #
-    maker.add_col( angle_Inner, org_Inner, dx_Entr_Pipe, col_IR, col_IL )
+    maker.add_col( angle_Inner, org_Inner, dx_Entr_Yen, col_IR, col_IL )
     #
     # Rotary encoder
     angle_RotEnc = angle_Index
-    org_RotEnc = org_Dot + vec2( -0.62, 1.75 ) @ mat2_rot( angle_Comm )
+    org_RotEnc = org_Dot + vec2( -0.5, 1.75 ) @ mat2_rot( angle_Comm )
     maker.add_col( angle_RotEnc, org_RotEnc, 0, {'RE_R'}, {'RE_L'}, keyw = 13.7 / unit, keyh = 12.7 / unit )
 
-    add_out = 0.4
     outline = []
-    outline.append( org_RBrc + vec2(             0.5 + add_out, +0.5 + add_out ) @ mat2_rot( angle_PinkyTop ) )
-    outline.append( org_Bsls + vec2( keyw_Bsls * 0.5 + add_out,  0.5 + add_out ) @ mat2_rot( angle_PinkyBtm ) )
-    outline.append( org_Thmbs[2] + vec2( -0.5 - add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
-    outline.append( org_Thmbs[2] + vec2( +0.5 + add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
-
     arc_pnts = []
-    arc_pnts.append( outline[-1] )
-    arc_pnts.append( org_6    + vec2( - 0.5 - add_out, -0.5 - add_out ) @ mat2_rot( angle_Index ) )
-    arc_pnts.append( org_Mnus + vec2( 0.5 + add_out, -0.5 - add_out ) @ mat2_rot( angle_PinkyTop ) )
-    arc_pnts.append( org_LBrc + vec2( 0.5 + add_out, -0.5 - add_out ) @ mat2_rot( angle_PinkyTop ) )
-    arc_pnts.append( outline[0] )
-    arc_prms = []
-    for pnt in arc_pnts:
-        vec = pnt - org_RotEnc
-        r = np.linalg.norm( vec )
-        th = np.arctan2( vec[1], vec[0] )
-        if th > 0:
-            th -= np.pi * 2
-        arc_prms.append( np.array( (r, th) ) )
+
+    if False:
+        add_out = 0.4
+        outline.append( org_RBrc + vec2(             0.5 + add_out, +0.5 + add_out ) @ mat2_rot( angle_PinkyTop ) )
+        outline.append( org_Bsls + vec2( keyw_Bsls * 0.5 + add_out,  0.5 + add_out ) @ mat2_rot( angle_PinkyBtm ) )
+        outline.append( org_Thmbs[2] + vec2( -0.5 - add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
+        outline.append( org_Thmbs[2] + vec2( +0.5 + add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
+
+        d = 0.5 + 0.8
+        arc_pnts.append( outline[-1] )
+        arc_pnts.append( org_Inner + vec2( -d,  0 ) @ mat2_rot( angle_Inner ) )
+        arc_pnts.append( org_Yen   + vec2( -d,  0 ) @ mat2_rot( angle_Inner ) )
+        arc_pnts.append( org_Yen   + vec2( -d, -d ) @ mat2_rot( angle_Inner ) )
+        arc_pnts.append( org_6     + vec2( -d, -d ) @ mat2_rot( angle_Index ) )
+        arc_pnts.append( org_6     + vec2(  0, -d ) @ mat2_rot( angle_Index ) )
+        arc_pnts.append( org_8     + vec2(  0, -d ) @ mat2_rot( angle_Comm ) )
+        arc_pnts.append( org_9     + vec2(  0, -d ) @ mat2_rot( angle_Dot ) )
+        arc_pnts.append( org_Mnus  + vec2( +d, -d ) @ mat2_rot( angle_PinkyTop ) )
+        arc_pnts.append( org_LBrc  + vec2( +d, -d ) @ mat2_rot( angle_PinkyTop ) )
+        arc_pnts.append( outline[0] )
+    else:
+        add_out = 0.4
+        d = 0.5 + 0.8
+        outline.append( org_LBrc + vec2(             0.5 + add_out, -0.5 - add_out ) @ mat2_rot( angle_PinkyTop ) )
+        outline.append( org_Bsls + vec2( keyw_Bsls * 0.5 + add_out, +0.5 + add_out ) @ mat2_rot( angle_PinkyBtm ) )
+        outline.append( org_Thmbs[2] + vec2( -0.5 - add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
+        outline.append( org_Thmbs[2] + vec2( +0.5 + add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
+        outline.append( org_6     + vec2( -d, -d ) @ mat2_rot( angle_Index ) )
+        outline.append( org_9     + vec2(  0, -d ) @ mat2_rot( angle_Dot ) )
+    outline.append( outline[0] )
 
     def calc_bezier_point( pnts, t ):
         num_pnts = len( pnts )
@@ -479,13 +496,30 @@ def make_kbd_layout( unit, output_type ):
                 tmp[n] = s * tmp[n] + t * tmp[n+1]
         return tmp[0]
 
-    pnts = []
-    for t in np.linspace( 0, 1, 100 ):
-        r, th = calc_bezier_point( arc_prms, t )
-        pnt = r * np.cos( th ), r * np.sin( th )
-        pnt += org_RotEnc
-        pnts.append( pnt )
-        outline.append( pnt )
+    if False:
+        arc_prms = []
+        for pnt in arc_pnts:
+            vec = pnt - org_RotEnc
+            r = np.linalg.norm( vec )
+            th = np.arctan2( vec[1], vec[0] )
+            if th > 0:
+                th -= np.pi * 2
+            arc_prms.append( np.array( (r, th) ) )
+
+        pnts = []
+        for t in np.linspace( 0, 1, 10 ):
+            r, th = calc_bezier_point( arc_prms, t )
+            pnt = r * np.cos( th ), r * np.sin( th )
+            pnt += org_RotEnc
+            pnts.append( pnt )
+            outline.append( pnt )
+    elif False:
+        for t in np.linspace( 0, 1, 10 ):
+            pnt = calc_bezier_point( arc_pnts, t )
+            outline.append( pnt )
+    else:
+        for pnt in arc_pnts:
+            outline.append( pnt )
 
     outline = np.array( outline )
 
