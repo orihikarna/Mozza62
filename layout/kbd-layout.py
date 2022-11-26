@@ -49,6 +49,57 @@ def get_key_image( size, radius, name, fill ):
     draw.text( (sz / 2 - tw / 2, sz / 2 - th / 2), name, "DarkSlateGrey", font )
     return rect, sz
 
+def calc_bezier_point( pnts, t ):
+    num_pnts = len( pnts )
+    tmp = [np.array( [0, 0] ) for n in range( num_pnts )]
+    s = 1 - t
+    for n in range( num_pnts ):
+        tmp[n] = pnts[n]
+    for L in range( num_pnts - 1, 0, -1 ):
+        for n in range( L ):
+            tmp[n] = s * tmp[n] + t * tmp[n+1]
+    return tmp[0]
+
+def calc_bspline( pnts, num_divs=1 ):
+    ret = []
+    N = len( pnts )
+    for n in range( N ):
+        p = pnts[n]
+        q = pnts[(n+1) % N]
+        r = pnts[(n+2) % N]
+        s = pnts[(n+3) % N]
+        for t in np.linspace( 0, 1, num_divs ):
+            if False:
+                a = (1-t)*(1-t)/2
+                b = -t*t + t + 1/2
+                c = t*t/2
+                ret.append( a * p + b * q + c * r )
+            else:
+                a = (1 - 3*t + 3*t*t - t*t*t)/6
+                b = (4 - 6*t*t + 3*t*t*t)/6
+                c = (1 + 3*t + 3*t*t - 3*t*t*t)/6
+                d = (t*t*t)/6
+                ret.append( a * p + b * q + c * r + d * s )
+    return ret
+
+# if False:
+#     arc_prms = []
+#     for pnt in arc_pnts:
+#         vec = pnt - org_RotEnc
+#         r = np.linalg.norm( vec )
+#         th = np.arctan2( vec[1], vec[0] )
+#         if th > 0:
+#             th -= np.pi * 2
+#         arc_prms.append( np.array( (r, th) ) )
+
+#     pnts = []
+#     for t in np.linspace( 0, 1, 10 ):
+#         r, th = calc_bezier_point( arc_prms, t )
+#         pnt = r * np.cos( th ), r * np.sin( th )
+#         pnt += org_RotEnc
+#         pnts.append( pnt )
+#         outline.append( pnt )
+
 class keyboard_key:
     def __init__( self, name, prop ):
         self.name = name
@@ -98,7 +149,7 @@ class keyboard_layout:
         for name, q, r in keys:
             print( "    ['{}', {:.3f}, {:.3f}, {:.1f}],".format( name[-1], (q[0] - max_x), (q[1] - min_y), r ) )
 
-    def write_png( self, path: str, unit, thickness, paper_size, outline ):
+    def write_png( self, path: str, unit, thickness, paper_size, arc_pnts ):
         # 2560 x 1600, 286mm x 179mm, MacBook size
         scale = 2560.0 / 286.0 / 2 * anti_alias_scaling
         size = scale * paper_size
@@ -124,35 +175,24 @@ class keyboard_layout:
                 r = 41/2 * L / unit
                 draw.ellipse( (ctr[0] - r, ctr[1] - r, ctr[0] + r, ctr[1] + r), fill='gray' )
             image.paste( key_image, (int( pos[0] ), int( pos[1] )), key_image )
-        if False:# egg
-            a = L * 5.4
-            b = L * 4.2
-            egg_ctr[0] -= L * 1.2
-            egg_ctr[1] -= L * 0.3
+
+        def conv_pnts( in_pnts ):
             pnts = []
-            for th in np.linspace( -np.pi, +np.pi, 100 ):
-                x = egg_ctr[0] - a * np.cos( th )
-                y = egg_ctr[1] + b * np.sin( th ) * np.cos( 0.22 * th )
-                pnts.append( (x, y) )
-            draw.line( pnts, width=10, fill='black' )
-        if False:
-            a = L * 5.6
-            b = L * 3.8
-            egg_ctr[0] -= L * 1.4
-            egg_ctr[1] -= L * 0.3
-            draw.ellipse( (egg_ctr[0] - a, egg_ctr[1] - b, egg_ctr[0] + a, egg_ctr[1] + b), outline='green', width=10 )
-        pnts = []
-        for xy in outline:
-            pnt = xy * L + paper_ctr
-            pnts.append( (pnt[0], pnt[1]) )
-        # draw.line( pnts, width=10, fill='black' )
+            for xy in in_pnts:
+                pnt = xy * L + paper_ctr
+                pnts.append( (pnt[0], pnt[1]) )
+            return pnts
+
+        outline = calc_bspline( arc_pnts, 10 )
+        draw.line( conv_pnts( arc_pnts ), width=2, fill='red' )
+        draw.line( conv_pnts( outline ), width=10, fill='black' )
 
         xsize = int( round( size[0] / anti_alias_scaling ) )
         ysize = int( round( size[1] / anti_alias_scaling ) )
         image = image.resize( (xsize, ysize), Image.ANTIALIAS )
         image.save( path )
 
-    def write_scad( self, path: str, unit: float ):
+    def write_scad( self, path: str, unit: float, arc_pnts ):
         xctr = np.mean( list( map( lambda k: k.getCenterPos()[0], self.keys ) ) )
         with open( path, 'w' ) as fout:
             fout.write( f'key_w = {unit};\n' )
@@ -171,6 +211,16 @@ class keyboard_layout:
                 fout.write( '    [{:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {}, "{}"],\n'.format( ctr[0], -ctr[1], -rot, w, h, idx, key.name ) )
                 idx += 1
             fout.write( '];\n' )
+
+            if True:
+                fout.write( 'edgecuts=[' )
+                outline = calc_bspline( arc_pnts, 16 )
+                for idx, pnt in enumerate( outline ):
+                    if idx % 8 == 0:
+                        fout.write( '\n  ' )
+                    pnt *= unit
+                    fout.write( f'[{pnt[0]:.3f}, {pnt[1]:.3f}], ' )
+                fout.write( '\n];\n' )
 
     def write_kicad( self, fout, unit: float ):
         fout.write( 'keys = {\n' )
@@ -341,12 +391,12 @@ def make_kbd_layout( unit, output_type ):
     angle_M_Comm = -18
     dx_angle_M = 6
     # index
-    dy_Entr = 0.45
+    dy_Entr = 0.35
     # thumb
-    delta_M_Thmb = vec2( -0.7, 2.1 )
+    delta_M_Thmb = vec2( -0.75, 1.85 )
     angle_Index_Thmb = 78
     dangles_Thmb = [-10, -10, 0]
-    dys_Thmb = [-0.12, -0.12-0.125, 0]
+    dys_Thmb = [-0.05, -0.05-0.125, 0]
 
 
     ## Rules
@@ -452,78 +502,26 @@ def make_kbd_layout( unit, output_type ):
     org_RotEnc = org_Dot + vec2( -0.5, 1.75 ) @ mat2_rot( angle_Comm )
     maker.add_col( angle_RotEnc, org_RotEnc, 0, {'RE_R'}, {'RE_L'}, keyw = 13.7 / unit, keyh = 12.7 / unit )
 
-    outline = []
     arc_pnts = []
 
-    if False:
-        add_out = 0.4
-        outline.append( org_RBrc + vec2(             0.5 + add_out, +0.5 + add_out ) @ mat2_rot( angle_PinkyTop ) )
-        outline.append( org_Bsls + vec2( keyw_Bsls * 0.5 + add_out,  0.5 + add_out ) @ mat2_rot( angle_PinkyBtm ) )
-        outline.append( org_Thmbs[2] + vec2( -0.5 - add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
-        outline.append( org_Thmbs[2] + vec2( +0.5 + add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
+    if True:
+        arc_pnts.append( org_Inner  + vec2( -1.4, +2.0 ) @ mat2_rot( angle_Inner ) )
+        arc_pnts.append( org_Inner  + vec2( -1.7, -0.5 ) @ mat2_rot( angle_Inner ) )
+        arc_pnts.append( org_6      + vec2( -1.8, -0.2 ) @ mat2_rot( angle_Index ) )
+        arc_pnts.append( org_6      + vec2(  0.0, -1.2 ) @ mat2_rot( angle_Index ) )
+        arc_pnts.append( org_9      + vec2( -1.0, -1.1 ) @ mat2_rot( angle_Dot ) )
+        arc_pnts.append( org_9      + vec2( +1.5, -1.0 ) @ mat2_rot( angle_Dot ) )
+        arc_pnts.append( org_LBrc   + vec2(  0.5, -1.7 ) @ mat2_rot( angle_PinkyTop ) )
+        arc_pnts.append( org_LBrc   + vec2(  1.1,  0.0 ) @ mat2_rot( angle_PinkyTop ) )
+        arc_pnts.append( org_Bsls   + vec2( keyw_Bsls * 0.7 + 0.4, 0 ) @ mat2_rot( angle_PinkyBtm ) )
+        arc_pnts.append( org_Bsls   + vec2( keyw_Bsls * 0.2 + 0.4, +1.1 ) @ mat2_rot( angle_PinkyBtm ) )
+        arc_pnts.append( org_Bsls   + vec2( keyw_Bsls * -0.6 + 0.4, +1.6 ) @ mat2_rot( angle_PinkyBtm ) )
+        arc_pnts.append( org_RotEnc + vec2( 0, 1.0 ) @ mat2_rot( angle_RotEnc ) )
+        arc_pnts.append( org_Thmbs[1] + vec2( -1.2, 2 ) @ mat2_rot( angle_Thmbs[1] ) )
+        arc_pnts.append( org_Thmbs[2] + vec2( -0.9, 0.1 ) @ mat2_rot( angle_Thmbs[2] ) )
+        arc_pnts.append( org_Thmbs[2] + vec2( +0.9, 0.1 ) @ mat2_rot( angle_Thmbs[2] ) )
 
-        d = 0.5 + 0.8
-        arc_pnts.append( outline[-1] )
-        arc_pnts.append( org_Inner + vec2( -d,  0 ) @ mat2_rot( angle_Inner ) )
-        arc_pnts.append( org_Yen   + vec2( -d,  0 ) @ mat2_rot( angle_Inner ) )
-        arc_pnts.append( org_Yen   + vec2( -d, -d ) @ mat2_rot( angle_Inner ) )
-        arc_pnts.append( org_6     + vec2( -d, -d ) @ mat2_rot( angle_Index ) )
-        arc_pnts.append( org_6     + vec2(  0, -d ) @ mat2_rot( angle_Index ) )
-        arc_pnts.append( org_8     + vec2(  0, -d ) @ mat2_rot( angle_Comm ) )
-        arc_pnts.append( org_9     + vec2(  0, -d ) @ mat2_rot( angle_Dot ) )
-        arc_pnts.append( org_Mnus  + vec2( +d, -d ) @ mat2_rot( angle_PinkyTop ) )
-        arc_pnts.append( org_LBrc  + vec2( +d, -d ) @ mat2_rot( angle_PinkyTop ) )
-        arc_pnts.append( outline[0] )
-    else:
-        add_out = 0.4
-        d = 0.5 + 0.8
-        outline.append( org_LBrc + vec2(             0.5 + add_out, -0.5 - add_out ) @ mat2_rot( angle_PinkyTop ) )
-        outline.append( org_Bsls + vec2( keyw_Bsls * 0.5 + add_out, +0.5 + add_out ) @ mat2_rot( angle_PinkyBtm ) )
-        outline.append( org_Thmbs[2] + vec2( -0.5 - add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
-        outline.append( org_Thmbs[2] + vec2( +0.5 + add_out, 0.5 - add_out ) @ mat2_rot( angle_Thmbs[2] ) )
-        outline.append( org_6     + vec2( -d, -d ) @ mat2_rot( angle_Index ) )
-        outline.append( org_9     + vec2(  0, -d ) @ mat2_rot( angle_Dot ) )
-    outline.append( outline[0] )
-
-    def calc_bezier_point( pnts, t ):
-        num_pnts = len( pnts )
-        tmp = [np.array( [0, 0] ) for n in range( num_pnts )]
-        s = 1 - t
-        for n in range( num_pnts ):
-            tmp[n] = pnts[n]
-        for L in range( num_pnts - 1, 0, -1 ):
-            for n in range( L ):
-                tmp[n] = s * tmp[n] + t * tmp[n+1]
-        return tmp[0]
-
-    if False:
-        arc_prms = []
-        for pnt in arc_pnts:
-            vec = pnt - org_RotEnc
-            r = np.linalg.norm( vec )
-            th = np.arctan2( vec[1], vec[0] )
-            if th > 0:
-                th -= np.pi * 2
-            arc_prms.append( np.array( (r, th) ) )
-
-        pnts = []
-        for t in np.linspace( 0, 1, 10 ):
-            r, th = calc_bezier_point( arc_prms, t )
-            pnt = r * np.cos( th ), r * np.sin( th )
-            pnt += org_RotEnc
-            pnts.append( pnt )
-            outline.append( pnt )
-    elif False:
-        for t in np.linspace( 0, 1, 10 ):
-            pnt = calc_bezier_point( arc_pnts, t )
-            outline.append( pnt )
-    else:
-        for pnt in arc_pnts:
-            outline.append( pnt )
-
-    outline = np.array( outline )
-
-    return maker.data, outline
+    return maker.data, arc_pnts
 
 if __name__=='__main__':
 
@@ -539,7 +537,7 @@ if __name__=='__main__':
     thickness = 0.3# mm
 
     for output_type in ['png']:
-        data, outline = make_kbd_layout( unit, output_type )
+        data, arc_pnts = make_kbd_layout( unit, output_type )
         # write to json for keyboard layout editor
         with open( dst_path, 'w' ) as fout:
             json.dump( data, fout, indent = 4 )
@@ -547,7 +545,7 @@ if __name__=='__main__':
         kbd = keyboard_layout.load( dst_path )
         # kbd.print()
         if output_type == 'png':
-            kbd.write_png( dst_png, unit, thickness, paper_size, outline )
-            kbd.write_scad( dst_scad, unit )
+            kbd.write_png( dst_png, unit, thickness, paper_size, arc_pnts )
+            kbd.write_scad( dst_scad, unit, arc_pnts )
         if output_type == 'kicad':
             kbd.write_kicad( sys.stdout, unit )
