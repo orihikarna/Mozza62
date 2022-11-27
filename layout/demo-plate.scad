@@ -3,7 +3,7 @@ $fn = 24;
 include <kbd-layout.scad>
 //include <hermit-edgecuts.scad>
 
-key_hole = 14.4;
+key_hole = 14.1;
 center_key = 8;
 
 module round_square( xsize, ysize, radius ) {
@@ -79,6 +79,7 @@ difference() {
     linear_extrude( 20, scale = 1.01 ) {
       offset( wall + 0.1 )
         plate_inflate();
+        //plate_edgecuts();
     }
   }
   // key holes (top)
@@ -106,7 +107,7 @@ difference() {
     }
   }
   // small ditches
-  if (true) {
+  if (false) {
     for (idxs = [[0, 2], [3, 6], [7, 10], [11, 14], [15, 18], [19, 21], [22, 24], [25, 26], [29, 30], [2,31]]) {
       hull() {
         for (idx = idxs) {
