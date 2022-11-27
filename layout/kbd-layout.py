@@ -391,12 +391,12 @@ def make_kbd_layout( unit, output_type ):
     angle_M_Comm = -18
     dx_angle_M = 6
     # index
-    dy_Entr = 0.35
+    dy_Entr = 0.4
     # thumb
     delta_M_Thmb = vec2( -0.75, 1.85 )
-    angle_Index_Thmb = 78
-    dangles_Thmb = [-10, -10, 0]
-    dys_Thmb = [-0.05, -0.05-0.125, 0]
+    angle_Index_Thmb = 82
+    dangles_Thmb = [-12, -12, 0]
+    dys_Thmb = [0, 0, 0]
 
 
     ## Rules
@@ -468,7 +468,7 @@ def make_kbd_layout( unit, output_type ):
     org_Bsls = org_Slsh + vec2( (keyw_Slsh + keyw_Bsls) * 0.5, 0.5 + _dy ) @ mat2_rot( angle_PinkyBtm )
 
     # Thumbs row
-    keyws = [keyw12, keyw12, 1]
+    keyws = [keyw12, keyw12, keyw12]
     angle_Thmb = angle_Index + angle_Index_Thmb
     org_Thmb = org_M + delta_M_Thmb @ mat2_rot( angle_Index )
     angle_Thmbs = []
@@ -505,11 +505,11 @@ def make_kbd_layout( unit, output_type ):
     arc_pnts = []
 
     if True:
-        arc_pnts.append( org_Inner  + vec2( -1.4, +2.0 ) @ mat2_rot( angle_Inner ) )
+        arc_pnts.append( org_Inner  + vec2( -1.6, +2.0 ) @ mat2_rot( angle_Inner ) )
         arc_pnts.append( org_Inner  + vec2( -1.7, -0.5 ) @ mat2_rot( angle_Inner ) )
         arc_pnts.append( org_6      + vec2( -1.8, -0.2 ) @ mat2_rot( angle_Index ) )
-        arc_pnts.append( org_6      + vec2(  0.0, -1.2 ) @ mat2_rot( angle_Index ) )
-        arc_pnts.append( org_9      + vec2( -1.0, -1.1 ) @ mat2_rot( angle_Dot ) )
+        arc_pnts.append( org_6      + vec2(  0.0, -1.3 ) @ mat2_rot( angle_Index ) )
+        arc_pnts.append( org_9      + vec2( -1.0, -1.2 ) @ mat2_rot( angle_Dot ) )
         arc_pnts.append( org_9      + vec2( +1.5, -1.0 ) @ mat2_rot( angle_Dot ) )
         arc_pnts.append( org_LBrc   + vec2(  0.5, -1.7 ) @ mat2_rot( angle_PinkyTop ) )
         arc_pnts.append( org_LBrc   + vec2(  1.1,  0.0 ) @ mat2_rot( angle_PinkyTop ) )
