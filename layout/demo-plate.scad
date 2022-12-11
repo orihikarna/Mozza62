@@ -78,8 +78,8 @@ difference() {
       cube( [300, 300, 100], center = true );
     linear_extrude( 20, scale = 1.01 ) {
       offset( wall + 0.1 )
-        plate_inflate();
-        //plate_edgecuts();
+        //plate_inflate();
+        plate_edgecuts();
     }
   }
   // key holes (top)

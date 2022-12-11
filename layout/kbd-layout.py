@@ -157,10 +157,14 @@ class keyboard_layout:
         L = scale * unit
         Th = thickness / unit
 
+        xctr = np.mean( list( map( lambda k: k.getCenterPos()[0], self.keys ) ) )
+
         image = Image.new( 'RGBA', (int( np.ceil( size[0] ) ), int( np.ceil( size[1] ) )), ( 255, 255, 255, 255 ) )
         draw = ImageDraw.Draw( image )
         for key in self.keys:
             ctr = key.getCenterPos()
+            if ctr[0] < xctr:
+                continue
             w, h, rot, name = key.w, key.h, key.r, key.name
 
             ctr *= L
@@ -356,10 +360,15 @@ def make_kbd_layout( unit, output_type ):
     maker = key_layout_maker()
     maker.data.append( { "name" : kbd_name, "author" : "orihikarna" } ) # meta
 
-    # Dot: the origin  
+    # Dot: the origin
+    isHexa = True
     if output_type in ['png', 'scad']:
-        angle_Dot = 6
-        org_Dot = vec2( 5.5, -0.5 )
+        if isHexa:
+            angle_Dot = 27 - 30 *1
+            org_Dot = vec2( 5.3, -0.5 )
+        else:
+            angle_Dot = 27 - 45 *1
+            org_Dot = vec2( 6.0, -1 )
     elif output_type in ['kicad']:
         # angle_Dot = 0
         # angle_Dot = 16
@@ -502,9 +511,9 @@ def make_kbd_layout( unit, output_type ):
     org_RotEnc = org_Dot + vec2( -0.5, 1.75 ) @ mat2_rot( angle_Comm )
     maker.add_col( angle_RotEnc, org_RotEnc, 0, {'RE_R'}, {'RE_L'}, keyw = 13.7 / unit, keyh = 12.7 / unit )
 
+    # edge cuts
     arc_pnts = []
-
-    if True:
+    if False:
         arc_pnts.append( org_Inner  + vec2( -1.6, +2.0 ) @ mat2_rot( angle_Inner ) )
         arc_pnts.append( org_Inner  + vec2( -1.7, -0.5 ) @ mat2_rot( angle_Inner ) )
         arc_pnts.append( org_6      + vec2( -1.8, -0.2 ) @ mat2_rot( angle_Index ) )
@@ -521,6 +530,43 @@ def make_kbd_layout( unit, output_type ):
         arc_pnts.append( org_Thmbs[2] + vec2( -0.9, 0.1 ) @ mat2_rot( angle_Thmbs[2] ) )
         arc_pnts.append( org_Thmbs[2] + vec2( +0.9, 0.1 ) @ mat2_rot( angle_Thmbs[2] ) )
 
+    if isHexa: # hexagonal
+        R = mat2_rot( -30*1 )
+        d = 3
+        org = org_Dot + (-5.5, 2.95) 
+        P = np.array( [[1, 0], [0.5, 0.866]] ) * d
+        cnrs = [(0, 0), (1, 0), (2, 0), (3, 0), (4, -1), (4, -2), (4, -3), (3, -3), (2, -3), (1, -2), (0, -1)]
+        cnrs = np.array( cnrs )
+        N = len( cnrs )
+        for n in range( N ):
+            cnr0 = cnrs[n]
+            cnr1 = cnrs[(n + 1) % N]
+            for k in np.arange( 0, 1, 0.2 ):
+                vec = org + (cnr0 + (cnr1 - cnr0) * k) @ P
+                vec -= org_Dot
+                vec = vec @ R
+                vec += org_Dot
+                arc_pnts.append( vec )
+    if not isHexa: # octagonal
+        R = mat2_rot( -45 *1 )
+        th = np.deg2rad( 10 )
+        P1 = np.eye(2)
+        P2 = np.array( [[1, 0], [np.sin(th), np.cos(th)]] )
+        Ps = [P1, P2]
+        org = org_Dot + vec2(-3.6, -4.7)
+
+        deltas = [(4, 0), (2, 2), (0, 3), (-1, 1), (-6, 0), (-1, -1), (0, -3), (2, -2)]
+        deltas = np.array( deltas ) * 1.28
+        pnt = org.copy()
+        for idx, delta in enumerate(deltas):
+            for k in np.arange( 0, 1, 0.1 ):
+                vec = pnt + k * (delta @ Ps[idx%1])
+                vec -= org_Dot
+                vec = vec @ R
+                vec += org_Dot
+                arc_pnts.append( vec )
+            pnt += delta @ Ps[idx%1]
+
     return maker.data, arc_pnts
 
 if __name__=='__main__':
@@ -533,7 +579,7 @@ if __name__=='__main__':
     unit = 17.0
     # paper_size = vec2( 297, 210 )# A4
     # paper_size = vec2( 364, 257 )# B4
-    paper_size = vec2( 350, 170 )
+    paper_size = vec2( 350, 200 )
     thickness = 0.3# mm
 
     for output_type in ['png']:
