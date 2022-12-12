@@ -364,7 +364,7 @@ def make_kbd_layout( unit, output_type ):
     isHexa = True
     if output_type in ['png', 'scad']:
         if isHexa:
-            angle_Dot = 27 - 30 *1
+            angle_Dot = 27 - 30 *0
             org_Dot = vec2( 5.3, -0.5 )
         else:
             angle_Dot = 27 - 45 *1
@@ -405,7 +405,7 @@ def make_kbd_layout( unit, output_type ):
     delta_M_Thmb = vec2( -0.75, 1.85 )
     angle_Index_Thmb = 82
     dangles_Thmb = [-12, -12, 0]
-    dys_Thmb = [0, 0, 0]
+    dys_Thmb = [0.1, 0.1, 0]
 
 
     ## Rules
@@ -531,22 +531,27 @@ def make_kbd_layout( unit, output_type ):
         arc_pnts.append( org_Thmbs[2] + vec2( +0.9, 0.1 ) @ mat2_rot( angle_Thmbs[2] ) )
 
     if isHexa: # hexagonal
-        R = mat2_rot( -30*1 )
-        d = 3
-        org = org_Dot + (-5.5, 2.95) 
-        P = np.array( [[1, 0], [0.5, 0.866]] ) * d
-        cnrs = [(0, 0), (1, 0), (2, 0), (3, 0), (4, -1), (4, -2), (4, -3), (3, -3), (2, -3), (1, -2), (0, -1)]
-        cnrs = np.array( cnrs )
-        N = len( cnrs )
-        for n in range( N ):
-            cnr0 = cnrs[n]
-            cnr1 = cnrs[(n + 1) % N]
-            for k in np.arange( 0, 1, 0.2 ):
-                vec = org + (cnr0 + (cnr1 - cnr0) * k) @ P
-                vec -= org_Dot
-                vec = vec @ R
-                vec += org_Dot
+        R = mat2_rot( -30*0 )
+        org = org_Dot + (-5.3, 2.76) 
+        P = np.array( [[1, 0], [0.5, 0.866]] ) * 2.84
+        deltas = [
+            (1, 0), (1, 0), (1, 0),
+            (1, -1),
+            (0, -1), (0, -1),
+            (-1, 0), (-1, 0),
+            (-1, 1), (-1, 1),
+            (0, 1),
+        ]
+        # deltas = [(3, 0), (1, -1), (0, -2), (-2, 0), (-2, 2), (0, 1)]
+        deltas = np.array( deltas )
+        pnt = org.copy()
+        for delta in deltas:
+            for k in [0.25, 0.75]:
+                vec = pnt + k * (delta @ P)
+                vec = (vec - org_Dot) @ R + org_Dot
                 arc_pnts.append( vec )
+            pnt += delta @ P
+
     if not isHexa: # octagonal
         R = mat2_rot( -45 *1 )
         th = np.deg2rad( 10 )
@@ -561,9 +566,7 @@ def make_kbd_layout( unit, output_type ):
         for idx, delta in enumerate(deltas):
             for k in np.arange( 0, 1, 0.1 ):
                 vec = pnt + k * (delta @ Ps[idx%1])
-                vec -= org_Dot
-                vec = vec @ R
-                vec += org_Dot
+                vec = (vec - org_Dot) @ R + org_Dot
                 arc_pnts.append( vec )
             pnt += delta @ Ps[idx%1]
 
