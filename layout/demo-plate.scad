@@ -86,7 +86,7 @@ difference() {
   translate( [0, 0, -1] ) {
     linear_extrude( 10 ) {
       for (prm = key_pos_angles) {
-        if (prm[5] == 31) {
+        if (prm[5] >= 31) {
           key_rect( prm, 0 );
         } else {
           key_square( prm, key_hole, 0.6 );

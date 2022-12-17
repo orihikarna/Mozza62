@@ -364,7 +364,7 @@ def make_kbd_layout( unit, output_type ):
     isHexa = True
     if output_type in ['png', 'scad']:
         if isHexa:
-            angle_Dot = 27 - 30 *0
+            angle_Dot = 26 - 30 *0
             org_Dot = vec2( 5.3, -0.5 )
         else:
             angle_Dot = 27 - 45 *1
@@ -443,7 +443,8 @@ def make_kbd_layout( unit, output_type ):
     _dy = 1 - dy_Entr * np.cos( np.deg2rad( angle_Inner_Index ) )
     dx_Entr_Yen = - _dy * np.sin( np.deg2rad( angle_Inner_Index ) )
     #
-    org_Yen = org_Inner + vec2( dx_Entr_Yen, -1 ) @ mat2_rot( angle_Inner )
+    org_Yen  = org_Inner + vec2( dx_Entr_Yen, -1 ) @ mat2_rot( angle_Inner )
+    org_Conn = org_Yen   + vec2( dx_Entr_Yen - 0.05, -1 ) @ mat2_rot( angle_Inner )
 
     # Pinky finger: top
     angle_PinkyTop = angle_Dot + angle_Dot_Scln
@@ -505,6 +506,7 @@ def make_kbd_layout( unit, output_type ):
     maker.add_col( angle_PinkyBtm, org_Bsls, 0, col_Brac[0:1], col_Gui[0:1], keyw = keyw_Bsls )
     #
     maker.add_col( angle_Inner, org_Inner, dx_Entr_Yen, col_IR, col_IL )
+    maker.add_col( angle_Inner, org_Conn, 0, {'rj45'}, {'rj45'}, keyw = (15.24+1.27+0.4) / unit, keyh = (15.08+0.4) / unit )
     #
     # Rotary encoder
     angle_RotEnc = angle_Index
@@ -513,40 +515,33 @@ def make_kbd_layout( unit, output_type ):
 
     # edge cuts
     arc_pnts = []
-    if False:
-        arc_pnts.append( org_Inner  + vec2( -1.6, +2.0 ) @ mat2_rot( angle_Inner ) )
-        arc_pnts.append( org_Inner  + vec2( -1.7, -0.5 ) @ mat2_rot( angle_Inner ) )
-        arc_pnts.append( org_6      + vec2( -1.8, -0.2 ) @ mat2_rot( angle_Index ) )
-        arc_pnts.append( org_6      + vec2(  0.0, -1.3 ) @ mat2_rot( angle_Index ) )
-        arc_pnts.append( org_9      + vec2( -1.0, -1.2 ) @ mat2_rot( angle_Dot ) )
-        arc_pnts.append( org_9      + vec2( +1.5, -1.0 ) @ mat2_rot( angle_Dot ) )
-        arc_pnts.append( org_LBrc   + vec2(  0.5, -1.7 ) @ mat2_rot( angle_PinkyTop ) )
-        arc_pnts.append( org_LBrc   + vec2(  1.1,  0.0 ) @ mat2_rot( angle_PinkyTop ) )
-        arc_pnts.append( org_Bsls   + vec2( keyw_Bsls * 0.7 + 0.4, 0 ) @ mat2_rot( angle_PinkyBtm ) )
-        arc_pnts.append( org_Bsls   + vec2( keyw_Bsls * 0.2 + 0.4, +1.1 ) @ mat2_rot( angle_PinkyBtm ) )
-        arc_pnts.append( org_Bsls   + vec2( keyw_Bsls * -0.6 + 0.4, +1.6 ) @ mat2_rot( angle_PinkyBtm ) )
-        arc_pnts.append( org_RotEnc + vec2( 0, 1.0 ) @ mat2_rot( angle_RotEnc ) )
-        arc_pnts.append( org_Thmbs[1] + vec2( -1.2, 2 ) @ mat2_rot( angle_Thmbs[1] ) )
-        arc_pnts.append( org_Thmbs[2] + vec2( -0.9, 0.1 ) @ mat2_rot( angle_Thmbs[2] ) )
-        arc_pnts.append( org_Thmbs[2] + vec2( +0.9, 0.1 ) @ mat2_rot( angle_Thmbs[2] ) )
-
     if isHexa: # hexagonal
         R = mat2_rot( -30*0 )
-        org = org_Dot + (-5.3, 2.76) 
-        P = np.array( [[1, 0], [0.5, 0.866]] ) * 2.84
+        org = org_Dot + (-6.9, 0.3)
+        P = np.array( [[1, 0], [1/2, np.sqrt(3)/2]] ) * 2.9
+        d1 = 0.268
+        d2 = 0.25
         deltas = [
+            (0, 1),
             (1, 0), (1, 0), (1, 0),
             (1, -1),
             (0, -1), (0, -1),
             (-1, 0), (-1, 0),
             (-1, 1), (-1, 1),
-            (0, 1),
         ]
-        # deltas = [(3, 0), (1, -1), (0, -2), (-2, 0), (-2, 2), (0, 1)]
+        ks_set = [
+            [d1, 1-d1],
+            [d1, 1-d1], [d1, 1-d1], [d1, 1-d1],
+            [d1, 1-d1],
+            #
+            [d1, 1-d2], [d2, 1-d2],
+            [d2, 1-d2], [d2, 1-d2],
+            [d2, 1-d2], [d2, 1-d1],
+        ]
         deltas = np.array( deltas )
         pnt = org.copy()
-        for delta in deltas:
-            for k in [0.25, 0.75]:
+        for n, delta in enumerate(deltas):
+            for k in ks_set[n]:
                 vec = pnt + k * (delta @ P)
                 vec = (vec - org_Dot) @ R + org_Dot
                 arc_pnts.append( vec )
