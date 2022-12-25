@@ -506,7 +506,7 @@ def make_kbd_layout( unit, output_type ):
     maker.add_col( angle_PinkyBtm, org_Bsls, 0, col_Brac[0:1], col_Gui[0:1], keyw = keyw_Bsls )
     #
     maker.add_col( angle_Inner, org_Inner, dx_Entr_Yen, col_IR, col_IL )
-    maker.add_col( angle_Inner, org_Conn, 0, {'rj45'}, {'rj45'}, keyw = (15.24+1.27+0.4) / unit, keyh = (15.08+0.4) / unit )
+    maker.add_col( angle_Inner, org_Conn, 0, {' '}, {' '}, keyw = (15.24+1.27+0.4) / unit, keyh = (15.08+0.4) / unit )
     #
     # Rotary encoder
     angle_RotEnc = angle_Index
