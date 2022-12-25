@@ -429,6 +429,14 @@
     [
       "4e43d052-82f2-4b73-9568-e3db7a770a42",
       ""
+    ],
+    [
+      "32efc43b-36cd-4ed8-8e61-0d8db8950e5d",
+      "IO_expander"
+    ],
+    [
+      "096fe43d-bb63-4e85-b408-1b08ff8375d2",
+      "RGB_LED"
     ]
   ],
   "text_variables": {}
