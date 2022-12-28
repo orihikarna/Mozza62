@@ -431,12 +431,12 @@
       ""
     ],
     [
-      "32efc43b-36cd-4ed8-8e61-0d8db8950e5d",
-      "IO_expander"
-    ],
-    [
       "096fe43d-bb63-4e85-b408-1b08ff8375d2",
       "RGB_LED"
+    ],
+    [
+      "640a3fc7-fa1f-4829-bcbd-ff561d335477",
+      "SwitchMatrix"
     ]
   ],
   "text_variables": {}
