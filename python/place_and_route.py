@@ -43,7 +43,7 @@ Spline      = kad.Spline
 ##
 
 # in mm
-VIA_Size = [(1.1, 0.6), (1.0, 0.5), (0.8, 0.4), (0.7, 0.3)]
+VIA_Size = [(1.1, 0.6), (1.0, 0.5), (0.8, 0.4)]#, (0.7, 0.3)]
 
 PCB_Width  = 170
 PCB_Height = 155
@@ -56,8 +56,8 @@ D1_x, D1_y = 62, 106
 
 keys = {
     '11' : [91.937, -43.058, 16.910, 15.480, -21.2], # r
-    '12' : [89.129, -60.205, 17.000, 17.000, -21.2], # |
-    '13' : [85.528, -77.044, 17.000, 17.000, -21.2], # E
+    '13' : [89.129, -60.205, 17.000, 17.000, -21.2], # |
+    '14' : [85.528, -77.044, 17.000, 17.000, -21.2], # E
     '15' : [64.347, -125.667, 22.000, 17.000, -244.0], # R
     '21' : [112.294, -37.720, 17.000, 17.000, -6.0], # &
     '22' : [108.740, -54.440, 17.000, 17.000, -6.0], # Y
@@ -889,15 +889,42 @@ def wire_mods( board ):
     layer2 = ['B.Cu', 'F.Cu'][board]
     GND = pcb.FindNet( 'GND' )
 
-    w_mcu, r_mcu = 0.5, -0.6
+    # w_mcu, r_mcu = 0.5, -0.6
     w_exp, r_exp = 0.44, -0.4
     w_pwr, r_pwr = 0.75, -1
     w_dbn, r_dbn = 0.6, -1
-    w_row, r_row = 0.6, -1
+    w_row, r_row = 0.8, -1.6
     w_col, r_col = 0.6, -1
     w_dat, r_dat = 0.5, -0.75# LED
-    w_jtag, r_jtag = 0.4, -0.6
+    # w_jtag, r_jtag = 0.4, -0.6
 
+    # ROW horizontal lines (Row1=4)
+    for ridx in range( 1, 5 ):
+        row = str( ridx )
+        for cidx in range( 1, 8 ):
+            idx = str( cidx ) + row
+            if idx not in keys.keys() or idx in '11':
+                continue
+            nidx = str( cidx + 1 ) + row
+            if nidx == '74':
+                nidx = '84'
+            if nidx not in keys.keys():
+                continue
+            if cidx in [2, 4]:
+                prm_row = (Strt)
+            elif cidx in [3]:
+                prm_row = (Dird, 0, 0, r_row)
+            else:
+                prm_row = (Dird, 0, ([(0, 7.4)], -90), r_row)
+            # print( idx, nidx )
+            kad.wire_mods( [
+                ('SW'+idx, '1', 'SW'+nidx, '1', w_row, prm_row, 'F.Cu'),
+            ] )
+    if board == BDR:# SW91
+        kad.wire_mods( [
+            # ('SW91', '1', 'SW11', '1', w_row, (Dird, -45, 0, r_row), 'F.Cu'),
+        ] )
+    return
     # J1: Split (USB) connector
     if board in [BDL, BDR]:# connector vias & wires
         via_splt_vba = kad.add_via_relative( 'J1', 'A4', (-0.4,  -6.6), VIA_Size[0] )
@@ -1340,47 +1367,6 @@ def wire_mods( board ):
         pcb.Delete( via_col6_tmp )
         pcb.Delete( via_col7_tmp )
 
-    # ROW lines
-    if board in [BDL, BDR]:# horizontal wires
-        for ridx in range( 1, 5 ):
-            row = str( ridx )
-            for cidx in range( 1, 7 ):
-                idx = str( cidx ) + row
-                if idx not in keys.keys():
-                    continue
-                cnext = 7 if cidx == 5 and row == '1' else cidx + 1
-                nidx = str( cnext ) + row
-                if nidx not in keys.keys():
-                    continue
-                if cidx in [1, 3]:
-                    prm_row = (Strt)
-                elif cidx in [2]:
-                    prm_row = (Dird, 0, 0, r_row)
-                elif cidx in [4]:
-                    if board == BDL:
-                        dx = [None, 2.4, 3.6, 6.4, 6.4][ridx]
-                        angle = [None, 45, 60, 60, 60][ridx]
-                        prm_row = (Dird, 0, ([(dx, 180)], angle), r_row)
-                    else:# BDR
-                        if ridx == 1:
-                            prm_row = (Dird, 0, ([(8.4, 0)], 135), r_row)
-                        else:
-                            prm_row = (Dird, 0, -50, r_row)
-                elif cidx in [5, 6]:
-                    if ridx == 1:
-                        prm_row = (Dird, 90, 0, r_row)
-                    else:
-                        if board == BDL:
-                            prm_row = (Dird, ([(3, 0)], 30), 0, r_row)
-                        else:# BDR
-                            prm_row = (Dird, ([(4.2, 180)], 150), 0, r_row)
-                kad.wire_mods( [
-                    ('SW'+idx, '1', 'SW'+nidx, '1', w_row, prm_row, layer2),
-                ] )
-    if board == BDR:# SW91
-        kad.wire_mods( [
-            ('SW91', '1', 'SW11', '1', w_row, (Dird, -45, 0, r_row), layer2),
-        ] )
     if board == BDL:# Row to mcu
         pos, angle, _, _ = kad.get_pad_pos_angle_layer_net( 'SW21', '1' )
         via_row4_top = kad.add_via( vec2.mult( mat2.rotate( angle ), (11.6, +5.0), pos ), kad.get_pad_pos_net( 'U1', '12' )[1], VIA_Size[2] )
@@ -1843,20 +1829,12 @@ def wire_mods( board ):
             ] )
 
 ### Ref
-def set_refs( board ):
-    if board == BDL:
-        refs = [
-            (6.4, 90, 0, ['J1']),
-            (6.4, 90, 0, ['J2']),
-            (15,  -90, -90, ['J3']),
-            (3,   135,   0, ['U1']),
-            (2.8,   0,  90, ['U2']),
-            (2.5,   0, +90, ['C1', 'C2', 'C6', 'C3', 'C5', 'R1']),
-            (2.5, 180, -90, ['C4', 'R4', 'R5', 'L1', 'F1']),
-            (1.8, +90,   0, ['R2', 'R6', 'R8', 'D0']),
-            (1.8, -90, 180, ['R3', 'R7', 'R9', 'D1']),
-        ]
-    elif board == BDR:
+def setRefs( board ):
+    for mod in pcb.GetFootprints():
+        ref = mod.Reference()
+        # ref.SetVisible( False )
+    return
+    if board == BDC:
         refs = [
             (6.4, -90, 180, ['J1']),
             (4,  -110,  90, ['U1']),
@@ -1911,7 +1889,6 @@ def set_refs( board ):
             pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER  )
 
 def main():
-
     # board type
     filename = pcb.GetFileName()
     # print( f'{filename = }' )
@@ -1965,19 +1942,24 @@ def main():
                 corners.append( [(pt, 0), Line, [0]] )
             kad.draw_closed_corners( corners, 'F.Fab', 0.1 )
             # wire 2-3
-            kad.wire_mods( [('SW' + name, '2', 'SW' + name, '3', 0.5, (Strt))])
+            kad.wire_mods( [('SW' + name, '2', 'SW' + name, '3', 0.8, (Strt))])
             ### LED
+            isL2R = (name[1] in ['2', '4'])
             pos = vec2.scale( 4.93, vec2.rotate( - angle - 90 ), sw_pos )
-            kad.set_mod_pos_angle( 'L' + name, pos, angle + 180)
+            kad.set_mod_pos_angle( 'L' + name, pos, angle + (0 if isL2R else 180))
             ### LED Caps
             pos = vec2.mult( mat2.rotate( angle ), (0, -7.5), sw_pos )
             kad.set_mod_pos_angle( 'C' + name, pos, angle + 180 )
             ## Diode
-            Dx, Dy = -5.4, -0.8
+            isThumbRow = (name[1] == '5')
+            diode_sign = -1 if isThumbRow else +1
+            Dx = -5.4 * diode_sign
+            Dy = -0.8
             pos = vec2.mult( mat2.rotate( angle ), (Dx, Dy), sw_pos )
             kad.set_mod_pos_angle( 'D' + name, pos, angle - 90 )
             # wire to SW
-            kad.wire_mods( [('D' + name, '2', 'SW' + name, '3', 0.5, (Dird, 0, 0))])
+            for layer in ('F.Cu', 'B.Cu'):
+                kad.wire_mods( [('D' + name, '2', 'SW' + name, '2' if isThumbRow else '3', 0.5, (Dird, 0, 0), layer)])
             ### GND Vias
             # if name[0] not in ['1', '8', '9'] and name[1] not in ['1']:
             #     if board != BDC or name[0] != '7':
@@ -1995,6 +1977,7 @@ def main():
     if board in [BDC]:
         wire_mods( board )
 
+    setRefs( board )
     drawEdgeCuts( board )
     return
 
@@ -2023,9 +2006,6 @@ def main():
     # draw top & bottom patterns
     if board in [BDT, BDB, BDS]:
         draw_top_bottom( board, sw_pos_angles )
-
-    set_refs( board )
-    # return
 
 
 

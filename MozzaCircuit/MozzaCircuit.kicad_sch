@@ -2128,11 +2128,11 @@
     (path "/54545bb1-2b96-4182-82a6-c6c8033edb00"
       (reference "C2") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_2012")
     )
-    (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/3f07d010-f525-4889-b35d-2c573f2fe087"
-      (reference "C12") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_2012_rev")
-    )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/ee6443d6-4e22-4bbc-83a6-640a8cf146b2"
       (reference "C13") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_2012_rev")
+    )
+    (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/3f07d010-f525-4889-b35d-2c573f2fe087"
+      (reference "C14") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_2012_rev")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/4ae6a39a-2fb7-4f23-8b07-007f392c0bef"
       (reference "C15") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_2012_rev")
@@ -2251,11 +2251,11 @@
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/b058ea3d-73b6-4f8d-b761-beb28badf6d5"
       (reference "CD8") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_2012_rev")
     )
-    (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/991c063e-ad48-4121-ada9-51d9b41237fa"
-      (reference "D12") (unit 1) (value "D_Small") (footprint "00_KeyParts:D_SOD-323_both_sides")
-    )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/cf902e5e-bea0-422a-b0c4-daa292a39158"
       (reference "D13") (unit 1) (value "D_Small") (footprint "00_KeyParts:D_SOD-323_both_sides")
+    )
+    (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/991c063e-ad48-4121-ada9-51d9b41237fa"
+      (reference "D14") (unit 1) (value "D_Small") (footprint "00_KeyParts:D_SOD-323_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/2a0b05f9-e939-4166-91b2-769770e331ff"
       (reference "D15") (unit 1) (value "D_Small") (footprint "00_KeyParts:D_SOD-323_both_sides")
@@ -2389,11 +2389,11 @@
     (path "/62b9a5da-77cb-4614-bc4f-3c34d8c2c649"
       (reference "JPF8") (unit 1) (value "SolderJumper_2_Open") (footprint "Jumper:SolderJumper-2_P1.3mm_Open_TrianglePad1.0x1.5mm")
     )
-    (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/898502e1-7835-4255-8cf5-ffc25ec8ae82"
-      (reference "L12") (unit 1) (value "WS2812-2020_both_sides") (footprint "00_KeyParts:WS2812B_2020_rev")
-    )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/9b5eaf97-edc0-48e1-87e3-c4a5ae903595"
       (reference "L13") (unit 1) (value "WS2812-2020_both_sides") (footprint "00_KeyParts:WS2812B_2020_rev")
+    )
+    (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/898502e1-7835-4255-8cf5-ffc25ec8ae82"
+      (reference "L14") (unit 1) (value "WS2812-2020_both_sides") (footprint "00_KeyParts:WS2812B_2020_rev")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/17833c6c-e144-4529-98ce-c3f6d718bee0"
       (reference "L15") (unit 1) (value "WS2812-2020_both_sides") (footprint "00_KeyParts:WS2812B_2020_rev")
@@ -2545,11 +2545,11 @@
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/7902f8d7-02f1-4b1c-894c-bd9de998a510"
       (reference "RE1") (unit 1) (value "RotaryEncoder_Switch") (footprint "00_KeyParts:RotaryEncoder_Bourns_PEC12R-4215F")
     )
-    (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/72cf7602-1d3d-4380-9ef5-28e3347d7b7f"
-      (reference "SW12") (unit 1) (value "SW_ChocV2_rev") (footprint "00_KeyParts:ChocV2_rev")
-    )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/38f41d39-56fc-4c33-9fb5-69bb280bf998"
       (reference "SW13") (unit 1) (value "SW_ChocV2_rev") (footprint "00_KeyParts:ChocV2_rev")
+    )
+    (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/72cf7602-1d3d-4380-9ef5-28e3347d7b7f"
+      (reference "SW14") (unit 1) (value "SW_ChocV2_rev") (footprint "00_KeyParts:ChocV2_rev")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/1ff478f4-5dc6-4ac6-b535-2c32ad617290"
       (reference "SW15") (unit 1) (value "SW_ChocV2_rev") (footprint "00_KeyParts:ChocV2_rev")

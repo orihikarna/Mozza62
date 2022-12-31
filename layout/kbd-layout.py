@@ -211,7 +211,7 @@ class keyboard_layout:
     def write_kicad( self, fout, unit: float, arc_pnts ):
         xctr = np.mean( list( map( lambda k: k.getCenterPos()[0], self.keys ) ) )
         key_cols = [
-            ['rj45', '|', 'Entr', None, 'Raise'],
+            ['rj45', None, '|', 'Entr', 'Raise'],
             ['6', 'Y', 'H', 'N', 'Shift'],
             ['7', 'U', 'J', 'M', 'Space'],
             ['8', 'I', 'K', ',', 'RE'],

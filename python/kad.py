@@ -1,10 +1,10 @@
 import math
-import pcbnew
 import pnt
 import vec2
 import mat2
+import pcbnew
 
-UnitMM = False
+UnitMM = True
 PointDigits = 3
 
 def scalar_to_unit( v, mm_or_mils ):
@@ -278,10 +278,10 @@ def add_wire_offsets_straight( prms_a, prms_b, net, layer, width, radius ):
     pos_b, offsets_b = prms_b
     pnts_a = [pos_a]
     pnts_b = [pos_b]
-    for off_len_a, off_angle_a in offsets_a:
+    for off_angle_a, off_len_a in offsets_a:
         pos_a = vec2.scale( off_len_a, vec2.rotate( - off_angle_a ), pos_a )
         pnts_a.append( pos_a )
-    for off_len_b, off_angle_b in offsets_b:
+    for off_angle_b, off_len_b in offsets_b:
         pos_b = vec2.scale( off_len_b, vec2.rotate( - off_angle_b ), pos_b )
         pnts_b.append( pos_b )
     pnts = pnts_a
@@ -305,10 +305,10 @@ def add_wire_offsets_directed( prms_a, prms_b, net, layer, width, radius ):
     pos_b, offsets_b, angle_b = prms_b
     pnts_a = [pos_a]
     pnts_b = [pos_b]
-    for off_len_a, off_angle_a in offsets_a:
+    for off_angle_a, off_len_a in offsets_a:
         pos_a = vec2.scale( off_len_a, vec2.rotate( - off_angle_a ), pos_a )
         pnts_a.append( pos_a )
-    for off_len_b, off_angle_b in offsets_b:
+    for off_angle_b, off_len_b in offsets_b:
         pos_b = vec2.scale( off_len_b, vec2.rotate( - off_angle_b ), pos_b )
         pnts_b.append( pos_b )
     apos = pnts_a[-1]
@@ -341,10 +341,10 @@ def __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, widt
         prms_a, prms_b, radius = prms[1:]
         offsets_a = []
         offsets_b = []
-        for off_len_a, off_angle_a in prms_a:
-            offsets_a.append( (off_len_a, angle_a + off_angle_a * sign_a) )
-        for off_len_b, off_angle_b in prms_b:
-            offsets_b.append( (off_len_b, angle_b + off_angle_b * sign_b) )
+        for off_angle_a, off_len_a in prms_a:
+            offsets_a.append( (angle_a + off_angle_a * sign_a, off_len_a) )
+        for off_angle_b, off_len_b in prms_b:
+            offsets_b.append( (angle_b + off_angle_b * sign_b, off_len_b) )
         prms2_a = (pos_a, offsets_a)
         prms2_b = (pos_b, offsets_b)
         add_wire_offsets_straight( prms2_a, prms2_b, net, layer, width, radius )
@@ -354,14 +354,14 @@ def __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, widt
         offsets_a = []
         offsets_b = []
         if type( prms_a ) == type( () ):# tuple
-            for off_len_a, off_angle_a in prms_a[0]:
-                offsets_a.append( (off_len_a, angle_a + off_angle_a * sign_a) )
+            for off_angle_a, off_len_a in prms_a[0]:
+                offsets_a.append( (angle_a + off_angle_a * sign_a, off_len_a) )
             dir_angle_a = prms_a[1] * sign_a
         else:
             dir_angle_a = prms_a * sign_a
         if type( prms_b ) == type( () ):# tuple
-            for off_len_b, off_angle_b in prms_b[0]:
-                offsets_b.append( (off_len_b, angle_b + off_angle_b * sign_b) )
+            for off_angle_b, off_len_b in prms_b[0]:
+                offsets_b.append( (angle_b + off_angle_b * sign_b, off_len_b) )
             dir_angle_b = prms_b[1] * sign_b
         else:
             dir_angle_b = prms_b * sign_b
