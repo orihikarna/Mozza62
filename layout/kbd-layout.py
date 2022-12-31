@@ -82,24 +82,6 @@ def calc_bspline( pnts, num_divs=1 ):
                 ret.append( a * p + b * q + c * r + d * s )
     return ret
 
-# if False:
-#     arc_prms = []
-#     for pnt in arc_pnts:
-#         vec = pnt - org_RotEnc
-#         r = np.linalg.norm( vec )
-#         th = np.arctan2( vec[1], vec[0] )
-#         if th > 0:
-#             th -= np.pi * 2
-#         arc_prms.append( np.array( (r, th) ) )
-
-#     pnts = []
-#     for t in np.linspace( 0, 1, 10 ):
-#         r, th = calc_bezier_point( arc_prms, t )
-#         pnt = r * np.cos( th ), r * np.sin( th )
-#         pnt += org_RotEnc
-#         pnts.append( pnt )
-#         outline.append( pnt )
-
 class keyboard_key:
     def __init__( self, name, prop ):
         self.name = name
@@ -226,34 +208,51 @@ class keyboard_layout:
                     fout.write( f'[{pnt[0]:.3f}, {pnt[1]:.3f}], ' )
                 fout.write( '\n];\n' )
 
-    def write_kicad( self, fout, unit: float ):
+    def write_kicad( self, fout, unit: float, arc_pnts ):
+        xctr = np.mean( list( map( lambda k: k.getCenterPos()[0], self.keys ) ) )
+        key_cols = [
+            ['rj45', '|', 'Entr', None, 'Raise'],
+            ['6', 'Y', 'H', 'N', 'Shift'],
+            ['7', 'U', 'J', 'M', 'Space'],
+            ['8', 'I', 'K', ',', 'RE'],
+            ['9', 'O', 'L', '.'],
+            ['0', 'P', ';', '/'],
+            ['-', '@', ':'],
+            [None, '[', ']', '_'],
+        ]
         fout.write( 'keys = {\n' )
-        col = 1
-        row = 1
-        for key in self.keys:
-            (x, y, r, rx, ry, w, h) = (key.x, key.y, key.r, key.rx, key.ry, key.w, key.h)
-            px = x - rx + w / 2
-            py = y - ry + h / 2
-            t = vec2( rx, ry ) + vec2( px, py ) @ mat2_rot( r )
-            keyidx = f'{col}{row}'
-            row += 1
-            if row == 4:
-                if col == 7:
-                    col += 1
-                    row = 2
-            elif row == 5:
-                if col == 5:
-                    row = 2
-                elif col == 8:
-                    row = 1
-                else:
-                    row = 1
-                col += 1
-            t *= unit
-            w *= unit
-            h *= unit
-            fout.write( '    \'{}\' : [{:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.1f}], # {}\n'.format( keyidx, t[0], -t[1], w, h, -r, key.name[0] ) )
+        for col in range( len( key_cols ) ):
+            for row, name in enumerate( key_cols[col] ):
+                if name is None:
+                    continue
+                key = None
+                for _key in self.keys:
+                    if _key.getCenterPos()[0] <= xctr:
+                        continue
+                    if _key.name.find( name ) >= 0:
+                        key = _key
+                        break
+                (x, y, r, rx, ry, w, h) = (key.x, key.y, key.r, key.rx, key.ry, key.w, key.h)
+                # px = x - rx + w / 2
+                # py = y - ry + h / 2
+                # t = vec2( rx, ry ) + vec2( px, py ) @ mat2_rot( r )
+                keyidx = f'{col+1}{row+1}'
+                t = key.getCenterPos()
+                t *= unit
+                w *= unit
+                h *= unit
+                fout.write( '    \'{}\' : [{:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.1f}], # {}\n'.format( keyidx, t[0], -t[1], w, h, -r, key.name[0] ) )
         fout.write( '}\n' )
+
+        if True:
+            fout.write( 'EdgeCuts = [' )
+            outline = calc_bspline( arc_pnts, 16 )
+            for idx, pnt in enumerate( outline ):
+                if idx % 4 == 0:
+                    fout.write( '\n  ' )
+                pnt *= unit
+                fout.write( f'[{pnt[0]:.3f}, {pnt[1]:.3f}], ' )
+            fout.write( '\n]\n' )
 
     def save( self, path: str ):
         data = []
@@ -370,10 +369,8 @@ def make_kbd_layout( unit, output_type ):
             angle_Dot = 27 - 45 *1
             org_Dot = vec2( 6.0, -1 )
     elif output_type in ['kicad']:
-        # angle_Dot = 0
-        # angle_Dot = 16
-        angle_Dot = 6.351954683901843
-        org_Dot = vec2( -3.9, 0 )
+        angle_Dot = 26
+        org_Dot = vec2( 9.0, 6.0 )
     else:
         return
 
@@ -506,7 +503,7 @@ def make_kbd_layout( unit, output_type ):
     maker.add_col( angle_PinkyBtm, org_Bsls, 0, col_Brac[0:1], col_Gui[0:1], keyw = keyw_Bsls )
     #
     maker.add_col( angle_Inner, org_Inner, dx_Entr_Yen, col_IR, col_IL )
-    maker.add_col( angle_Inner, org_Conn, 0, {' '}, {' '}, keyw = (15.24+1.27+0.4) / unit, keyh = (15.08+0.4) / unit )
+    maker.add_col( angle_Inner, org_Conn, 0, {'rj45'}, {'rj45'}, keyw = (15.24+1.27+0.4) / unit, keyh = (15.08+0.4) / unit )
     #
     # Rotary encoder
     angle_RotEnc = angle_Index
@@ -580,7 +577,7 @@ if __name__=='__main__':
     paper_size = vec2( 350, 200 )
     thickness = 0.3# mm
 
-    for output_type in ['png']:
+    for output_type in ['png', 'kicad']:
         data, arc_pnts = make_kbd_layout( unit, output_type )
         # write to json for keyboard layout editor
         with open( dst_path, 'w' ) as fout:
@@ -592,4 +589,4 @@ if __name__=='__main__':
             kbd.write_png( dst_png, unit, thickness, paper_size, arc_pnts )
             kbd.write_scad( dst_scad, unit, arc_pnts )
         if output_type == 'kicad':
-            kbd.write_kicad( sys.stdout, unit )
+            kbd.write_kicad( sys.stdout, unit, arc_pnts )
