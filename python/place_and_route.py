@@ -915,7 +915,7 @@ def wire_mods( board ):
             elif cidx in [3]:
                 prm_row = (Dird, 0, 0, r_row)
             else:
-                prm_row = (Dird, 0, ([(0, 7.4)], -90), r_row)
+                prm_row = (Dird, 0, ([(0, 7.4)], -80), r_row)
             # print( idx, nidx )
             kad.wire_mods( [
                 ('SW'+idx, '1', 'SW'+nidx, '1', w_row, prm_row, 'F.Cu'),
@@ -1948,13 +1948,13 @@ def main():
             pos = vec2.scale( 4.93, vec2.rotate( - angle - 90 ), sw_pos )
             kad.set_mod_pos_angle( 'L' + name, pos, angle + (0 if isL2R else 180))
             ### LED Caps
-            pos = vec2.mult( mat2.rotate( angle ), (0, -7.5), sw_pos )
-            kad.set_mod_pos_angle( 'C' + name, pos, angle + 180 )
-            ## Diode
+            pos = vec2.mult( mat2.rotate( angle ), (0, -7.3), sw_pos )
+            kad.set_mod_pos_angle( 'C' + name, pos, angle + (180 if isL2R else 0))
+            ### Diode
             isThumbRow = (name[1] == '5')
             diode_sign = -1 if isThumbRow else +1
             Dx = -5.4 * diode_sign
-            Dy = -0.8
+            Dy = 0
             pos = vec2.mult( mat2.rotate( angle ), (Dx, Dy), sw_pos )
             kad.set_mod_pos_angle( 'D' + name, pos, angle - 90 )
             # wire to SW
