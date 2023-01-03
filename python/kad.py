@@ -17,9 +17,8 @@ pcb = pcbnew.GetBoard()
 
 # wire types
 Straight = 0
-OffsetStraight = 1
-OffsetDirected = 2
-ZigZag = 3
+Directed = 1
+ZigZag = 2
 
 
 # draw corner types
@@ -75,6 +74,12 @@ def add_line( a, b, layer = 'Edge.Cuts', width = 2):
     line.SetWidth( scalar_to_unit( width, UnitMM ) )
     pcb.Add( line )
     return line
+
+def add_lines( curv, layer, width ):
+    for idx, pnt in enumerate( curv ):
+        if idx == 0:
+            continue
+        add_line( curv[idx-1], pnt, layer, width )
 
 def add_arc( ctr, pos, angle, layer = 'Edge.Cuts', width = 2 ):
     pnt_ctr = pnt.to_unit( vec2.round( ctr, PointDigits ), UnitMM )
@@ -156,9 +161,9 @@ def add_via( pos, net, size ):# size [mm]
     pcb.Add( via )
     return via
 
-def add_via_on_pad( mod_name, pad_name, via_size ):
-    pos, net = get_pad_pos_net( mod_name, pad_name )
-    add_via( pos, net, via_size )
+# def add_via_on_pad( mod_name, pad_name, via_size ):
+#     pos, net = get_pad_pos_net( mod_name, pad_name )
+#     add_via( pos, net, via_size )
 
 def add_via_relative( mod_name, pad_name, offset_vec, size_via ):
     pos, angle, _, net = get_pad_pos_angle_layer_net( mod_name, pad_name )
@@ -171,7 +176,9 @@ def get_via_pos_net( via ):
     return pnt.from_unit( via.GetPosition(), UnitMM ), via.GetNet()
 
 
-# mod
+##
+## Module
+##
 def get_mod( mod_name ):
     return pcb.FindFootprintByReference( mod_name )
 
@@ -221,7 +228,70 @@ def get_pad_pos_angle_layer_net( mod_name, pad_name ):
     layer = get_mod_layer( mod_name )
     return (pnt.from_unit( pad.GetPosition(), UnitMM ), mod.GetOrientation() / 10, layer, pad.GetNet())
 
-# wires
+##
+## Wires
+##
+# def __add_bezier_corner( radius, num_divs = 15 ):
+#     cef = (math.sqrt( 0.5 ) - 0.5) / 3 * 8
+#     bpnts = []
+#     bpnts.append( vec2.scale( radius / len_a,       vec_a, curr ) )
+#     bpnts.append( vec2.scale( radius / len_a * cef, vec_a, curr ) )
+#     bpnts.append( vec2.scale( radius / len_b * cef, vec_b, curr ) )
+#     bpnts.append( vec2.scale( radius / len_b,       vec_b, curr ) )
+#     num_pnts = len( bpnts )
+#     tmp = [(0, 0) for n in range( num_pnts )]
+#     rpnts.append( bpnts[0] )
+#     for i in range( 1, num_divs ):
+#         t = float( i ) / num_divs
+#         s = 1 - t
+#         for n in range( num_pnts ):
+#             tmp[n] = bpnts[n]
+#         for L in range( num_pnts - 1, 0, -1 ):
+#             for n in range( L ):
+#                 tmp[n] = vec2.scale( s, tmp[n], vec2.scale( t, tmp[n+1] ) )
+#         rpnts.append( tmp[0] )
+#     rpnts.append( bpnts[-1] )
+
+# def __add_arc_corner( apos, avec, bpos, bvec, radius ):
+#     xpos, alen, blen = vec2.find_intersection( apos, avec, bpos, bvec )
+#     # print( xpos, alen, blen )
+#     debug = False
+#     if not is_supported_round_angle( aangle ):
+#         pass
+#         #print( 'Round: warning aangle = {}'.format( aangle ) )
+#         #debug = True
+#     if not is_supported_round_angle( bangle ):
+#         pass
+#         #print( 'Round: warning bangle = {}'.format( bangle ) )
+#         #debug = True
+#     if alen < radius:
+#         print( 'Round: alen < radius, {} < {}'.format( alen, radius ) )
+#         debug = True
+#     if blen < radius:
+#         print( 'Round: blen < radius, {} < {}'.format( blen, radius ) )
+#         debug = True
+#     if debug:
+#         add_arc( xpos, vec2.add( xpos, (10, 0) ), 360, layer, width )
+#         return b, curv
+#     angle = vec2.angle( avec, bvec )
+#     angle = math.ceil( angle * 10 ) / 10
+#     tangent = math.tan( abs( angle ) / 2 / 180 * math.pi )
+#     side_len = radius / tangent
+#     # print( 'angle = {}, radius = {}, side_len = {}, tangent = {}'.format( angle, radius, side_len, tangent ) )
+
+#     amid = vec2.scale( -side_len, avec, xpos )
+#     bmid = vec2.scale( -side_len, bvec, xpos )
+#     add_line( apos, amid, layer, width )
+#     add_line( bpos, bmid, layer, width )
+
+#     aperp = (-avec[1], avec[0])
+#     if angle >= 0:
+#         ctr = vec2.scale( -radius, aperp, amid )
+#         add_arc2( ctr, bmid, amid, 180 - angle, layer, width )
+#     else:
+#         ctr = vec2.scale( +radius, aperp, amid )
+#         add_arc2( ctr, amid, bmid, 180 + angle, layer, width )
+
 def add_wire_straight( pnts, net, layer, width, radius = 0 ):
     rpnts = []
     for idx, curr in enumerate( pnts ):
@@ -236,90 +306,98 @@ def add_wire_straight( pnts, net, layer, width, radius = 0 ):
         len_b = vec2.length( vec_b )
         length = min( abs( radius ),
             len_a / 2 if idx - 1 > 0 else len_a,
-            len_b / 2 if idx + 1 < len( pnts ) - 1 else len_b )
+            len_b / 2 if idx + 1 < len( pnts ) - 1 else len_b
+        )
         if length < 10**(-PointDigits):
             rpnts.append( curr )
         else:
-            if radius < 0:# and abs( vec2.dot( vec_a, vec_b ) ) < len_a * len_b * 0.001:
-                # bezier circle
-                num_divs = 15
-                cef = (math.sqrt( 0.5 ) - 0.5) / 3 * 8
-                bpnts = []
-                bpnts.append( vec2.scale( length / len_a,       vec_a, curr ) )
-                bpnts.append( vec2.scale( length / len_a * cef, vec_a, curr ) )
-                bpnts.append( vec2.scale( length / len_b * cef, vec_b, curr ) )
-                bpnts.append( vec2.scale( length / len_b,       vec_b, curr ) )
-                num_pnts = len( bpnts )
-                tmp = [(0, 0) for n in range( num_pnts )]
-                rpnts.append( bpnts[0] )
-                for i in range( 1, num_divs ):
-                    t = float( i ) / num_divs
-                    s = 1 - t
-                    for n in range( num_pnts ):
-                        tmp[n] = bpnts[n]
-                    for L in range( num_pnts - 1, 0, -1 ):
-                        for n in range( L ):
-                            tmp[n] = vec2.scale( s, tmp[n], vec2.scale( t, tmp[n+1] ) )
-                    rpnts.append( tmp[0] )
-                rpnts.append( bpnts[-1] )
-            else:
-                rpnts.append( vec2.scale( length / len_a, vec_a, curr ) )
-                rpnts.append( vec2.scale( length / len_b, vec_b, curr ) )
+            assert radius >= 0
+            # bezier circle
+            num_divs = 15
+            cef = (math.sqrt( 0.5 ) - 0.5) / 3 * 8
+            bpnts = []
+            bpnts.append( vec2.scale( length / len_a,       vec_a, curr ) )
+            bpnts.append( vec2.scale( length / len_a * cef, vec_a, curr ) )
+            bpnts.append( vec2.scale( length / len_b * cef, vec_b, curr ) )
+            bpnts.append( vec2.scale( length / len_b,       vec_b, curr ) )
+            num_pnts = len( bpnts )
+            tmp = [(0, 0) for n in range( num_pnts )]
+            rpnts.append( bpnts[0] )
+            for i in range( 1, num_divs ):
+                t = float( i ) / num_divs
+                s = 1 - t
+                for n in range( num_pnts ):
+                    tmp[n] = bpnts[n]
+                for L in range( num_pnts - 1, 0, -1 ):
+                    for n in range( L ):
+                        tmp[n] = vec2.scale( s, tmp[n], vec2.scale( t, tmp[n+1] ) )
+                rpnts.append( tmp[0] )
+            rpnts.append( bpnts[-1] )
     for idx, curr in enumerate( rpnts ):
         if idx == 0:
+            prev = rpnts[0]
             continue
-        prev = rpnts[idx-1]
         if vec2.distance( prev, curr ) > 0.01:
             add_track( prev, curr, net, layer, width )
+            prev = curr
+
+def __make_points_from_offsets( start_pos, offsets ):
+    pos = start_pos
+    pnts = [pos]
+    for off_angle, off_len in offsets:
+        pos = vec2.scale( off_len, vec2.rotate( - off_angle ), pos )
+        pnts.append( pos )
+    return pnts
+
+def __combine_points( pnts_a, xpnt, pnts_b ):
+    pnts = []
+    for pnt in pnts_a:
+        pnts.append( pnt )
+    if xpnt is not None:
+        pnts.append( xpnt )
+    for pnt_b in reversed( pnts_b ):
+        pnts.append( pnt_b )
+    return pnts
 
 # params: pos, (offset length, offset angle) x n
 def add_wire_offsets_straight( prms_a, prms_b, net, layer, width, radius ):
     pos_a, offsets_a = prms_a
     pos_b, offsets_b = prms_b
-    pnts_a = [pos_a]
-    pnts_b = [pos_b]
-    for off_angle_a, off_len_a in offsets_a:
-        pos_a = vec2.scale( off_len_a, vec2.rotate( - off_angle_a ), pos_a )
-        pnts_a.append( pos_a )
-    for off_angle_b, off_len_b in offsets_b:
-        pos_b = vec2.scale( off_len_b, vec2.rotate( - off_angle_b ), pos_b )
-        pnts_b.append( pos_b )
-    pnts = pnts_a
-    for pnt_b in reversed( pnts_b ):
-        pnts.append( pnt_b )
+    pnts_a = __make_points_from_offsets( pos_a, offsets_a )
+    pnts_b = __make_points_from_offsets( pos_b, offsets_b )
+    #
+    pnts = __combine_points( pnts_a, None, pnts_b )
     add_wire_straight( pnts, net, layer, width, radius )
 
 # params: pos, angle
 def add_wire_directed( prms_a, prms_b, net, layer, width, radius ):
     pos_a, angle_a = prms_a
     pos_b, angle_b = prms_b
+    #
     dir_a = vec2.rotate( - angle_a )
     dir_b = vec2.rotate( - angle_b )
     xpos, _, _ = vec2.find_intersection( pos_a, dir_a, pos_b, dir_b )
-    pnts = [pos_a, xpos, pos_b]
+    #
+    # pnts = [pos_a, xpos, pos_b]
+    pnts = __combine_points( [pos_a], xpos, [pos_b] )
     add_wire_straight( pnts, net, layer, width, radius )
 
 # params: pos, (offset length, offset angle) x n, direction angle
 def add_wire_offsets_directed( prms_a, prms_b, net, layer, width, radius ):
     pos_a, offsets_a, angle_a = prms_a
     pos_b, offsets_b, angle_b = prms_b
-    pnts_a = [pos_a]
-    pnts_b = [pos_b]
-    for off_angle_a, off_len_a in offsets_a:
-        pos_a = vec2.scale( off_len_a, vec2.rotate( - off_angle_a ), pos_a )
-        pnts_a.append( pos_a )
-    for off_angle_b, off_len_b in offsets_b:
-        pos_b = vec2.scale( off_len_b, vec2.rotate( - off_angle_b ), pos_b )
-        pnts_b.append( pos_b )
+    pnts_a = __make_points_from_offsets( pos_a, offsets_a )
+    pnts_b = __make_points_from_offsets( pos_b, offsets_b )
+    #
     apos = pnts_a[-1]
     bpos = pnts_b[-1]
     dir_a = vec2.rotate( - angle_a )
     dir_b = vec2.rotate( - angle_b )
     xpos, _, _ = vec2.find_intersection( apos, dir_a, bpos, dir_b )
-    pnts = pnts_a
-    pnts.append( xpos )
-    for pnt_b in reversed( pnts_b ):
-        pnts.append( pnt_b )
+    if xpos[0] is None:
+        print( f'{xpos = }, {angle_a = }, {angle_b = }, {apos = }, {bpos = }')
+    #
+    pnts = __combine_points( pnts_a, xpos, pnts_b )
     add_wire_straight( pnts, net, layer, width, radius )
 
 # params: parallel lines direction angle
@@ -334,36 +412,36 @@ def add_wire_zigzag( pos_a, pos_b, angle, delta_angle, net, layer, width, radius
     add_wire_directed( (pos_a, angle), (mid_pos, mid_angle), net, layer, width, radius )
     add_wire_directed( (pos_b, angle), (mid_pos, mid_angle), net, layer, width, radius )
 
+def __make_offsets_from_params( params, angle, sign ):
+    offsets = []
+    for off_angle, off_len in params:
+        offsets.append( (angle + off_angle * sign, off_len) )
+    return offsets
+
 def __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, width, prms ):
     if type( prms ) == type( Straight ) and prms == Straight:
         add_wire_straight( [pos_a, pos_b], net, layer, width )
-    elif prms[0] == OffsetStraight:
+    elif prms[0] == Straight:
         prms_a, prms_b, radius = prms[1:]
-        offsets_a = []
-        offsets_b = []
-        for off_angle_a, off_len_a in prms_a:
-            offsets_a.append( (angle_a + off_angle_a * sign_a, off_len_a) )
-        for off_angle_b, off_len_b in prms_b:
-            offsets_b.append( (angle_b + off_angle_b * sign_b, off_len_b) )
+        offsets_a = __make_offsets_from_params( prms_a, angle_a, sign_a )
+        offsets_b = __make_offsets_from_params( prms_b, angle_b, sign_b )
         prms2_a = (pos_a, offsets_a)
         prms2_b = (pos_b, offsets_b)
         add_wire_offsets_straight( prms2_a, prms2_b, net, layer, width, radius )
-    elif prms[0] == OffsetDirected:
+    elif prms[0] == Directed:
         prms_a, prms_b = prms[1:3]
         radius = prms[3] if len( prms ) > 3 else 0
-        offsets_a = []
-        offsets_b = []
         if type( prms_a ) == type( () ):# tuple
-            for off_angle_a, off_len_a in prms_a[0]:
-                offsets_a.append( (angle_a + off_angle_a * sign_a, off_len_a) )
+            offsets_a = __make_offsets_from_params( prms_a[0], angle_a, sign_a )
             dir_angle_a = prms_a[1] * sign_a
         else:
+            offsets_a = []
             dir_angle_a = prms_a * sign_a
         if type( prms_b ) == type( () ):# tuple
-            for off_angle_b, off_len_b in prms_b[0]:
-                offsets_b.append( (angle_b + off_angle_b * sign_b, off_len_b) )
+            offsets_b = __make_offsets_from_params( prms_b[0], angle_b, sign_b )
             dir_angle_b = prms_b[1] * sign_b
         else:
+            offsets_b = []
             dir_angle_b = prms_b * sign_b
         prms2_a = (pos_a, offsets_a, angle_a + dir_angle_a)
         prms2_b = (pos_b, offsets_b, angle_b + dir_angle_b)
@@ -417,7 +495,9 @@ def wire_mods( tracks ):
         __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, width, prms )
 
 
-# drawing
+##
+## Drawwings
+##
 def removeDrawings():
     # pcb.DeleteZONEOutlines()
     for draw in pcb.GetDrawings():
@@ -472,12 +552,6 @@ def is_supported_round_angle( angle ):
         return False
     return True
 
-def add_lines( curv, layer, width ):
-    for idx, pnt in enumerate( curv ):
-        if idx == 0:
-            continue
-        add_line( curv[idx-1], pnt, layer, width )
-
 def calc_bezier_points( pnts, num_divs, debug = False ):
     num_pnts = len( pnts )
     tmp = [(0, 0) for n in range( num_pnts )]
@@ -492,7 +566,6 @@ def calc_bezier_points( pnts, num_divs, debug = False ):
                 tmp[n] = vec2.scale( s, tmp[n], vec2.scale( t, tmp[n+1] ) )
         curv.append( tmp[0] )
     curv.append( pnts[-1] )
-    #add_lines( curv, layer, width )
     if debug:# debug
         for pnt in pnts:
             add_arc( pnt, vec2.add( pnt, (20, 0) ), 360, 'F.Fab', 4 )
@@ -551,7 +624,7 @@ def h1( t ):    return t * t * (3 - 2 * t)
 def g0( t ):    return t * (1 - t) * (1 - t)
 def g1( t ):    return t * t * (1 - t)
 
-def calc_spline_points( apos, avec, bpos, bvec, num_divs, vec_scale ):
+def calc_hermit_spline_points( apos, avec, bpos, bvec, num_divs, vec_scale ):
     curv = [apos]
     for i in range( 1, num_divs ):
         t = float( i ) / num_divs
@@ -603,29 +676,6 @@ def draw_corner( cnr_type, a, cnr_data, b, layer, width, dump = False ):
         add_lines( curv, layer, width )
     elif cnr_type == BezierRound:
         radius = cnr_data[0]
-        # _, alen, blen = vec2.find_intersection( apos, avec, bpos, bvec )
-        # debug = False
-        # if alen <= radius:
-        #     print( 'BezierRound: alen < radius, {} < {}, at {}'.format( alen, radius, apos ) )
-        #     debug = True
-        # if blen <= radius:
-        #     print( 'BezierRound: alen < radius, {} < {}, at {}'.format( blen, radius, bpos ) )
-        #     debug = True
-        # amid = vec2.scale( alen - radius, avec, apos )
-        # bmid = vec2.scale( blen - radius, bvec, bpos )
-        # add_line( apos, amid, layer, width )
-        # add_line( bpos, bmid, layer, width )
-        # angle = vec2.angle( avec, bvec )
-        # if angle < 0:
-        #     #angle += 360
-        #     angle *= -1
-        # ndivs = int( round( angle / 4.5 ) )
-        # #print( 'BezierRound: angle = {}, ndivs = {}'.format( angle, ndivs ) )
-        # coeff = (math.sqrt( 0.5 ) - 0.5) / 3 * 8
-        # #print( 'coeff = {}'.format( coeff ) )
-        # actrl = vec2.scale( alen + (coeff - 1) * radius, avec, apos )
-        # bctrl = vec2.scale( blen + (coeff - 1) * radius, bvec, bpos )
-        # pnts = [amid, actrl, bctrl, bmid]
         curv = calc_bezier_round_points( apos, avec, bpos, bvec, radius )
         add_lines( curv, layer, width )
     elif cnr_type == Round:
@@ -675,7 +725,7 @@ def draw_corner( cnr_type, a, cnr_data, b, layer, width, dump = False ):
         ndivs = int( round( vec2.distance( apos, bpos ) / 2.0 ) )
         avec = vec2.rotate( aangle + 90 )
         bvec = vec2.rotate( bangle - 90 )
-        curv = calc_spline_points( apos, avec, bpos, bvec, ndivs, vec_scale )
+        curv = calc_hermit_spline_points( apos, avec, bpos, bvec, ndivs, vec_scale )
         add_lines( curv, layer, width )
     return b, curv
 

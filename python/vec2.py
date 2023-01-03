@@ -5,6 +5,7 @@ import mat2
 zero = (0, 0)
 
 # vectors utility
+def equal( a, b ):     return a[0] == b[0] and a[1] == b[1]
 def length2( a ):      ax, ay = a;   return ax * ax + ay * ay
 def length( a ):       return math.sqrt( length2( a ) )
 def add( a, b ):       ax, ay = a;   bx, by = b;   return (ax + bx, ay + by)

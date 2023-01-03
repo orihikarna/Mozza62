@@ -31,8 +31,7 @@ pcb = pcbnew.GetBoard()
 
 # alias
 Strt  = kad.Straight # Straight
-Strt2 = kad.OffsetStraight
-Dird  = kad.OffsetDirected # Directed + Offsets
+Dird  = kad.Directed # Directed + Offsets
 ZgZg  = kad.ZigZag # ZigZag
 
 Line        = kad.Line
@@ -183,9 +182,21 @@ EdgeCuts = [
 SW_RJ45 = '11'
 SW_RotEnc = '45'
 
-angle_SW82 = 19.6
-angle_PB = 9.6
-angle_M = 16
+angle_M_Comm = -18
+
+def is_SW( idx ):
+    return idx not in [SW_RJ45, SW_RotEnc]
+
+def is_L2R_key( idx ):
+    row = idx[1]
+    return row in ['1', '3']
+
+def is_Thumb_key( idx ):
+    row = idx[1]
+    return row in ['5']
+# angle_SW82 = 19.6
+# angle_PB = 9.6
+# angle_M = 16
 
 holes = [
     ( 16.8, 150, 90 - 16),
@@ -221,16 +232,6 @@ BDR = -1
 Edge_CX, Edge_CY = 0, 0
 Edge_W, Edge_H = 0, 0
 
-def is_SW( idx ):
-    return idx not in [SW_RJ45, SW_RotEnc]
-
-def is_L2R_row( idx ):
-    row = idx[1]
-    return row in ['1', '3']
-
-def is_Thumb_row( idx ):
-    row = idx[1]
-    return row in ['5']
 
 def make_rect( size, offset = (0, 0) ):
     FourCorners = [(0, 0), (1, 0), (1, 1), (0, 1)]
@@ -251,17 +252,14 @@ def make_corners( key_cnrs ):
         corners.append( [(pos, -angle + dangle), cnr_type, prms] )
     return corners
 
-def vec2_same( a, b ):
-    return a[0] == b[0] and a[1] == b[1]
-
 def drawEdgeCuts( board ):
     width = 0.12
 
     pnts = []
     for pnt in EdgeCuts:
-        if len( pnts ) == 0 or not vec2_same( pnt, pnts[-1] ):
+        if len( pnts ) == 0 or not vec2.equal( pnt, pnts[-1] ):
             pnts.append( pnt )
-    if not vec2_same( pnts[0], pnts[-1] ):
+    if not vec2.equal( pnts[0], pnts[-1] ):
         pnts.append( pnts[0] )
     kad.add_lines( pnts, 'Edge.Cuts', width )
     return
@@ -899,28 +897,42 @@ def place_mods( board ):
 
 ### Wire mods
 def wire_mods( board ):
-    layer1 = ['F.Cu', 'B.Cu'][board]
-    layer2 = ['B.Cu', 'F.Cu'][board]
     GND = pcb.FindNet( 'GND' )
+    Cu_layers = ['F.Cu', 'B.Cu']
+#    layer1 = ['F.Cu', 'B.Cu'][board]
+#    layer2 = ['B.Cu', 'F.Cu'][board]
 
-    w_exp, r_exp = 0.44, -0.4
-    w_pwr, r_pwr = 0.75, -1
-    w_dbn, r_dbn = 0.6, -1
-    w_row, r_row = 0.8, -1.6
-    w_col, r_col = 0.6, -1
-    w_led, r_led = 0.7, -1# LED power
-    w_dat, r_dat = 0.5, -0.75# LED dat
+    w_exp, r_exp = 0.44, 0.4
+    w_pwr, r_pwr = 0.75, 1
+    w_dbn, r_dbn = 0.6, 1
+    w_row, r_row = 0.8, 1.6
+    w_col, r_col = 0.6, 1
+    w_led, r_led = 0.75, 1# LED power
+    w_dat, r_dat = 0.5, 0.75# LED dat
 
-    # RGB LED
-    via_led_vcc = {}
-    via_led_gnd = {}
+    dy_via = 0.15
+    pwr_offset = (90, dy_via)
+
+    #################
+    ### RGB LED Vias
+    # power rails
+    via_led_pwr_1st = {}
+    via_led_pwr_2nd = {}
+    # caps
+    via_cap_vcc = {}
+    via_cap_gnd = {}
+    # led dat
     via_led_in  = {}
     via_led_out = {}
+    # led dat connection
+    via_led_left = {}
+    via_led_rght = {}
+
     for idx in keys.keys():
         if not is_SW( idx ):
             continue
-        isL2R = is_L2R_row( idx )
-        isThumb = is_Thumb_row( idx )
+        isL2R = is_L2R_key( idx )
+        isThumb = is_Thumb_key( idx )
 
         sign_led = +1 if isL2R else -1
 
@@ -928,16 +940,111 @@ def wire_mods( board ):
         mod_sw = 'SW' + idx
         mod_led = 'L' + idx
         mod_cap = 'C' + idx
+        lrx = 0 if isL2R else 1 # L/R index
+        lrs = [+1, -1][lrx] # L/R sign
         if isL2R:
-            sign = +1
+            # sign = +1
             led_sw_vcc, led_sw_gnd = '5', '4'
             led_datS, led_datT = '4', '2'
         else:# R2L
-            sign = -1
+            # sign = -1
             led_sw_vcc, led_sw_gnd = '4', '5'
             led_datS, led_datT = '2', '4'
-        via_led_vcc[idx] = kad.add_via_relative( mod_cap, '1', (-1.5, 0), VIA_Size[1] )
-        via_led_gnd[idx] = kad.add_via_relative( mod_cap, '2', (+1.5, 0), VIA_Size[1] )
+        ### Making Vias
+        via_vcc_pos = (0.8625, -(2.1 + dy_via))
+        via_gnd_pos = (1.5, -1.1)
+        if not isL2R:# signed swap
+            via_vcc_pos, via_gnd_pos = vec2.scale( -1, via_gnd_pos ), vec2.scale( -1, via_vcc_pos )
+        via_led_pwr_1st[idx] = kad.add_via_relative( mod_cap, '12'[lrx],   [via_vcc_pos, via_gnd_pos][lrx],   VIA_Size[1] )
+        via_led_pwr_2nd[idx] = kad.add_via_relative( mod_cap, '12'[lrx^1], [via_vcc_pos, via_gnd_pos][lrx^1], VIA_Size[1] )
+        via_cap_vcc[idx] = kad.add_via_relative( mod_cap, '1', (-1.5, 0), VIA_Size[1] )
+        via_cap_gnd[idx] = kad.add_via_relative( mod_cap, '2', (+1.5, 0), VIA_Size[1] )
+        via_led_in [idx] = kad.add_via_relative( mod_led, ['7', '3'][lrx], (+1.4, 0), VIA_Size[2] )
+        via_led_out[idx] = kad.add_via_relative( mod_led, ['1', '5'][lrx], (-1.4, 0), VIA_Size[2] )
+        via_led_left[idx] = kad.add_via_relative( mod_led, ['1', '5'][lrx], (-1.4, 0), VIA_Size[2] )
+        via_led_rght[idx] = kad.add_via_relative( mod_led, ['1', '5'][lrx], (-1.4, 0), VIA_Size[2] )
+        ### Wiring Vias
+        for lidx, layer in enumerate( Cu_layers ):
+            kad.wire_mods( [
+                # cap pad <-> cap pwr via
+                (mod_cap, '1', mod_cap, via_cap_vcc[idx], w_pwr, (Strt), layer),
+                (mod_cap, '2', mod_cap, via_cap_gnd[idx], w_pwr, (Strt), layer),
+                # led pad <-> dat via (in/out)
+                (mod_led, ['3', '7'][lidx], mod_led, via_led_in [idx], w_dat, (Dird, 0, 90), layer),
+                (mod_led, ['1', '5'][lidx], mod_led, via_led_out[idx], w_dat, (Dird, 0, 90), layer),
+            ] )
+        ### pwr (LED, cap, SW)
+        r_tmp = 1
+        kad.wire_mods( [
+            # line vias <-> pwr vias
+            (mod_sw, via_led_pwr_1st[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx],   w_pwr, (Dird, ([pwr_offset], 0), 90), 'B.Cu'),
+            (mod_sw, via_led_pwr_2nd[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx^1], w_pwr, (Strt), 'F.Cu'),
+            # cap <-> led
+            (mod_cap, '1', mod_led, ['4', '8'][lrx],   w_led, (Dird, 0, 90, 0), Cu_layers[lrx]),
+            (mod_cap, '2', mod_led, ['2', '6'][lrx^1], w_led, (Dird, 0, 90, 0), Cu_layers[lrx^1]),
+            # cap <-> sw pins
+            (mod_cap, '1', mod_sw, led_sw_vcc, w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx^1]),
+            (mod_cap, '2', mod_sw, led_sw_gnd, w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx]),
+            # led <-> sw pins
+            (mod_led, ['2', '6'][lrx],   mod_sw, led_sw_gnd, w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx]),
+            (mod_led, ['4', '8'][lrx^1], mod_sw, led_sw_vcc, w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx^1]),
+        ] )
+        # # datT: led <--> via
+        # if idx in via_led_datTs:
+        #     kad.wire_mods( [
+        #         (mod_led, led_datT, mod_led, via_led_datTs[idx], w_dat, (Strt), layer1),
+        #     ] )
+        # # datS: led <--> via
+        # if idx in via_led_datSs:
+        #     kad.wire_mods( [
+        #         (mod_led, led_datS, mod_led, via_led_datSs[idx], w_dat, (Strt), layer1),
+        #     ] )
+
+    # Row horizontal lines (ROW1-4, LED Pwr)
+    for ridx in range( 1, 5 ):
+        row = str( ridx )
+        for cidx in range( 1, 8 ):
+            # from (left)
+            left = str( cidx ) + row
+            if left not in keys.keys() or left == SW_RJ45:
+                continue
+            # to (right)
+            rght = str( cidx + 1 ) + row
+            if rght == '74':
+                rght = '84'
+            if rght not in keys.keys():
+                continue
+            # route
+            prm_sw = None
+            prm_led_pwr_1st = None
+            prm_led_pwr_2nd = None
+            if cidx in [2]:
+                prm_sw = (Strt)
+                prm_led_pwr_1st = (Dird, ([pwr_offset], 0), 90, r_row)
+                prm_led_pwr_2nd = (Strt)
+            elif cidx in [3, 4]:
+                prm_sw = (Dird, 0, 0, r_row)
+                prm_led_pwr_1st = (Dird, ([pwr_offset], 0), ([pwr_offset], 0), r_row)
+                prm_led_pwr_2nd = (Dird, 0, 0, r_row)
+            else:
+                if cidx in [1, 5]:
+                    prm_sw = (Dird, 0, ([(0, 7.2)], -80), r_row)
+                else:
+                    prm_sw = (Dird, 0, ([(0, 7.8)], -80 - angle_M_Comm), r_row)
+                prm_led_pwr_1st = (Dird, ([pwr_offset, (180, 7)], -80 - angle_M_Comm), ([pwr_offset], 0), r_row)
+                prm_led_pwr_2nd = (Dird, ([(180, 3.5)], -80 - angle_M_Comm), 0, r_row)
+            # print( idx, nidx )
+            if prm_sw is not None:
+                kad.wire_mods( [('SW'+left, '1', 'SW'+rght, '1', w_row, prm_sw, 'F.Cu')] )
+            if prm_led_pwr_1st is not None:
+                kad.wire_mods( [('SW'+left, via_led_pwr_1st[left], 'SW'+rght, via_led_pwr_1st[rght], w_led, prm_led_pwr_1st, 'F.Cu')] )
+            if prm_led_pwr_2nd is not None:
+                kad.wire_mods( [('SW'+left, via_led_pwr_2nd[left], 'SW'+rght, via_led_pwr_2nd[rght], w_led, prm_led_pwr_2nd, 'F.Cu')] )
+    # remove temporary vias
+    for via in via_led_pwr_2nd.values():
+        pcb.Delete( via )
+    return
+    if False:
         # thumb column (Row5)
         if isThumb:
             pass
@@ -979,63 +1086,6 @@ def wire_mods( board ):
         # if board != BDL or idx not in ['14']:
         #     via_led_datSs[idx] = kad.add_via_relative( mod_led, led_datS, (0, -sign * 1.1), VIA_Size[1] )
         # pwrS: SW '3' <--> cap & led
-        Cu_layers = ['F.Cu', 'B.Cu']
-        ### LED Caps
-        for layer in Cu_layers:
-            kad.wire_mods( [
-                (mod_cap, '1', mod_cap, via_led_vcc[idx], w_pwr, (Strt), layer),
-                (mod_cap, '2', mod_cap, via_led_gnd[idx], w_pwr, (Strt), layer),
-            ] )
-        r_tmp = r_dat
-        if False:
-            r_tmp = 0
-        lrx = 0 if isL2R else 1
-        kad.wire_mods( [
-            # cap <-> sw via
-            (mod_cap, '1', mod_sw, led_sw_vcc, w_pwr, (Dird, 0, 90, -1), Cu_layers[lrx^1]),
-            (mod_cap, '2', mod_sw, led_sw_gnd, w_pwr, (Dird, 0, 90, -1), Cu_layers[lrx]),
-            # cap <-> led
-            (mod_cap, '1', mod_led, ['4', '8'][lrx],   w_pwr, (Dird, 0, 90, 0), Cu_layers[lrx]),
-            (mod_cap, '2', mod_led, ['2', '6'][lrx^1], w_pwr, (Dird, 0, 90, 0), Cu_layers[lrx^1]),
-            # led <-> sw via
-            (mod_led, ['2', '6'][lrx],   mod_sw, led_sw_gnd, w_pwr, (Dird, 0, 90, -1), Cu_layers[lrx]),
-            (mod_led, ['4', '8'][lrx^1], mod_sw, led_sw_vcc, w_pwr, (Dird, 0, 90, -1), Cu_layers[lrx^1]),
-        ] )
-        # # datT: led <--> via
-        # if idx in via_led_datTs:
-        #     kad.wire_mods( [
-        #         (mod_led, led_datT, mod_led, via_led_datTs[idx], w_dat, (Strt), layer1),
-        #     ] )
-        # # datS: led <--> via
-        # if idx in via_led_datSs:
-        #     kad.wire_mods( [
-        #         (mod_led, led_datS, mod_led, via_led_datSs[idx], w_dat, (Strt), layer1),
-        #     ] )
-
-    # ROW horizontal lines (Row1~4)
-    for ridx in range( 1, 5 ):
-        row = str( ridx )
-        for cidx in range( 1, 8 ):
-            # from (left)
-            left = str( cidx ) + row
-            if left not in keys.keys() or left == SW_RJ45:
-                continue
-            # to (right)
-            rght = str( cidx + 1 ) + row
-            if rght == '74':
-                rght = '84'
-            if rght not in keys.keys():
-                continue
-            # route
-            if cidx in [2, 4]:
-                prm_row = (Strt)
-            elif cidx in [3]:
-                prm_row = (Dird, 0, 0, r_row)
-            else:
-                prm_row = (Dird, 0, ([(0, 7.4)], -80), r_row)
-            # print( idx, nidx )
-            kad.wire_mods( [('SW'+left, '1', 'SW'+rght, '1', w_row, prm_row, 'F.Cu')] )
-    return
     # J1: Split (USB) connector
     if board in [BDL, BDR]:# connector vias & wires
         via_splt_vba = kad.add_via_relative( 'J1', 'A4', (-0.4,  -6.6), VIA_Size[0] )
@@ -1955,8 +2005,8 @@ def main():
         sw_pos_angles.append( (sw_pos, 180 - angle) )
         # col = int( name[0] )
         row = int( name[1] )
-        isL2R = is_L2R_row( name )
-        isThumbRow = is_Thumb_row( name )
+        isL2R = is_L2R_key( name )
+        isThumbRow = is_Thumb_key( name )
         # SW & LED & Diode
         if board in [BDC]:
             # RJ45

@@ -433,6 +433,7 @@ def make_kbd_layout( unit, output_type ):
     # Inner most
     angle_Inner_Index = np.rad2deg( np.arcsin( dx_M_J / dy_Entr ) )
     angle_Inner = angle_Inner_Index + angle_Index
+    print( f'angle_Inner_Index = {angle_Inner_Index}' )
     org_Inner = org_N \
         + vec2( -0.5, -0.5 ) @ mat2_rot( angle_Index ) \
         + vec2( -0.5, 0.5 - dy_Entr ) @ mat2_rot( angle_Inner )
