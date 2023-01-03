@@ -231,27 +231,6 @@ def get_pad_pos_angle_layer_net( mod_name, pad_name ):
 ##
 ## Wires
 ##
-# def __add_bezier_corner( radius, num_divs = 15 ):
-#     cef = (math.sqrt( 0.5 ) - 0.5) / 3 * 8
-#     bpnts = []
-#     bpnts.append( vec2.scale( radius / len_a,       vec_a, curr ) )
-#     bpnts.append( vec2.scale( radius / len_a * cef, vec_a, curr ) )
-#     bpnts.append( vec2.scale( radius / len_b * cef, vec_b, curr ) )
-#     bpnts.append( vec2.scale( radius / len_b,       vec_b, curr ) )
-#     num_pnts = len( bpnts )
-#     tmp = [(0, 0) for n in range( num_pnts )]
-#     rpnts.append( bpnts[0] )
-#     for i in range( 1, num_divs ):
-#         t = float( i ) / num_divs
-#         s = 1 - t
-#         for n in range( num_pnts ):
-#             tmp[n] = bpnts[n]
-#         for L in range( num_pnts - 1, 0, -1 ):
-#             for n in range( L ):
-#                 tmp[n] = vec2.scale( s, tmp[n], vec2.scale( t, tmp[n+1] ) )
-#         rpnts.append( tmp[0] )
-#     rpnts.append( bpnts[-1] )
-
 # def __add_arc_corner( apos, avec, bpos, bvec, radius ):
 #     xpos, alen, blen = vec2.find_intersection( apos, avec, bpos, bvec )
 #     # print( xpos, alen, blen )
@@ -293,46 +272,32 @@ def get_pad_pos_angle_layer_net( mod_name, pad_name ):
 #         add_arc2( ctr, amid, bmid, 180 + angle, layer, width )
 
 def add_wire_straight( pnts, net, layer, width, radius = 0 ):
+    assert radius >= 0
+    num_pnts = len( pnts )
     rpnts = []
     for idx, curr in enumerate( pnts ):
-        if idx == 0 or idx + 1 == len( pnts ):# first or last
+        if idx == 0 or idx == num_pnts - 1:# first or last
             rpnts.append( curr )
             continue
         prev = pnts[idx-1]
         next = pnts[idx+1]
-        vec_a = vec2.sub( prev, curr )
-        vec_b = vec2.sub( next, curr )
-        len_a = vec2.length( vec_a )
-        len_b = vec2.length( vec_b )
+        avec = vec2.sub( prev, curr )
+        bvec = vec2.sub( next, curr )
+        alen = vec2.length( avec )
+        blen = vec2.length( bvec )
         length = min( abs( radius ),
-            len_a / 2 if idx - 1 > 0 else len_a,
-            len_b / 2 if idx + 1 < len( pnts ) - 1 else len_b
+            alen / 2 if idx - 1 > 0 else alen,
+            blen / 2 if idx + 1 < num_pnts - 1 else blen
         )
         if length < 10**(-PointDigits):
             rpnts.append( curr )
         else:
-            assert radius >= 0
             # bezier circle
             num_divs = 15
-            cef = (math.sqrt( 0.5 ) - 0.5) / 3 * 8
-            bpnts = []
-            bpnts.append( vec2.scale( length / len_a,       vec_a, curr ) )
-            bpnts.append( vec2.scale( length / len_a * cef, vec_a, curr ) )
-            bpnts.append( vec2.scale( length / len_b * cef, vec_b, curr ) )
-            bpnts.append( vec2.scale( length / len_b,       vec_b, curr ) )
-            num_pnts = len( bpnts )
-            tmp = [(0, 0) for n in range( num_pnts )]
-            rpnts.append( bpnts[0] )
-            for i in range( 1, num_divs ):
-                t = float( i ) / num_divs
-                s = 1 - t
-                for n in range( num_pnts ):
-                    tmp[n] = bpnts[n]
-                for L in range( num_pnts - 1, 0, -1 ):
-                    for n in range( L ):
-                        tmp[n] = vec2.scale( s, tmp[n], vec2.scale( t, tmp[n+1] ) )
-                rpnts.append( tmp[0] )
-            rpnts.append( bpnts[-1] )
+            debug = False
+            auvec = vec2.scale( 1 / alen, avec )
+            buvec = vec2.scale( 1 / blen, bvec )
+            rpnts += vec2.make_bezier_corner( curr, auvec, buvec, length, num_divs, debug )
     for idx, curr in enumerate( rpnts ):
         if idx == 0:
             prev = rpnts[0]
@@ -552,25 +517,6 @@ def is_supported_round_angle( angle ):
         return False
     return True
 
-def calc_bezier_points( pnts, num_divs, debug = False ):
-    num_pnts = len( pnts )
-    tmp = [(0, 0) for n in range( num_pnts )]
-    curv = [pnts[0]]
-    for i in range( 1, num_divs ):
-        t = float( i ) / num_divs
-        s = 1 - t
-        for n in range( num_pnts ):
-            tmp[n] = pnts[n]
-        for L in range( num_pnts - 1, 0, -1 ):
-            for n in range( L ):
-                tmp[n] = vec2.scale( s, tmp[n], vec2.scale( t, tmp[n+1] ) )
-        curv.append( tmp[0] )
-    curv.append( pnts[-1] )
-    if debug:# debug
-        for pnt in pnts:
-            add_arc( pnt, vec2.add( pnt, (20, 0) ), 360, 'F.Fab', 4 )
-    return curv
-
 def calc_bezier_corner_points( apos, avec, bpos, bvec, pitch = 1, ratio = 0.7 ):
     _, alen, blen = vec2.find_intersection( apos, avec, bpos, bvec )
     debug = False
@@ -586,7 +532,7 @@ def calc_bezier_corner_points( apos, avec, bpos, bvec, pitch = 1, ratio = 0.7 ):
     bctrl = vec2.scale( blen * ratio, bvec, bpos )
     ndivs = int( round( (alen + blen) / pitch ) )
     pnts = [apos, actrl, bctrl, bpos]
-    curv = calc_bezier_points( pnts, ndivs, debug )
+    curv = vec2.interpolate_points_by_bezier( pnts, ndivs, debug )
     return curv
 
 def calc_bezier_round_points( apos, avec, bpos, bvec, radius ):
@@ -614,23 +560,7 @@ def calc_bezier_round_points( apos, avec, bpos, bvec, radius ):
     bctrl = vec2.scale( blen + (coeff - 1) * radius, bvec, bpos )
     pnts = [amid, actrl, bctrl, bmid]
     curv = [apos]
-    for pos in calc_bezier_points( pnts, ndivs, debug ):
-        curv.append( pos )
-    curv.append( bpos )
-    return curv
-
-def h0( t ):    return (1 - t) * (1 - t) * (2 * t + 1)
-def h1( t ):    return t * t * (3 - 2 * t)
-def g0( t ):    return t * (1 - t) * (1 - t)
-def g1( t ):    return t * t * (1 - t)
-
-def calc_hermit_spline_points( apos, avec, bpos, bvec, num_divs, vec_scale ):
-    curv = [apos]
-    for i in range( 1, num_divs ):
-        t = float( i ) / num_divs
-        pos = vec2.add( vec2.scale( h0( t ), apos ), vec2.scale( h1( t ), bpos ) )
-        vec = vec2.add( vec2.scale( g0( t ), (avec[1], -avec[0]) ), vec2.scale( g1( t ), (bvec[1], -bvec[0]) ) )
-        pos = vec2.scale( vec_scale, vec, pos )
+    for pos in vec2.interpolate_points_by_bezier( pnts, ndivs, debug ):
         curv.append( pos )
     curv.append( bpos )
     return curv
@@ -672,7 +602,7 @@ def draw_corner( cnr_type, a, cnr_data, b, layer, width, dump = False ):
                 pnts.append( pt )
         pnts.append( bpos2 )
         pnts.append( bpos )
-        curv = calc_bezier_points( pnts, ndivs )
+        curv = vec2.interpolate_points_by_bezier( pnts, ndivs )
         add_lines( curv, layer, width )
     elif cnr_type == BezierRound:
         radius = cnr_data[0]
@@ -723,9 +653,9 @@ def draw_corner( cnr_type, a, cnr_data, b, layer, width, dump = False ):
     elif cnr_type == Spline:
         vec_scale = cnr_data[0]
         ndivs = int( round( vec2.distance( apos, bpos ) / 2.0 ) )
-        avec = vec2.rotate( aangle + 90 )
-        bvec = vec2.rotate( bangle - 90 )
-        curv = calc_hermit_spline_points( apos, avec, bpos, bvec, ndivs, vec_scale )
+        auvec = vec2.rotate( aangle + 90 )
+        buvec = vec2.rotate( bangle - 90 )
+        curv = vec2.interpolate_points_by_hermit_spline( apos, auvec, bpos, buvec, ndivs, vec_scale )
         add_lines( curv, layer, width )
     return b, curv
 
