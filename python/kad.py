@@ -252,7 +252,6 @@ def add_wire_straight( pnts, net, layer, width, radius = 0 ):
         if length < 10**(-PointDigits):
             rpnts.append( curr )
         else:
-            # bezier circle
             num_divs = 15
             debug = False
             auvec = vec2.scale( 1 / alen, avec )
@@ -425,9 +424,9 @@ def removeTracksAndVias():
         delete = False
         if track.IsLocked():# locked == placed by python
             delete = True
-        # elif type( track ) is pcbnew.VIA:
+        # elif type( track ) is pcbnew.PCB_VIA:
         #     delete = True
-        # elif type( track ) is pcbnew.TRACK:
+        # elif type( track ) is pcbnew.PCB_TRACK:
         #     delete = True
         if delete:
             pcb.Delete( track )

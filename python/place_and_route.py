@@ -194,9 +194,6 @@ def is_L2R_key( idx ):
 def is_Thumb_key( idx ):
     row = idx[1]
     return row in ['5']
-# angle_SW82 = 19.6
-# angle_PB = 9.6
-# angle_M = 16
 
 holes = [
     ( 16.8, 150, 90 - 16),
@@ -214,8 +211,6 @@ holes = [
     (65, 84.6, 90),
 ]
 
-# L2R = []
-# R2L = []
 
 # Board Type
 # class Board(Enum):
@@ -942,14 +937,6 @@ def wire_mods( board ):
         mod_cap = 'C' + idx
         lrx = 0 if isL2R else 1 # L/R index
         lrs = [+1, -1][lrx] # L/R sign
-        if isL2R:
-            # sign = +1
-            led_sw_vcc, led_sw_gnd = '5', '4'
-            led_datS, led_datT = '4', '2'
-        else:# R2L
-            # sign = -1
-            led_sw_vcc, led_sw_gnd = '4', '5'
-            led_datS, led_datT = '2', '4'
         ### Making Vias
         via_vcc_pos = (0.8625, -(2.1 + dy_via))
         via_gnd_pos = (1.5, -1.1)
@@ -959,10 +946,10 @@ def wire_mods( board ):
         via_led_pwr_2nd[idx] = kad.add_via_relative( mod_cap, '12'[lrx^1], [via_vcc_pos, via_gnd_pos][lrx^1], VIA_Size[1] )
         via_cap_vcc[idx] = kad.add_via_relative( mod_cap, '1', (-1.5, 0), VIA_Size[1] )
         via_cap_gnd[idx] = kad.add_via_relative( mod_cap, '2', (+1.5, 0), VIA_Size[1] )
-        via_led_in [idx] = kad.add_via_relative( mod_led, ['7', '3'][lrx], (+1.4, 0), VIA_Size[2] )
-        via_led_out[idx] = kad.add_via_relative( mod_led, ['1', '5'][lrx], (-1.4, 0), VIA_Size[2] )
-        via_led_left[idx] = kad.add_via_relative( mod_led, ['1', '5'][lrx], (-1.4, 0), VIA_Size[2] )
-        via_led_rght[idx] = kad.add_via_relative( mod_led, ['1', '5'][lrx], (-1.4, 0), VIA_Size[2] )
+        via_led_in [idx] = kad.add_via_relative( mod_led, '73'[lrx], (+1.4, 0), VIA_Size[2] )
+        via_led_out[idx] = kad.add_via_relative( mod_led, '15'[lrx], (-1.4, 0), VIA_Size[2] )
+        via_led_left[idx] = kad.add_via_relative( mod_led, '75'[lrx], (+4.6 * lrs, 1.8 * lrs), VIA_Size[2] )
+        via_led_rght[idx] = kad.add_via_relative( mod_led, '13'[lrx], (-4.6 * lrs, 1.8 * lrs), VIA_Size[2] )
         ### Wiring Vias
         for lidx, layer in enumerate( Cu_layers ):
             kad.wire_mods( [
@@ -970,35 +957,28 @@ def wire_mods( board ):
                 (mod_cap, '1', mod_cap, via_cap_vcc[idx], w_pwr, (Strt), layer),
                 (mod_cap, '2', mod_cap, via_cap_gnd[idx], w_pwr, (Strt), layer),
                 # led pad <-> dat via (in/out)
-                (mod_led, ['3', '7'][lidx], mod_led, via_led_in [idx], w_dat, (Dird, 0, 90), layer),
-                (mod_led, ['1', '5'][lidx], mod_led, via_led_out[idx], w_dat, (Dird, 0, 90), layer),
+                (mod_led, '37'[lidx], mod_led, via_led_in [idx], w_dat, (Dird, 0, 90), layer),
+                (mod_led, '15'[lidx], mod_led, via_led_out[idx], w_dat, (Dird, 0, 90), layer),
             ] )
         ### pwr (LED, cap, SW)
         r_tmp = 1
         kad.wire_mods( [
-            # line vias <-> pwr vias
+            # pwr rail vias <-> pwr vias
             (mod_sw, via_led_pwr_1st[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx],   w_pwr, (Dird, ([pwr_offset], 0), 90), 'B.Cu'),
             (mod_sw, via_led_pwr_2nd[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx^1], w_pwr, (Strt), 'F.Cu'),
-            # cap <-> led
-            (mod_cap, '1', mod_led, ['4', '8'][lrx],   w_led, (Dird, 0, 90, 0), Cu_layers[lrx]),
-            (mod_cap, '2', mod_led, ['2', '6'][lrx^1], w_led, (Dird, 0, 90, 0), Cu_layers[lrx^1]),
-            # cap <-> sw pins
-            (mod_cap, '1', mod_sw, led_sw_vcc, w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx^1]),
-            (mod_cap, '2', mod_sw, led_sw_gnd, w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx]),
-            # led <-> sw pins
-            (mod_led, ['2', '6'][lrx],   mod_sw, led_sw_gnd, w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx]),
-            (mod_led, ['4', '8'][lrx^1], mod_sw, led_sw_vcc, w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx^1]),
+            # cap pad <-> led pad
+            (mod_cap, '1', mod_led, '48'[lrx],   w_led, (Dird, 0, 90, 0), Cu_layers[lrx]),
+            (mod_cap, '2', mod_led, '26'[lrx^1], w_led, (Dird, 0, 90, 0), Cu_layers[lrx^1]),
+            # cap pad <-> sw pins
+            (mod_cap, '1', mod_sw, '54'[lrx],   w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx^1]),
+            (mod_cap, '2', mod_sw, '54'[lrx^1], w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx]),
+            # led pad <-> sw pins
+            (mod_led, '26'[lrx],   mod_sw, '54'[lrx^1], w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx]),
+            (mod_led, '48'[lrx^1], mod_sw, '54'[lrx],   w_led, (Dird, 0, 90, r_tmp), Cu_layers[lrx^1]),
+            # led dat via <-> dat connect vias
+            (mod_led, [via_led_in[idx], via_led_out[idx]][lrx],   mod_led, via_led_left[idx], w_dat, (Dird, 90, 0, 4), 'F.Cu'),
+            (mod_led, [via_led_in[idx], via_led_out[idx]][lrx^1], mod_led, via_led_rght[idx], w_dat, (Dird, 90, 0, 4), 'B.Cu'),
         ] )
-        # # datT: led <--> via
-        # if idx in via_led_datTs:
-        #     kad.wire_mods( [
-        #         (mod_led, led_datT, mod_led, via_led_datTs[idx], w_dat, (Strt), layer1),
-        #     ] )
-        # # datS: led <--> via
-        # if idx in via_led_datSs:
-        #     kad.wire_mods( [
-        #         (mod_led, led_datS, mod_led, via_led_datSs[idx], w_dat, (Strt), layer1),
-        #     ] )
 
     # Row horizontal lines (ROW1-4, LED Pwr)
     for ridx in range( 1, 5 ):

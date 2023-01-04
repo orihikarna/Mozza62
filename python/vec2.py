@@ -129,7 +129,6 @@ def make_arc_corner( corner, auvec, buvec, radius, num_divs, debug ):
     if debug:
         kad.add_arc( corner, add( corner, (10, 0) ), 360, 'F.Fab', 0.2 )
         assert False
-        # return b, curv
     theta = angle( auvec, buvec )
     # theta = builtins.round( theta * 10 ) / 10
     arc_radius = math.tan( (theta / 2) / 180 * math.pi ) * radius
