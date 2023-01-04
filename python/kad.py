@@ -231,46 +231,6 @@ def get_pad_pos_angle_layer_net( mod_name, pad_name ):
 ##
 ## Wires
 ##
-# def __add_arc_corner( apos, avec, bpos, bvec, radius ):
-#     xpos, alen, blen = vec2.find_intersection( apos, avec, bpos, bvec )
-#     # print( xpos, alen, blen )
-#     debug = False
-#     if not is_supported_round_angle( aangle ):
-#         pass
-#         #print( 'Round: warning aangle = {}'.format( aangle ) )
-#         #debug = True
-#     if not is_supported_round_angle( bangle ):
-#         pass
-#         #print( 'Round: warning bangle = {}'.format( bangle ) )
-#         #debug = True
-#     if alen < radius:
-#         print( 'Round: alen < radius, {} < {}'.format( alen, radius ) )
-#         debug = True
-#     if blen < radius:
-#         print( 'Round: blen < radius, {} < {}'.format( blen, radius ) )
-#         debug = True
-#     if debug:
-#         add_arc( xpos, vec2.add( xpos, (10, 0) ), 360, layer, width )
-#         return b, curv
-#     angle = vec2.angle( avec, bvec )
-#     angle = math.ceil( angle * 10 ) / 10
-#     tangent = math.tan( abs( angle ) / 2 / 180 * math.pi )
-#     side_len = radius / tangent
-#     # print( 'angle = {}, radius = {}, side_len = {}, tangent = {}'.format( angle, radius, side_len, tangent ) )
-
-#     amid = vec2.scale( -side_len, avec, xpos )
-#     bmid = vec2.scale( -side_len, bvec, xpos )
-#     add_line( apos, amid, layer, width )
-#     add_line( bpos, bmid, layer, width )
-
-#     aperp = (-avec[1], avec[0])
-#     if angle >= 0:
-#         ctr = vec2.scale( -radius, aperp, amid )
-#         add_arc2( ctr, bmid, amid, 180 - angle, layer, width )
-#     else:
-#         ctr = vec2.scale( +radius, aperp, amid )
-#         add_arc2( ctr, amid, bmid, 180 + angle, layer, width )
-
 def add_wire_straight( pnts, net, layer, width, radius = 0 ):
     assert radius >= 0
     num_pnts = len( pnts )
@@ -297,7 +257,8 @@ def add_wire_straight( pnts, net, layer, width, radius = 0 ):
             debug = False
             auvec = vec2.scale( 1 / alen, avec )
             buvec = vec2.scale( 1 / blen, bvec )
-            rpnts += vec2.make_bezier_corner( curr, auvec, buvec, length, num_divs, debug )
+            # rpnts += vec2.make_bezier_corner( curr, auvec, buvec, length, num_divs, debug )
+            rpnts += vec2.make_arc_corner( curr, auvec, buvec, length, num_divs, debug )
     for idx, curr in enumerate( rpnts ):
         if idx == 0:
             prev = rpnts[0]
@@ -314,16 +275,6 @@ def __make_points_from_offsets( start_pos, offsets ):
         pnts.append( pos )
     return pnts
 
-def __combine_points( pnts_a, xpnt, pnts_b ):
-    pnts = []
-    for pnt in pnts_a:
-        pnts.append( pnt )
-    if xpnt is not None:
-        pnts.append( xpnt )
-    for pnt_b in reversed( pnts_b ):
-        pnts.append( pnt_b )
-    return pnts
-
 # params: pos, (offset length, offset angle) x n
 def add_wire_offsets_straight( prms_a, prms_b, net, layer, width, radius ):
     pos_a, offsets_a = prms_a
@@ -331,7 +282,7 @@ def add_wire_offsets_straight( prms_a, prms_b, net, layer, width, radius ):
     pnts_a = __make_points_from_offsets( pos_a, offsets_a )
     pnts_b = __make_points_from_offsets( pos_b, offsets_b )
     #
-    pnts = __combine_points( pnts_a, None, pnts_b )
+    pnts = vec2.combine_points( pnts_a, None, pnts_b )
     add_wire_straight( pnts, net, layer, width, radius )
 
 # params: pos, angle
@@ -344,7 +295,7 @@ def add_wire_directed( prms_a, prms_b, net, layer, width, radius ):
     xpos, _, _ = vec2.find_intersection( pos_a, dir_a, pos_b, dir_b )
     #
     # pnts = [pos_a, xpos, pos_b]
-    pnts = __combine_points( [pos_a], xpos, [pos_b] )
+    pnts = vec2.combine_points( [pos_a], xpos, [pos_b] )
     add_wire_straight( pnts, net, layer, width, radius )
 
 # params: pos, (offset length, offset angle) x n, direction angle
@@ -362,7 +313,7 @@ def add_wire_offsets_directed( prms_a, prms_b, net, layer, width, radius ):
     if xpos[0] is None:
         print( f'{xpos = }, {angle_a = }, {angle_b = }, {apos = }, {bpos = }')
     #
-    pnts = __combine_points( pnts_a, xpos, pnts_b )
+    pnts = vec2.combine_points( pnts_a, xpos, pnts_b )
     add_wire_straight( pnts, net, layer, width, radius )
 
 # params: parallel lines direction angle

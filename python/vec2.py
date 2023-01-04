@@ -40,6 +40,10 @@ def rotate( angle ):
 
 
 
+##
+## Util
+##
+
 # lines
 # k0 * t0 + p0 = k1 * t1 + p1
 # t0 * k0 - t1 * k1 = p1 - p0
@@ -60,7 +64,15 @@ def find_intersection( p0, t0, p1, t1, tolerance = 1 ):
         print( 'ERROR |q0 - q1| = {}'.format( dq ) )
     return (q1, k0, -k1)
 
-
+def combine_points( apnts, xpnt, bpnts ):
+    pnts = []
+    for pnt in apnts:
+        pnts.append( pnt )
+    if xpnt is not None:
+        pnts.append( xpnt )
+    for pnt_b in reversed( bpnts ):
+        pnts.append( pnt_b )
+    return pnts
 
 ##
 ## Interpolation
@@ -112,3 +124,30 @@ def make_bezier_corner( corner, auvec, buvec, raidus, num_divs, debug ):
         scale( raidus,       buvec, corner ),
     ]
     return interpolate_points_by_bezier( anchors, num_divs, debug )
+
+def make_arc_corner( corner, auvec, buvec, radius, num_divs, debug ):
+    if debug:
+        kad.add_arc( corner, add( corner, (10, 0) ), 360, 'F.Fab', 0.2 )
+        assert False
+        # return b, curv
+    theta = angle( auvec, buvec )
+    # theta = builtins.round( theta * 10 ) / 10
+    arc_radius = math.tan( (theta / 2) / 180 * math.pi ) * radius
+
+    afoot = scale( radius, auvec, corner )
+    bfoot = scale( radius, buvec, corner )
+    aperp = (-auvec[1], auvec[0])
+
+    if theta >= 0:
+        arc_theta = 180 - theta
+    else:
+        arc_theta = -(180 + theta)
+    arc_center = scale( arc_radius, aperp, afoot )
+
+    pnts = [afoot]
+    for i in range( 1, num_divs ):
+        pnt = scale( -arc_radius, mult( mat2.rotate( arc_theta / num_divs * i ), aperp ), arc_center )
+        pnts.append( pnt )
+    pnts.append( bfoot )
+
+    return pnts
