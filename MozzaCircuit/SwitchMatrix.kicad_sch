@@ -3732,7 +3732,7 @@
     (pin "2" (uuid e037fb1e-621f-4c67-8d0f-52dc245a272e))
   )
 
-  (symbol (lib_name "SW_ChocV2_rev_23") (lib_id "00_KeyParts:SW_ChocV2_rev") (at 31.75 134.62 90) (unit 1)
+  (symbol (lib_name "SW_ChocV2_rev_23") (lib_id "00_KeyParts:SW_ChocV2_rev") (at 31.75 134.62 90) (mirror x) (unit 1)
     (in_bom yes) (on_board yes)
     (uuid 1ff478f4-5dc6-4ac6-b535-2c32ad617290)
     (property "Reference" "SW15" (id 0) (at 27.94 134.62 0))

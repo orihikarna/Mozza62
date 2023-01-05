@@ -6,6 +6,7 @@ import pcbnew
 
 UnitMM = True
 PointDigits = 3
+inf = 1e9
 
 def scalar_to_unit( v, mm_or_mils ):
     if mm_or_mils:
@@ -345,7 +346,7 @@ def __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, widt
         add_wire_offsets_straight( prms2_a, prms2_b, net, layer, width, radius )
     elif prms[0] == Directed:
         prms_a, prms_b = prms[1:3]
-        radius = prms[3] if len( prms ) > 3 else 0
+        radius = prms[3] if len( prms ) > 3 else inf
         if type( prms_a ) == type( () ):# tuple
             offsets_a = __make_offsets_from_params( prms_a[0], angle_a, sign_a )
             dir_angle_a = prms_a[1] * sign_a
