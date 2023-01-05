@@ -904,7 +904,7 @@ def wire_mods( board ):
     w_row, r_row = 0.8, 1.6
     w_col, r_col = 0.6, 1
     w_led, r_led = 0.7, 1.4# LED power
-    w_dat, r_dat = 0.5, 0.8# LED dat
+    w_dat, r_dat = 0.5, 1.2# LED dat
 
     dy_via = 0.15
     pwr_offset = (90, dy_via)
@@ -1014,10 +1014,11 @@ def wire_mods( board ):
                 prm_led_pwr_1st = (Dird, ([pwr_offset], 0), ([pwr_offset], 0), r_led)
                 prm_led_pwr_2nd = (Dird, 0, 0, r_led)
             elif cidx in [4]:
-                prm_sw = (Dird, 0, 0, r_row)
-                prm_led_dat = (Dird, 0, 90, r_dat)
-                prm_led_pwr_1st = (Dird, ([pwr_offset], 0), ([pwr_offset], 0), r_led)
-                prm_led_pwr_2nd = (Dird, 0, 0, r_led)
+                small_angle = 2
+                prm_sw = (Dird, small_angle, 0, r_row)
+                prm_led_dat = (Dird, small_angle, 0, r_dat)
+                prm_led_pwr_1st = (Dird, ([pwr_offset], small_angle), ([pwr_offset], 0), r_led)
+                prm_led_pwr_2nd = (Dird, small_angle, 0, r_led)
             else:
                 if cidx in [1, 5]:
                     prm_sw = (Dird, 0, ([(0, 7.3)], row_angle), r_row)
