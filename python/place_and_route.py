@@ -185,6 +185,20 @@ SW_RotEnc = '45'
 angle_M_Comm = -18
 angle_Inner_Index = -15.2
 
+dx_Dot = -2.997559
+dx_Comma = -2.997559
+dx_Index = 1.786772
+dx_Inner = -2.742943
+dx_Pinky = 2.371815
+
+dx_cols = [
+    dx_Inner,
+    dx_Index, dx_Index,
+    dx_Comma,
+    dx_Dot,
+    dx_Pinky, dx_Pinky, dx_Pinky,
+]
+
 def is_SW( idx ):
     return idx not in [SW_RJ45, SW_RotEnc]
 
@@ -752,10 +766,7 @@ def place_mods( board ):
     if board in [BDC]:
         for col in '12345678':
             mod_sw = 'SW' + col + '4'
-            if col == '1':
-                mod_sw = 'SW13'
-                dx, dy = 9.2, 4.0
-            elif col == '7':
+            if col == '7':
                 mod_sw = 'SW73'
                 dx, dy = 9.4, 4.0
             else:
@@ -942,18 +953,18 @@ def wire_mods( board ):
         lrx = 0 if isL2R else 1 # L/R index
         lrs = [+1, -1][lrx] # L/R sign
         ### Making Vias
-        via_vcc_pos = (0.8625, -(2.15 + dy_via))
-        via_gnd_pos = (1.5, -1.1)
+        via_vcc_pos = (0.8625, -(2.16 + dy_via))
+        via_gnd_pos = (1.5, -1.08)
         if not isL2R:# signed swap
             via_vcc_pos, via_gnd_pos = vec2.scale( -1, via_gnd_pos ), vec2.scale( -1, via_vcc_pos )
         via_led_pwr_1st[idx] = kad.add_via_relative( mod_cap, '12'[lrx],   [via_vcc_pos, via_gnd_pos][lrx],   VIA_Size[1] )
         via_led_pwr_2nd[idx] = kad.add_via_relative( mod_cap, '12'[lrx^1], [via_vcc_pos, via_gnd_pos][lrx^1], VIA_Size[1] )
         via_cap_vcc[idx] = kad.add_via_relative( mod_cap, '1', (-1.5, dy_via2 * lrs), VIA_Size[1] )
         via_cap_gnd[idx] = kad.add_via_relative( mod_cap, '2', (+1.5, dy_via2 * lrs), VIA_Size[1] )
-        via_led_in [idx] = kad.add_via_relative( mod_led, '73'[lrx], (+1.4, 0), VIA_Size[2] )
-        via_led_out[idx] = kad.add_via_relative( mod_led, '15'[lrx], (-1.4, 0), VIA_Size[2] )
-        via_led_left[idx] = kad.add_via_relative( mod_led, '75'[lrx], vec2.scale( lrs, (+4.3, 1.8) ), VIA_Size[2] )
-        via_led_rght[idx] = kad.add_via_relative( mod_led, '13'[lrx], vec2.scale( lrs, (-4.3, 1.8) ), VIA_Size[2] )
+        via_led_in [idx] = kad.add_via_relative( mod_led, '73'[lrx], (+1.5, 0), VIA_Size[2] )
+        via_led_out[idx] = kad.add_via_relative( mod_led, '15'[lrx], (-1.5, 0), VIA_Size[2] )
+        via_led_left[idx] = kad.add_via_relative( mod_led, '75'[lrx], vec2.scale( lrs, (+4.2, 1.7) ), VIA_Size[2] )
+        via_led_rght[idx] = kad.add_via_relative( mod_led, '13'[lrx], vec2.scale( lrs, (-4.2, 1.7) ), VIA_Size[2] )
         ### Wiring Vias
         for lidx, layer in enumerate( Cu_layers ):
             kad.wire_mods( [
@@ -1014,11 +1025,11 @@ def wire_mods( board ):
                 prm_led_pwr_1st = (Dird, ([pwr_offset], 0), ([pwr_offset], 0), r_led)
                 prm_led_pwr_2nd = (Dird, 0, 0, r_led)
             elif cidx in [4]:
-                small_angle = 2
-                prm_sw = (Dird, small_angle, 0, r_row)
-                prm_led_dat = (Dird, small_angle, 0, r_dat)
-                prm_led_pwr_1st = (Dird, ([pwr_offset], small_angle), ([pwr_offset], 0), r_led)
-                prm_led_pwr_2nd = (Dird, small_angle, 0, r_led)
+                sangle = 2 # small_angle
+                prm_sw = (Dird, sangle, 0, r_row)
+                prm_led_dat = (Dird, sangle, 0, r_dat)
+                prm_led_pwr_1st = (Dird, ([pwr_offset], sangle), ([pwr_offset], 0), r_led)
+                prm_led_pwr_2nd = (Dird, sangle, 0, r_led)
             else:
                 if cidx in [1, 5]:
                     prm_sw = (Dird, 0, ([(0, 7.3)], row_angle), r_row)

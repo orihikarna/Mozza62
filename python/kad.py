@@ -31,13 +31,6 @@ Round  = 4
 Spline = 5
 
 
-def sign( v ):
-    if v > 0:
-        return +1
-    if v < 0:
-        return -1
-    return 0
-
 ##
 ## Drawings
 ##
@@ -232,7 +225,7 @@ def get_pad_pos_angle_layer_net( mod_name, pad_name ):
 ##
 ## Wires
 ##
-def add_wire_straight( pnts, net, layer, width, radius = 0 ):
+def add_wire_straight( pnts, net, layer, width, radius = inf ):
     assert radius >= 0
     num_pnts = len( pnts )
     rpnts = []
@@ -246,11 +239,11 @@ def add_wire_straight( pnts, net, layer, width, radius = 0 ):
         bvec = vec2.sub( next, curr )
         alen = vec2.length( avec )
         blen = vec2.length( bvec )
-        length = min( abs( radius ),
+        side_len = min(
             alen / 2 if idx - 1 > 0 else alen,
             blen / 2 if idx + 1 < num_pnts - 1 else blen
         )
-        if length < 10**(-PointDigits):
+        if side_len < 10**(-PointDigits):
             rpnts.append( curr )
         else:
             num_divs = 15
@@ -258,7 +251,7 @@ def add_wire_straight( pnts, net, layer, width, radius = 0 ):
             auvec = vec2.scale( 1 / alen, avec )
             buvec = vec2.scale( 1 / blen, bvec )
             # rpnts += vec2.make_bezier_corner( curr, auvec, buvec, length, num_divs, debug )
-            rpnts += vec2.make_arc_corner( curr, auvec, buvec, length, num_divs, debug )
+            rpnts += vec2.make_arc_corner( curr, auvec, buvec, side_len, radius, num_divs, debug )
     for idx, curr in enumerate( rpnts ):
         if idx == 0:
             prev = rpnts[0]
@@ -328,39 +321,37 @@ def add_wire_zigzag( pos_a, pos_b, angle, delta_angle, net, layer, width, radius
     add_wire_directed( (pos_a, angle), (mid_pos, mid_angle), net, layer, width, radius )
     add_wire_directed( (pos_b, angle), (mid_pos, mid_angle), net, layer, width, radius )
 
-def __make_offsets_from_params( params, angle, sign ):
-    offsets = []
-    for off_angle, off_len in params:
-        offsets.append( (angle + off_angle * sign, off_len) )
-    return offsets
-
 def __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, width, prms ):
+    def _make_offsets_from_params( params, angle, sign ):
+        offsets = []
+        for off_angle, off_len in params:
+            offsets.append( (angle + off_angle * sign, off_len) )
+        return offsets
+    def _proc_directed_params( prms, angle, sign ):
+        if type( prms ) == type( () ):# tuple
+            offsets = _make_offsets_from_params( prms[0], angle, sign )
+            dir_angle = prms[1] * sign
+        else:
+            offsets = []
+            dir_angle = prms * sign
+        return offsets, dir_angle
+    #
     if type( prms ) == type( Straight ) and prms == Straight:
         add_wire_straight( [pos_a, pos_b], net, layer, width )
     elif prms[0] == Straight:
         prms_a, prms_b, radius = prms[1:]
-        offsets_a = __make_offsets_from_params( prms_a, angle_a, sign_a )
-        offsets_b = __make_offsets_from_params( prms_b, angle_b, sign_b )
+        offsets_a = _make_offsets_from_params( prms_a, angle_a, sign_a )
+        offsets_b = _make_offsets_from_params( prms_b, angle_b, sign_b )
         prms2_a = (pos_a, offsets_a)
         prms2_b = (pos_b, offsets_b)
         add_wire_offsets_straight( prms2_a, prms2_b, net, layer, width, radius )
     elif prms[0] == Directed:
         prms_a, prms_b = prms[1:3]
-        radius = prms[3] if len( prms ) > 3 else inf
-        if type( prms_a ) == type( () ):# tuple
-            offsets_a = __make_offsets_from_params( prms_a[0], angle_a, sign_a )
-            dir_angle_a = prms_a[1] * sign_a
-        else:
-            offsets_a = []
-            dir_angle_a = prms_a * sign_a
-        if type( prms_b ) == type( () ):# tuple
-            offsets_b = __make_offsets_from_params( prms_b[0], angle_b, sign_b )
-            dir_angle_b = prms_b[1] * sign_b
-        else:
-            offsets_b = []
-            dir_angle_b = prms_b * sign_b
+        offsets_a, dir_angle_a = _proc_directed_params( prms_a, angle_a, sign_a )
+        offsets_b, dir_angle_b = _proc_directed_params( prms_b, angle_b, sign_b )
         prms2_a = (pos_a, offsets_a, angle_a + dir_angle_a)
         prms2_b = (pos_b, offsets_b, angle_b + dir_angle_b)
+        radius = prms[3] if len( prms ) > 3 else inf
         add_wire_offsets_directed( prms2_a, prms2_b, net, layer, width, radius )
     elif prms[0] == ZigZag:
         dangle, delta_angle = prms[1:3]
@@ -368,29 +359,27 @@ def __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, widt
         add_wire_zigzag( pos_a, pos_b, angle_a + dangle * sign_a, delta_angle, net, layer, width, radius )
 
 def wire_mods( tracks ):
+    def _get_pad_props( pad, mod ):
+        if type( pad ) is pcbnew.PCB_VIA:# pad is Via
+            pos, net = get_via_pos_net( pad )
+            if mod is not None:# ref = mod
+                _, angle = get_mod_pos_angle( mod )
+                layer = get_mod_layer( mod )
+            else:
+                angle = None
+                layer = None
+        else:# pab is Pad
+            pos, angle, layer, net = get_pad_pos_angle_layer_net( mod, pad )
+        return pos, angle, layer, net
+    #
     layer_FCu = pcb.GetLayerID( 'F.Cu' )
     layer_BCu = pcb.GetLayerID( 'B.Cu' )
     for track in tracks:
         mod_a, pad_a, mod_b, pad_b, width, prms = track[:6]
-        angle_a, angle_b = None, None
-        layer_a, layer_b = None, None
-        # check a
-        if type( pad_a ) is pcbnew.PCB_VIA:# pad_a is via
-            pos_a, net_a = get_via_pos_net( pad_a )
-            if mod_a is not None:# ref = mod_a
-                _, angle_a = get_mod_pos_angle( mod_a )
-                layer_a = get_mod_layer( mod_a )
-        else:# pab_a is pad
-            pos_a, angle_a, layer_a, net_a = get_pad_pos_angle_layer_net( mod_a, pad_a )
-        # check b
-        if type( pad_b ) is pcbnew.PCB_VIA:# pad_b is via
-            pos_b, net_b = get_via_pos_net( pad_b )
-            if mod_b is not None:# ref = mod_b
-                _, angle_b = get_mod_pos_angle( mod_b )
-                layer_b = get_mod_layer( mod_b )
-        else:# pad_b is pad
-            pos_b, angle_b, layer_b, net_b = get_pad_pos_angle_layer_net( mod_b, pad_b )
-        # 
+        # check a & b
+        pos_a, angle_a, layer_a, net_a = _get_pad_props( pad_a, mod_a )
+        pos_b, angle_b, layer_b, net_b = _get_pad_props( pad_b, mod_b )
+        # process None
         if angle_a == None:
             angle_a = angle_b
         if angle_b == None:
@@ -399,6 +388,7 @@ def wire_mods( tracks ):
         sign_b = +1 if layer_b == None or layer_b == layer_FCu else -1
         net = net_b if net_a == None else net_a
         layer = layer_b if layer_a == None else layer_a
+        # validation
         if net == None:
             print( 'net is None' )
         if layer == None:

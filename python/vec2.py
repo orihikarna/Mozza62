@@ -3,7 +3,15 @@ import math
 import mat2
 import kad
 
+
 zero = (0, 0)
+
+def sign( v ):
+    if v > 0:
+        return +1
+    if v < 0:
+        return -1
+    return 0
 
 # vectors utility
 def equal( a, b ):     return a[0] == b[0] and a[1] == b[1]
@@ -125,16 +133,19 @@ def make_bezier_corner( corner, auvec, buvec, raidus, num_divs, debug ):
     ]
     return interpolate_points_by_bezier( anchors, num_divs, debug )
 
-def make_arc_corner( corner, auvec, buvec, radius, num_divs, debug ):
+def make_arc_corner( corner, auvec, buvec, max_side_len, radius, num_divs, debug ):
     if debug:
         kad.add_arc( corner, add( corner, (10, 0) ), 360, 'F.Fab', 0.2 )
         assert False
     theta = angle( auvec, buvec )
     # theta = builtins.round( theta * 10 ) / 10
-    arc_radius = math.tan( (theta / 2) / 180 * math.pi ) * radius
+    tan = math.tan( (theta / 2) / 180 * math.pi )
+    arc_radius = tan * max_side_len
+    arc_radius = min( abs( arc_radius ), radius ) * sign( arc_radius )
+    side_len = arc_radius / tan
 
-    afoot = scale( radius, auvec, corner )
-    bfoot = scale( radius, buvec, corner )
+    afoot = scale( side_len, auvec, corner )
+    bfoot = scale( side_len, buvec, corner )
     aperp = (-auvec[1], auvec[0])
 
     if theta >= 0:
@@ -145,7 +156,8 @@ def make_arc_corner( corner, auvec, buvec, radius, num_divs, debug ):
 
     pnts = [afoot]
     for i in range( 1, num_divs ):
-        pnt = scale( -arc_radius, mult( mat2.rotate( arc_theta / num_divs * i ), aperp ), arc_center )
+        rot_mat = mat2.rotate( arc_theta / num_divs * i )
+        pnt = scale( -arc_radius, mult( rot_mat, aperp ), arc_center )
         pnts.append( pnt )
     pnts.append( bfoot )
 

@@ -408,12 +408,14 @@ def make_kbd_layout( unit, output_type ):
     ## Rules
     # Ring finger: Dot
     dx_Dot_L = np.tan( np.deg2rad( dx_angle_Dot ) )
+    print( f'dx_Dot = {dx_Dot_L * unit:.6f}' )
     #
     org_9 = org_Dot + 3 * vec2( dx_Dot_L, -1 ) @ mat2_rot( angle_Dot )
 
     # Middle finger: Comm(,)
     angle_Comm = angle_Comm_Dot + angle_Dot
     dx_Comm_K = np.tan( np.deg2rad( dx_angle_Comm ) )
+    print( f'dx_Comma = {dx_Comm_K * unit:.6f}' )
     org_Comm = org_Dot \
          + vec2( -0.5, +0.5 ) @ mat2_rot( angle_Dot ) \
          + vec2( -0.5, -0.5 ) @ mat2_rot( angle_Comm )
@@ -423,6 +425,7 @@ def make_kbd_layout( unit, output_type ):
     # Index finger: M, N
     angle_Index = angle_M_Comm + angle_Comm
     dx_M_J = np.tan( np.deg2rad( dx_angle_M ) )
+    print( f'dx_Index = {dx_M_J * unit:.6f}' )
     org_M = org_Comm \
         + vec2( -0.5, +0.5 ) @ mat2_rot( angle_Comm ) \
         + vec2( -0.5, -0.5 ) @ mat2_rot( angle_Index )
@@ -433,13 +436,14 @@ def make_kbd_layout( unit, output_type ):
     # Inner most
     angle_Inner_Index = np.rad2deg( np.arcsin( dx_M_J / dy_Entr ) )
     angle_Inner = angle_Inner_Index + angle_Index
-    print( f'angle_Inner_Index = {angle_Inner_Index}' )
+    print( f'angle_Inner_Index = {angle_Inner_Index:.6f}' )
     org_Inner = org_N \
         + vec2( -0.5, -0.5 ) @ mat2_rot( angle_Index ) \
         + vec2( -0.5, 0.5 - dy_Entr ) @ mat2_rot( angle_Inner )
 
     _dy = 1 - dy_Entr * np.cos( np.deg2rad( angle_Inner_Index ) )
     dx_Entr_Yen = - _dy * np.sin( np.deg2rad( angle_Inner_Index ) )
+    print( f'dx_Inner = {dx_Entr_Yen * unit:.6f}' )
     #
     org_Yen  = org_Inner + vec2( dx_Entr_Yen, -1 ) @ mat2_rot( angle_Inner )
     org_Conn = org_Yen   + vec2( dx_Entr_Yen - 0.05, -1 ) @ mat2_rot( angle_Inner )
@@ -452,6 +456,8 @@ def make_kbd_layout( unit, output_type ):
         + vec2( +0.5, -0.5 ) @ mat2_rot( angle_Dot ) \
         + vec2( +0.5, dy_Scln - 0.5) @ mat2_rot( angle_PinkyTop )
     dx_Scln_P = dy_Scln * np.tan( np.deg2rad( -angle_Dot_Scln ) )
+    print( f'dx_Pinky = {dx_Scln_P * unit:.6f}' )
+    exit()
     # Cln(:), RBrc(])
     org_Cln = org_Scln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
     org_RBrc = org_Cln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
