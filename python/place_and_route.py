@@ -962,8 +962,6 @@ def wire_mods( board ):
         isL2R = is_L2R_key( idx )
         isThumb = is_Thumb_key( idx )
 
-        sign_led = +1 if isL2R else -1
-
         col, row = idx[0], idx[1]
         mod_sw = 'SW' + idx
         mod_led = 'L' + idx

@@ -160,10 +160,8 @@ def add_via( pos, net, size ):# size [mm]
 #     add_via( pos, net, via_size )
 
 def add_via_relative( mod_name, pad_name, offset_vec, size_via ):
-    pos, angle, _, net = get_pad_pos_angle_layer_net( mod_name, pad_name )
-    if get_mod_layer( mod_name ) == pcb.GetLayerID( 'B.Cu' ):
-        offset_vec = (offset_vec[0], -offset_vec[1])
-    pos_via = vec2.mult( mat2.rotate( angle ), offset_vec, pos )
+    pos_via = calc_pos_from_pad( mod_name, pad_name, offset_vec )
+    net = get_pad_net( mod_name, pad_name )
     return add_via( pos_via, net, size_via )
 
 def get_via_pos_net( via ):
@@ -173,16 +171,33 @@ def get_via_pos_net( via ):
 ##
 ## Module
 ##
+def _get_mod_layer( mod ):
+    return mod.GetLayer()
+
+def _get_mod_pos( mod ):
+    return pnt.from_unit( mod.GetPosition(), UnitMM )
+
+def _get_mod_angle( mod ):
+    return mod.GetOrientation() / 10
+#
 def get_mod( mod_name ):
     return pcb.FindFootprintByReference( mod_name )
 
 def get_mod_layer( mod_name ):
     mod = get_mod( mod_name )
-    return mod.GetLayer()
+    return _get_mod_layer( mod )
+
+def get_mod_pos( mod_name ):
+    mod = get_mod( mod_name )
+    return _get_mod_pos( mod )
+
+def get_mod_angle( mod_name ):
+    mod = get_mod( mod_name )
+    return _get_mod_angle( mod )
 
 def get_mod_pos_angle( mod_name ):
     mod = get_mod( mod_name )
-    return (pnt.from_unit( mod.GetPosition(), UnitMM ), mod.GetOrientation() / 10)
+    return _get_mod_pos( mod ), _get_mod_angle( mod )
 
 def set_mod_pos_angle( mod_name, pos, angle ):
     mod = get_mod( mod_name )
@@ -204,23 +219,50 @@ def move_mods( base_pos, base_angle, mods ):
             set_mod_pos_angle( name, npos, nangle )
 
 # pad
+def _get_pad( mod, pad_name ):
+    return mod.FindPadByNumber( pad_name )
+
+def _get_pad_pos( pad ):
+    return pnt.from_unit( pad.GetPosition(), UnitMM )
+
+def _get_pad_net( pad ):
+    return pad.GetNet()
+
+def _get_pad_pos_net_angle_layer( mod, pad ):
+    pos = _get_pad_pos( pad )
+    net = _get_pad_net( pad )
+    angle = _get_mod_angle( mod )
+    layer = _get_mod_layer( mod )
+    return pos, net, angle, layer
+
+#
 def get_pad( mod_name, pad_name ):
     mod = get_mod( mod_name )
-    return mod.FindPadByNumber( pad_name )
+    return _get_pad( mod, pad_name )
 
 def get_pad_pos( mod_name, pad_name ):
     pad = get_pad( mod_name, pad_name )
-    return pnt.from_unit( pad.GetPosition(), UnitMM )
+    return _get_pad_pos( pad )
 
-def get_pad_pos_net( mod_name, pad_name ):
+def get_pad_net( mod_name, pad_name ):
     pad = get_pad( mod_name, pad_name )
-    return pnt.from_unit( pad.GetPosition(), UnitMM ), pad.GetNet()
+    return _get_pad_net( pad )
 
-def get_pad_pos_angle_layer_net( mod_name, pad_name ):
+def get_pad_pos_net_angle_layer( mod_name, pad_name ):
     mod = get_mod( mod_name )
-    pad = get_pad( mod_name, pad_name )
-    layer = get_mod_layer( mod_name )
-    return (pnt.from_unit( pad.GetPosition(), UnitMM ), mod.GetOrientation() / 10, layer, pad.GetNet())
+    pad = _get_pad( mod, pad_name )
+    return _get_pad_pos_net_angle_layer( mod, pad )
+
+def calc_pos_from_pad( mod_name, pad_name, offset_vec ):
+    mod = get_mod( mod_name )
+    layer = _get_mod_layer( mod )
+    if layer == pcb.GetLayerID( 'B.Cu' ):
+        offset_vec = (offset_vec[0], -offset_vec[1])
+    pad = _get_pad( mod, pad_name )
+    pos = _get_pad_pos( pad )
+    angle = _get_mod_angle( mod )
+    pos_relative = vec2.mult( mat2.rotate( angle ), offset_vec, pos )
+    return pos_relative
 
 ##
 ## Wires
@@ -350,13 +392,13 @@ def wire_mods( tracks ):
         if type( pad ) is pcbnew.PCB_VIA:# pad is Via
             pos, net = get_via_pos_net( pad )
             if mod is not None:# ref = mod
-                _, angle = get_mod_pos_angle( mod )
+                angle = get_mod_angle( mod )
                 layer = get_mod_layer( mod )
             else:
                 angle = None
                 layer = None
         else:# pab is Pad
-            pos, angle, layer, net = get_pad_pos_angle_layer_net( mod, pad )
+            pos, net, angle, layer = get_pad_pos_net_angle_layer( mod, pad )
         return pos, angle, layer, net
     #
     layer_FCu = pcb.GetLayerID( 'F.Cu' )
