@@ -278,19 +278,6 @@ def add_wire_offsets_straight( prms_a, prms_b, net, layer, width, radius ):
     pnts = vec2.combine_points( pnts_a, None, pnts_b )
     add_wire_straight( pnts, net, layer, width, radius )
 
-# params: pos, angle
-def add_wire_directed( prms_a, prms_b, net, layer, width, radius ):
-    pos_a, angle_a = prms_a
-    pos_b, angle_b = prms_b
-    #
-    dir_a = vec2.rotate( - angle_a )
-    dir_b = vec2.rotate( - angle_b )
-    xpos, _, _ = vec2.find_intersection( pos_a, dir_a, pos_b, dir_b )
-    #
-    # pnts = [pos_a, xpos, pos_b]
-    pnts = vec2.combine_points( [pos_a], xpos, [pos_b] )
-    add_wire_straight( pnts, net, layer, width, radius )
-
 # params: pos, (offset length, offset angle) x n, direction angle
 def add_wire_offsets_directed( prms_a, prms_b, net, layer, width, radius ):
     pos_a, offsets_a, angle_a = prms_a
@@ -318,8 +305,8 @@ def add_wire_zigzag( pos_a, pos_b, angle, delta_angle, net, layer, width, radius
     _, ka1, _ = vec2.find_intersection( pos_a, dir, mid_pos, mid_dir1 )
     _, ka2, _ = vec2.find_intersection( pos_a, dir, mid_pos, mid_dir2 )
     mid_angle = (angle - delta_angle) if abs( ka1 ) < abs( ka2 ) else (angle + delta_angle)
-    add_wire_directed( (pos_a, angle), (mid_pos, mid_angle), net, layer, width, radius )
-    add_wire_directed( (pos_b, angle), (mid_pos, mid_angle), net, layer, width, radius )
+    add_wire_offsets_directed( (pos_a, [], angle), (mid_pos, [], mid_angle), net, layer, width, radius )
+    add_wire_offsets_directed( (pos_b, [], angle), (mid_pos, [], mid_angle), net, layer, width, radius )
 
 def __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, width, prms ):
     def _make_offsets_from_params( params, angle, sign ):

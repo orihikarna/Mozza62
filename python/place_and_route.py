@@ -906,8 +906,6 @@ def place_mods( board ):
 def wire_mods( board ):
     GND = pcb.FindNet( 'GND' )
     Cu_layers = ['F.Cu', 'B.Cu']
-#    layer1 = ['F.Cu', 'B.Cu'][board]
-#    layer2 = ['B.Cu', 'F.Cu'][board]
 
     w_exp, r_exp = 0.44, 0.4
     w_pwr, r_pwr = 0.75, 1
@@ -917,13 +915,33 @@ def wire_mods( board ):
     w_led, r_led = 0.7, 1.4# LED power
     w_dat, r_dat = 0.5, 1.2# LED dat
 
-    dy_via = 0.15
-    pwr_offset = (90, dy_via)
-    dy_via2 = 0.1
+    ### Diode column
+    # for cidx in range( 1, 9 ):
+    #     col = str( cidx )
+    #     for ridx in range( 1, 4 ):
+    #         # from (top)
+    #         top = col + str( ridx )
+    #         if top not in keys.keys() or top == SW_RJ45:
+    #             continue
+    #         # to (bottom)
+    #         btm = col + str( ridx + 1 )
+    #         if btm not in keys.keys() or btm == SW_RotEnc:
+    #             continue
+    #         # route
+    #         prm_dio = (ZgZg, 0, 60, 1)
+    #         # print( idx, nidx )
+    #         dio_T = 'D' + top
+    #         dio_B = 'D' + btm
+    #         if prm_dio is not None:
+    #             kad.wire_mods( [(dio_T, '2', dio_B, '1', w_col, prm_dio, 'B.Cu')] )
 
     ###############
     ### RGB LED ###
     ###############
+
+    dy_via = 0.15
+    pwr_offset = (90, dy_via)
+    dy_via2 = 0.1
 
     # power rails
     via_led_pwr_1st = {}
@@ -1014,22 +1032,17 @@ def wire_mods( board ):
             prm_led_dat = None
             prm_led_pwr_1st = None
             prm_led_pwr_2nd = None
-            if cidx in [2]:
+            if cidx in [2]:# straight
                 prm_sw = (Strt)
                 prm_led_dat = (Strt)
-                prm_led_pwr_1st = (Dird, ([pwr_offset], 0), 90, r_led)
                 prm_led_pwr_2nd = (Strt)
-            elif cidx in [3]:
-                prm_sw = (Dird, 0, 0, r_row)
-                prm_led_dat = (Dird, 0, 0, r_dat)
-                prm_led_pwr_1st = (Dird, ([pwr_offset], 0), ([pwr_offset], 0), r_led)
-                prm_led_pwr_2nd = (Dird, 0, 0, r_led)
-            elif cidx in [4]:
-                sangle = 2 # small_angle
+                prm_led_pwr_1st = (Dird, ([pwr_offset], 0), 90, r_led)
+            elif cidx in [3, 4]:
+                sangle = [0, 2][cidx - 3] # small_angle [deg]
                 prm_sw = (Dird, sangle, 0, r_row)
                 prm_led_dat = (Dird, sangle, 0, r_dat)
-                prm_led_pwr_1st = (Dird, ([pwr_offset], sangle), ([pwr_offset], 0), r_led)
                 prm_led_pwr_2nd = (Dird, sangle, 0, r_led)
+                prm_led_pwr_1st = (Dird, ([pwr_offset], sangle), ([pwr_offset], 0), r_led)
             else:
                 if cidx in [1, 5]:
                     prm_sw = (Dird, 0, ([(0, 7.3)], row_angle), r_row)
@@ -1040,14 +1053,16 @@ def wire_mods( board ):
                 prm_led_pwr_1st = (Dird, ([pwr_offset, (180, 8.2)], row_angle - delta_angle), ([pwr_offset], 0), r_led)
                 prm_led_pwr_2nd = (Dird, ([(180, 5.0)], row_angle - delta_angle), 0, r_led)
             # print( idx, nidx )
+            sw_L = 'SW' + left
+            sw_R = 'SW' + rght
             if prm_sw is not None:
-                kad.wire_mods( [('SW'+left, '1', 'SW'+rght, '1', w_row, prm_sw, 'F.Cu')] )
+                kad.wire_mods( [(sw_L, '1', sw_R, '1', w_row, prm_sw, 'F.Cu')] )
             if prm_led_dat is not None:
-                kad.wire_mods( [('SW'+left, via_led_rght[left], 'SW'+rght, via_led_left[rght], w_dat, prm_led_dat, 'F.Cu')] )
+                kad.wire_mods( [(sw_L, via_led_rght[left], sw_R, via_led_left[rght], w_dat, prm_led_dat, 'F.Cu')] )
             if prm_led_pwr_1st is not None:
-                kad.wire_mods( [('SW'+left, via_led_pwr_1st[left], 'SW'+rght, via_led_pwr_1st[rght], w_led, prm_led_pwr_1st, 'F.Cu')] )
+                kad.wire_mods( [(sw_L, via_led_pwr_1st[left], sw_R, via_led_pwr_1st[rght], w_led, prm_led_pwr_1st, 'F.Cu')] )
             if prm_led_pwr_2nd is not None:
-                kad.wire_mods( [('SW'+left, via_led_pwr_2nd[left], 'SW'+rght, via_led_pwr_2nd[rght], w_led, prm_led_pwr_2nd, 'F.Cu')] )
+                kad.wire_mods( [(sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_2nd[rght], w_led, prm_led_pwr_2nd, 'F.Cu')] )
     # remove temporary vias
     for via in via_led_pwr_2nd.values():
         pcb.Delete( via )
