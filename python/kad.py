@@ -171,37 +171,19 @@ def get_via_pos_net( via ):
 ##
 ## Module
 ##
-def _get_mod_layer( mod ):
-    return mod.GetLayer()
-
-def _get_mod_pos( mod ):
-    return pnt.from_unit( mod.GetPosition(), UnitMM )
-
-def _get_mod_angle( mod ):
-    return mod.GetOrientation() / 10
+def _get_mod_pos( mod ):            return pnt.from_unit( mod.GetPosition(), UnitMM )
+def _get_mod_angle( mod ):          return mod.GetOrientation() / 10
+def _get_mod_layer( mod ):          return mod.GetLayer()
 #
-def get_mod( mod_name ):
-    return pcb.FindFootprintByReference( mod_name )
-
-def get_mod_layer( mod_name ):
-    mod = get_mod( mod_name )
-    return _get_mod_layer( mod )
-
-def get_mod_pos( mod_name ):
-    mod = get_mod( mod_name )
-    return _get_mod_pos( mod )
-
-def get_mod_angle( mod_name ):
-    mod = get_mod( mod_name )
-    return _get_mod_angle( mod )
-
-def get_mod_pos_angle( mod_name ):
-    mod = get_mod( mod_name )
-    return _get_mod_pos( mod ), _get_mod_angle( mod )
+def get_mod( mod_name ):            return pcb.FindFootprintByReference( mod_name )
+def get_mod_pos( mod_name ):        mod = get_mod( mod_name );  return _get_mod_pos( mod )
+def get_mod_angle( mod_name ):      mod = get_mod( mod_name );  return _get_mod_angle( mod )
+def get_mod_layer( mod_name ):      mod = get_mod( mod_name );  return _get_mod_layer( mod )
+def get_mod_pos_angle( mod_name ):  mod = get_mod( mod_name );  return _get_mod_pos( mod ), _get_mod_angle( mod )
 
 def set_mod_pos_angle( mod_name, pos, angle ):
     mod = get_mod( mod_name )
-    if pos != None:
+    if pos is not None:
         mod.SetPosition( pnt.to_unit( vec2.round( pos, PointDigits ), UnitMM ) )
     mod.SetOrientation( 10 * angle )
     return mod
@@ -213,68 +195,47 @@ def move_mods( base_pos, base_angle, mods ):
         name, pos, angle = vals[:3]
         npos = vec2.add( base_pos, vec2.mult( mrot, pos ) )
         nangle = base_angle + angle
-        if name == None:
+        if name is None:
             move_mods( npos, nangle, vals[3] )
         else:
             set_mod_pos_angle( name, npos, nangle )
 
 # pad
-def _get_pad( mod, pad_name ):
-    return mod.FindPadByNumber( pad_name )
-
-def _get_pad_pos( pad ):
-    return pnt.from_unit( pad.GetPosition(), UnitMM )
-
-def _get_pad_net( pad ):
-    return pad.GetNet()
-
-def _get_pad_pos_net_angle_layer( mod, pad ):
-    pos = _get_pad_pos( pad )
-    net = _get_pad_net( pad )
-    angle = _get_mod_angle( mod )
-    layer = _get_mod_layer( mod )
-    return pos, net, angle, layer
-
+def _get_pad( mod, pad_name ):      return mod.FindPadByNumber( pad_name )
+def _get_pad_pos( pad ):            return pnt.from_unit( pad.GetPosition(), UnitMM )
+def _get_pad_net( pad ):            return pad.GetNet()
+def _get_pad_pos_net_angle_layer( mod, pad ):   return _get_pad_pos( pad ), _get_pad_net( pad ), _get_mod_angle( mod ), _get_mod_layer( mod )
 #
-def get_pad( mod_name, pad_name ):
-    mod = get_mod( mod_name )
-    return _get_pad( mod, pad_name )
-
-def get_pad_pos( mod_name, pad_name ):
-    pad = get_pad( mod_name, pad_name )
-    return _get_pad_pos( pad )
-
-def get_pad_net( mod_name, pad_name ):
-    pad = get_pad( mod_name, pad_name )
-    return _get_pad_net( pad )
-
-def get_pad_pos_net_angle_layer( mod_name, pad_name ):
-    mod = get_mod( mod_name )
-    pad = _get_pad( mod, pad_name )
-    return _get_pad_pos_net_angle_layer( mod, pad )
+def get_mod_pad( mod_name, pad_name ):  mod = get_mod( mod_name );  pad = _get_pad( mod, pad_name );    return mod, pad
+def get_pad( mod_name, pad_name ):      mod = get_mod( mod_name );  pad = _get_pad( mod, pad_name );    return pad
+def get_pad_pos( mod_name, pad_name ):  pad = get_pad( mod_name, pad_name );    return _get_pad_pos( pad )
+def get_pad_net( mod_name, pad_name ):  pad = get_pad( mod_name, pad_name );    return _get_pad_net( pad )
+def get_pad_pos_net_angle_layer( mod_name, pad_name ):  mod, pad = get_mod_pad( mod_name, pad_name );   return _get_pad_pos_net_angle_layer( mod, pad )
 
 def calc_pos_from_pad( mod_name, pad_name, offset_vec ):
-    mod = get_mod( mod_name )
-    layer = _get_mod_layer( mod )
+    pos, _, angle, layer = get_pad_pos_net_angle_layer( mod_name, pad_name )
+    # mod = get_mod( mod_name )
+    # layer = _get_mod_layer( mod )
     if layer == pcb.GetLayerID( 'B.Cu' ):
         offset_vec = (offset_vec[0], -offset_vec[1])
-    pad = _get_pad( mod, pad_name )
-    pos = _get_pad_pos( pad )
-    angle = _get_mod_angle( mod )
+    # pad = _get_pad( mod, pad_name )
+    # pos = _get_pad_pos( pad )
+    # angle = _get_mod_angle( mod )
     pos_relative = vec2.mult( mat2.rotate( angle ), offset_vec, pos )
     return pos_relative
 
 ##
 ## Wires
 ##
-def add_wire_straight( pnts, net, layer, width, radius = inf ):
-    assert radius >= 0
+def add_wire_straight( pnts, net, layer, width, radii ):
+    # assert radius >= 0
     num_pnts = len( pnts )
     rpnts = []
     for idx, curr in enumerate( pnts ):
         if idx == 0 or idx == num_pnts - 1:# first or last
             rpnts.append( curr )
             continue
+        radius = radii[idx]
         prev = pnts[idx-1]
         next = pnts[idx+1]
         avec = vec2.sub( prev, curr )
@@ -298,34 +259,50 @@ def add_wire_straight( pnts, net, layer, width, radius = inf ):
         if idx == 0:
             prev = rpnts[0]
             continue
-        if vec2.distance( prev, curr ) > 0.01:
+        if idx == len( rpnts ) - 1 or vec2.distance( prev, curr ) > 0.01:
             add_track( prev, curr, net, layer, width )
             prev = curr
 
-def __make_points_from_offsets( start_pos, offsets ):
-    pos = start_pos
-    pnts = [pos]
-    for off_angle, off_len in offsets:
-        pos = vec2.scale( off_len, vec2.rotate( - off_angle ), pos )
-        pnts.append( pos )
-    return pnts
-
-# params: pos, (offset length, offset angle) x n
-def add_wire_offsets_straight( prms_a, prms_b, net, layer, width, radius ):
-    pos_a, offsets_a = prms_a
-    pos_b, offsets_b = prms_b
-    pnts_a = __make_points_from_offsets( pos_a, offsets_a )
-    pnts_b = __make_points_from_offsets( pos_b, offsets_b )
-    #
-    pnts = vec2.combine_points( pnts_a, None, pnts_b )
-    add_wire_straight( pnts, net, layer, width, radius )
-
-# params: pos, (offset length, offset angle) x n, direction angle
+# params: pos, (offset length, offset angle / arc center) x n, direction angle
 def add_wire_offsets_directed( prms_a, prms_b, net, layer, width, radius ):
+    def _make_points_from_offsets( start_pos, offsets, angle, radius ):
+        pos = start_pos
+        pnts = [pos]
+        rads = [None]
+        for n, (off_angle, off_len_or_arcctr) in enumerate( offsets ):
+            off_len = None
+            off_udir = vec2.rotate( - off_angle )
+            if type( off_len_or_arcctr ) == type( () ):# tuple
+                arc_ctr = off_len_or_arcctr
+                vec = vec2.sub( arc_ctr, pos )
+                arc_rad = vec2.length( vec2.perp( vec, off_udir ) )
+                off_len = vec2.length( vec2.proj( vec, off_udir ) )
+                #
+                next_off_angle = offsets[n+1][0] if n+1 < len( offsets ) else angle
+                ctr_angle = off_angle - next_off_angle
+                while ctr_angle > +180: ctr_angle -= 360
+                while ctr_angle < -180: ctr_angle += 360
+                ctr_angle = abs( ctr_angle ) / 2
+                #
+                off_len += arc_rad * math.tan( ctr_angle / 180 * math.pi )
+                if True:# debug
+                    # arc_rad = 0
+                    # print( f'{arc_rad = :.2f}, {off_len = :.2f}' )
+                    # print( f'{ctr_angle = :.2f}, {off_angle = :.1f}, {next_off_angle = :.1f}' )
+                    # print( f'{pos = }, {arc_ctr = }' )
+                    add_arc( arc_ctr, vec2.add( arc_ctr, (0.4, 0) ), 360, 'F.Fab', 0.2 )
+            else:
+                off_len = off_len_or_arcctr
+                arc_rad = radius
+            pos = vec2.scale( off_len, off_udir, pos )
+            pnts.append( pos )
+            rads.append( arc_rad )
+        return pnts, rads
+    #
     pos_a, offsets_a, angle_a = prms_a
     pos_b, offsets_b, angle_b = prms_b
-    pnts_a = __make_points_from_offsets( pos_a, offsets_a )
-    pnts_b = __make_points_from_offsets( pos_b, offsets_b )
+    pnts_a, rads_a = _make_points_from_offsets( pos_a, offsets_a, angle_a, radius )
+    pnts_b, rads_b = _make_points_from_offsets( pos_b, offsets_b, angle_b, radius )
     #
     apos = pnts_a[-1]
     bpos = pnts_b[-1]
@@ -336,7 +313,8 @@ def add_wire_offsets_directed( prms_a, prms_b, net, layer, width, radius ):
         print( f'{xpos = }, {angle_a = }, {angle_b = }, {apos = }, {bpos = }')
     #
     pnts = vec2.combine_points( pnts_a, xpos, pnts_b )
-    add_wire_straight( pnts, net, layer, width, radius )
+    rads = vec2.combine_points( rads_a, radius, rads_b )
+    add_wire_straight( pnts, net, layer, width, rads )
 
 # params: parallel lines direction angle
 def add_wire_zigzag( pos_a, pos_b, angle, delta_angle, net, layer, width, radius ):
@@ -351,36 +329,25 @@ def add_wire_zigzag( pos_a, pos_b, angle, delta_angle, net, layer, width, radius
     add_wire_offsets_directed( (pos_b, [], angle), (mid_pos, [], mid_angle), net, layer, width, radius )
 
 def __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, width, prms ):
-    def _make_offsets_from_params( params, angle, sign ):
-        offsets = []
-        for off_angle, off_len in params:
-            offsets.append( (angle + off_angle * sign, off_len) )
-        return offsets
     def _proc_directed_params( prms, angle, sign ):
+        offsets = []
         if type( prms ) == type( () ):# tuple
-            offsets = _make_offsets_from_params( prms[0], angle, sign )
+            for off_angle, off_len_or_arcctr in prms[0]:
+                offsets.append( (angle + off_angle * sign, off_len_or_arcctr) )
             dir_angle = prms[1] * sign
         else:
-            offsets = []
             dir_angle = prms * sign
         return offsets, dir_angle
     #
     if type( prms ) == type( Straight ) and prms == Straight:
-        add_wire_straight( [pos_a, pos_b], net, layer, width )
-    elif prms[0] == Straight:
-        prms_a, prms_b, radius = prms[1:]
-        offsets_a = _make_offsets_from_params( prms_a, angle_a, sign_a )
-        offsets_b = _make_offsets_from_params( prms_b, angle_b, sign_b )
-        prms2_a = (pos_a, offsets_a)
-        prms2_b = (pos_b, offsets_b)
-        add_wire_offsets_straight( prms2_a, prms2_b, net, layer, width, radius )
+        add_wire_straight( [pos_a, pos_b], net, layer, width, [] )
     elif prms[0] == Directed:
         prms_a, prms_b = prms[1:3]
+        radius = prms[3] if len( prms ) > 3 else inf
         offsets_a, dir_angle_a = _proc_directed_params( prms_a, angle_a, sign_a )
         offsets_b, dir_angle_b = _proc_directed_params( prms_b, angle_b, sign_b )
         prms2_a = (pos_a, offsets_a, angle_a + dir_angle_a)
         prms2_b = (pos_b, offsets_b, angle_b + dir_angle_b)
-        radius = prms[3] if len( prms ) > 3 else inf
         add_wire_offsets_directed( prms2_a, prms2_b, net, layer, width, radius )
     elif prms[0] == ZigZag:
         dangle, delta_angle = prms[1:3]
