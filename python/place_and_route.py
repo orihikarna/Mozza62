@@ -765,18 +765,18 @@ def place_mods( board ):
     # Debounce RRCs
     if board in [BDC]:
         for col in '12345678':
-            mod_sw = 'SW' + col + '4'
+            mod_sw = f'SW{col}4'
             if col == '7':
-                mod_sw = 'SW73'
-                dx, dy = 9.4, 4.0
+                mod_sw = 'SW64'
+                dx, dy = 9.4, -11.0
             else:
                 dx, dy = 9.2, 4.0
             pos, angle = kad.get_mod_pos_angle( mod_sw )
             kad.move_mods( pos, angle + 90, [
                 (None, (dx, dy), 0, [
-                    ('CD' + col, (0, -2), 0),
+                    ('CD' + col, (0, -1.5), 0),
                     ('R' + col + '1', (0,  0), 0),
-                    ('R' + col + '2', (0, +2), 0),
+                    ('R' + col + '2', (0, +1.5), 0),
                 ] ),
             ] )
     return
@@ -945,6 +945,10 @@ def wire_mods( board ):
     pwr_offset = (+90, dy_via_1st)
     dat_offset = (-90, dy_via_dat)
 
+    sep_led = 1.1
+    sep_led_cnr = 1.4
+    sep_led_via = 2.0
+
     # power rails
     via_led_pwr_1st = {}
     via_led_pwr_2nd = {}
@@ -962,29 +966,21 @@ def wire_mods( board ):
     pos_ctr_left = {}
     pos_ctr_rght = {}
 
-    sep_led = 1.1
-    sep_led_cnr = 1.4
-    sep_led_via = 2.0
-
     for idx in keys.keys():
         if not is_SW( idx ):
             continue
-        isL2R = is_L2R_key( idx )
-        isThumb = is_Thumb_key( idx )
-
-        col, row = idx[0], idx[1]
         mod_sw = 'SW' + idx
         mod_led = 'L' + idx
         mod_cap = 'C' + idx
+
+        isThumb = is_Thumb_key( idx )
+        isL2R = is_L2R_key( idx )
         lrx = 0 if isL2R else 1 # L/R index
         lrs = [+1, -1][lrx] # L/R sign
+
         ### Making Vias
-        via_vcc_pos = (0.8625, -(sep_led * 2 + dy_via_1st))
-        via_gnd_pos = (1.5, -sep_led)
-        if not isL2R:# signed swap
-            via_vcc_pos, via_gnd_pos = vec2.scale( -1, via_gnd_pos ), vec2.scale( -1, via_vcc_pos )
-        via_led_pwr_1st[idx] = kad.add_via_relative( mod_cap, '12'[lrx],   [via_vcc_pos, via_gnd_pos][lrx],   VIA_Size[1] )
-        via_led_pwr_2nd[idx] = kad.add_via_relative( mod_cap, '12'[lrx^1], [via_vcc_pos, via_gnd_pos][lrx^1], VIA_Size[1] )
+        via_led_pwr_1st[idx] = kad.add_via_relative( mod_cap, '12'[lrx],   vec2.scale( lrs, (0.8625, -(0.05 + sep_led * 2 + dy_via_1st)) ), VIA_Size[1] )
+        via_led_pwr_2nd[idx] = kad.add_via_relative( mod_cap, '12'[lrx^1], vec2.scale( lrs, (1.5, -(0.05 + sep_led)) ), VIA_Size[1] )
         via_cap_vcc[idx] = kad.add_via_relative( mod_cap, '1', (-1.5, dy_via_2nd * lrs), VIA_Size[1] )
         via_cap_gnd[idx] = kad.add_via_relative( mod_cap, '2', (+1.5, dy_via_2nd * lrs), VIA_Size[1] )
         via_led_in [idx] = kad.add_via_relative( mod_led, '73'[lrx], (+1.5, 0), VIA_Size[2] )
@@ -1011,9 +1007,9 @@ def wire_mods( board ):
             # pwr rail vias <-> cap vias
             (mod_sw, via_led_pwr_1st[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx],   w_led, (Dird, ([pwr_offset], 0), 90), 'B.Cu'),
             (mod_sw, via_led_pwr_2nd[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx^1], w_led, (Strt), 'F.Cu'),
-            # cap pad <-> led pad
-            (mod_cap, '1', mod_led, '48'[lrx],   w_led, (Dird, 0, 90, 0), Cu_layers[lrx]),
-            (mod_cap, '2', mod_led, '26'[lrx^1], w_led, (Dird, 0, 90, 0), Cu_layers[lrx^1]),
+            # cap pwr via pad <-> led pad
+            (mod_cap, via_cap_vcc[idx], mod_led, '48'[lrx],   w_led, (ZgZg, 90, 55), Cu_layers[lrx]),
+            (mod_cap, via_cap_gnd[idx], mod_led, '26'[lrx^1], w_led, (ZgZg, 90, 55), Cu_layers[lrx^1]),
             # cap pwr via <-> sw pins
             (mod_cap, via_cap_vcc[idx], mod_sw, '54'[lrx],   w_led, (Dird, 0, +45 * lrs), Cu_layers[lrx^1]),
             (mod_cap, via_cap_gnd[idx], mod_sw, '54'[lrx^1], w_led, (Dird, 0, -45 * lrs), Cu_layers[lrx]),
