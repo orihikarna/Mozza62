@@ -2085,8 +2085,9 @@ def main():
             pos = vec2.mult( mat2.rotate( angle ), (Dx, Dy), sw_pos )
             kad.set_mod_pos_angle( 'D' + name, pos, angle - 90 )
             # wire to SW
+            mod_d = 'D' + name
             for layer in ('F.Cu', 'B.Cu'):
-                kad.wire_mods( [('D' + name, '2', mod_sw, '2' if isThumbRow else '3', 0.5, (Dird, 0, 0), layer)])
+                kad.wire_mods( [(mod_d, '2', mod_sw, '2' if isThumbRow else '3', 0.5, (Dird, 0, 0), layer)])
             ### GND Vias
             # if name[0] not in ['1', '8', '9'] and name[1] not in ['1']:
             #     if board != BDC or name[0] != '7':
