@@ -259,12 +259,13 @@ def add_wire_straight( pnts, net, layer, width, radii ):
         if idx == 0:
             prev = rpnts[0]
             continue
-        if idx == len( rpnts ) - 1 or vec2.distance( prev, curr ) > 0.01:
+        length = vec2.distance( prev, curr )
+        if length > 0.01:
             add_track( prev, curr, net, layer, width )
             prev = curr
 
 # params: pos, (offset length, offset angle / arc center) x n, direction angle
-def add_wire_offsets_directed( prms_a, prms_b, net, layer, width, radius ):
+def add_wire_offsets_directed( prms_a, prms_b, net, layer, width, radius, arc_ctr_mid = None ):
     def _make_points_from_offsets( start_pos, offsets, angle, radius ):
         pos = start_pos
         pnts = [pos]
@@ -277,6 +278,8 @@ def add_wire_offsets_directed( prms_a, prms_b, net, layer, width, radius ):
                 vec = vec2.sub( arc_ctr, pos )
                 arc_rad = vec2.length( vec2.perp( vec, off_udir ) )
                 off_len = vec2.length( vec2.proj( vec, off_udir ) )
+                if vec2.dot( vec, off_udir ) < 0:
+                    off_len *= -1
                 #
                 next_off_angle = offsets[n+1][0] if n+1 < len( offsets ) else angle
                 ctr_angle = off_angle - next_off_angle
@@ -304,16 +307,24 @@ def add_wire_offsets_directed( prms_a, prms_b, net, layer, width, radius ):
     pnts_a, rads_a = _make_points_from_offsets( pos_a, offsets_a, angle_a, radius )
     pnts_b, rads_b = _make_points_from_offsets( pos_b, offsets_b, angle_b, radius )
     #
-    apos = pnts_a[-1]
-    bpos = pnts_b[-1]
+    end_a = pnts_a[-1]
+    end_b = pnts_b[-1]
     dir_a = vec2.rotate( - angle_a )
     dir_b = vec2.rotate( - angle_b )
-    xpos, _, _ = vec2.find_intersection( apos, dir_a, bpos, dir_b )
+    xpos, _, _ = vec2.find_intersection( end_a, dir_a, end_b, dir_b )
     if xpos[0] is None:
-        print( f'{xpos = }, {angle_a = }, {angle_b = }, {apos = }, {bpos = }')
+        print( f'{xpos = }, {angle_a = }, {angle_b = }, {end_a = }, {end_b = }')
+    if arc_ctr_mid:
+        add_arc( arc_ctr_mid, vec2.add( arc_ctr_mid, (0.4, 0) ), 360, 'B.Fab', 0.2 )
+        dist_a = vec2.length( vec2.perp( vec2.sub( arc_ctr_mid, end_a ), dir_a ) )
+        dist_b = vec2.length( vec2.perp( vec2.sub( arc_ctr_mid, end_b ), dir_b ) )
+        radius_mid = min( dist_a, dist_b )
+        # print( f'{radius_mid = }' )
+    else:
+        radius_mid = radius
     #
     pnts = vec2.combine_points( pnts_a, xpos, pnts_b )
-    rads = vec2.combine_points( rads_a, radius, rads_b )
+    rads = vec2.combine_points( rads_a, radius_mid, rads_b )
     add_wire_straight( pnts, net, layer, width, rads )
 
 # params: parallel lines direction angle
@@ -328,7 +339,7 @@ def add_wire_zigzag( pos_a, pos_b, angle, delta_angle, net, layer, width, radius
     add_wire_offsets_directed( (pos_a, [], angle), (mid_pos, [], mid_angle), net, layer, width, radius )
     add_wire_offsets_directed( (pos_b, [], angle), (mid_pos, [], mid_angle), net, layer, width, radius )
 
-def __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, width, prms ):
+def __wire_mod_sub( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, width, prms ):
     def _proc_directed_params( prms, angle, sign ):
         offsets = []
         if type( prms ) == type( () ):# tuple
@@ -340,15 +351,17 @@ def __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, widt
         return offsets, dir_angle
     #
     if type( prms ) == type( Straight ) and prms == Straight:
-        add_wire_straight( [pos_a, pos_b], net, layer, width, [] )
+        add_wire_straight( [pos_a, pos_b], net, layer, width, None )
     elif prms[0] == Directed:
         prms_a, prms_b = prms[1:3]
-        radius = prms[3] if len( prms ) > 3 else inf
         offsets_a, dir_angle_a = _proc_directed_params( prms_a, angle_a, sign_a )
         offsets_b, dir_angle_b = _proc_directed_params( prms_b, angle_b, sign_b )
         prms2_a = (pos_a, offsets_a, angle_a + dir_angle_a)
         prms2_b = (pos_b, offsets_b, angle_b + dir_angle_b)
-        add_wire_offsets_directed( prms2_a, prms2_b, net, layer, width, radius )
+        #
+        radius = prms[3] if len( prms ) > 3 else inf
+        arc_ctr_mid = prms[4] if len( prms ) > 4 else None
+        add_wire_offsets_directed( prms2_a, prms2_b, net, layer, width, radius, arc_ctr_mid )
     elif prms[0] == ZigZag:
         dangle, delta_angle = prms[1:3]
         radius = prms[3] if len( prms ) > 3 else 0
@@ -394,7 +407,7 @@ def wire_mods( tracks ):
                 layer = layer_BCu if layer == layer_FCu else layer_FCu
             else:
                 layer = pcb.GetLayerID( track[6] )
-        __add_wire( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, width, prms )
+        __wire_mod_sub( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, width, prms )
 
 
 ##
