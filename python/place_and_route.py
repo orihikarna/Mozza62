@@ -204,7 +204,7 @@ def is_SW( idx ):
 
 def is_L2R_key( idx ):
     row = idx[1]
-    return row in ['1', '3']
+    return row in ['1', '3'] or idx == '25'
 
 def is_Thumb_key( idx ):
     row = idx[1]
@@ -1049,14 +1049,14 @@ def wire_mods( board ):
             (mod_sw, via_led_pwr_1st[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx],   w_led, (Dird, ([pwr_offset], 0), 90), 'B.Cu'),
             (mod_sw, via_led_pwr_2nd[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx^1], w_led, (Strt), 'F.Cu'),
             # cap pwr via pad <-> led pad
-            (mod_cap, via_cap_vcc[idx], mod_led, '48'[lrx],   w_led, (ZgZg, 90, 55, kad.inf), Cu_layers[lrx]),
-            (mod_cap, via_cap_gnd[idx], mod_led, '26'[lrx^1], w_led, (ZgZg, 90, 55, kad.inf), Cu_layers[lrx^1]),
+            (mod_cap, via_cap_vcc[idx], mod_led, '48'[lrx],   w_led, (ZgZg, 90, 45, kad.inf), Cu_layers[lrx]),
+            (mod_cap, via_cap_gnd[idx], mod_led, '26'[lrx^1], w_led, (ZgZg, 90, 45, kad.inf), Cu_layers[lrx^1]),
             # cap pwr via <-> sw pins
-            (mod_cap, via_cap_vcc[idx], mod_sw, '54'[lrx],   w_led, (Dird, 0, +45 * lrs), Cu_layers[lrx^1]),
-            (mod_cap, via_cap_gnd[idx], mod_sw, '54'[lrx^1], w_led, (Dird, 0, -45 * lrs), Cu_layers[lrx]),
+            (mod_cap, via_cap_vcc[idx], mod_sw, '54'[lrx],   w_led, (Dird, 0, +35 * lrs), Cu_layers[lrx^1]),
+            (mod_cap, via_cap_gnd[idx], mod_sw, '54'[lrx^1], w_led, (Dird, 0, -35 * lrs), Cu_layers[lrx]),
             # led pad <-> sw pins
-            (mod_led, '26'[lrx],   mod_sw, '54'[lrx^1], w_led, (Dird, 0, -75), Cu_layers[lrx]),
-            (mod_led, '48'[lrx^1], mod_sw, '54'[lrx],   w_led, (Dird, 0, -75), Cu_layers[lrx^1]),
+            (mod_led, '26'[lrx],   mod_sw, '54'[lrx^1], w_led, (Dird, 0, 90), Cu_layers[lrx]),
+            (mod_led, '48'[lrx^1], mod_sw, '54'[lrx],   w_led, (Dird, 0, 90), Cu_layers[lrx^1]),
             # led dat via <-> dat connect vias
             (mod_led, [via_led_in[idx], via_led_out[idx]][lrx],   mod_led, via_led_left[idx], w_dat, (Dird, 110, ([(0, 0)], 0)), 'F.Cu'),
             (mod_led, [via_led_in[idx], via_led_out[idx]][lrx^1], mod_led, via_led_rght[idx], w_dat, (Dird,  70, ([(-90 * lrs, dy_via_dat)], 0)), 'B.Cu'),
@@ -1980,7 +1980,7 @@ def main():
             kad.wire_mods( [(mod_sw, '2', mod_sw, '3', 0.8, (Strt))])
 
             ### LED
-            # 4.93
+            # original scale was 4.93
             pos = vec2.scale( 4.7, vec2.rotate( - angle - 90 ), sw_pos )
             kad.set_mod_pos_angle( 'L' + name, pos, angle + (180 if isL2R else 0))
 

@@ -12,7 +12,7 @@
     (effects (font (size 1 1) (thickness 0.15)))
     (tstamp 362cca7f-8dca-4233-b887-d7436da0c387)
   )
-  (fp_text user "${REFERENCE}" (at 0 -1.85) (layer "B.Fab")
+  (fp_text user "${REFERENCE}" (at 0 -1.85) (layer "B.SilkS")
     (effects (font (size 1 1) (thickness 0.15)) (justify mirror))
     (tstamp c1cd63bf-3c1f-4628-87b7-0c23047cf477)
   )
