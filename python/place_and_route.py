@@ -7,10 +7,10 @@ import re
 from enum import Enum
 
 ##
-sys.dont_write_bytecode = True
-root_dir = os.path.join( os.path.expanduser( '~' ), 'repos/Mozza62/python' )
-if not root_dir in sys.path:
-    sys.path.append( root_dir )
+# sys.dont_write_bytecode = True
+# root_dir = os.path.join( os.path.expanduser( '~' ), 'repos/Mozza62/python' )
+# if not root_dir in sys.path:
+#     sys.path.append( root_dir )
 ##
 import kad
 import pnt
@@ -772,10 +772,12 @@ def place_mods( board ):
                 (f'C2', (-8, 0), 90),
             ] ),
         ] )
+
     # RotEnc diode
     if board in [BDC]:
         pos, angle = kad.get_mod_pos_angle( 'RE1' )
         kad.move_mods( pos, angle + 90, [('D45', (0, 11), 0)] )
+
     # Debounce RRCs
     if board in [BDC]:
         # Col lines
@@ -943,8 +945,7 @@ def place_mods( board ):
                         corners.append( [(pos, deg + 90), Linear, [0]] )
                     kad.draw_closed_corners( corners, 'F.Fab', 0.1 )
 
-### Wire mods
-def wire_mods( board ):
+def wire_mods_diode():
     GND = pcb.FindNet( 'GND' )
     Cu_layers = ['F.Cu', 'B.Cu']
 
@@ -956,29 +957,79 @@ def wire_mods( board ):
     w_led        = 0.7 # LED power
     w_dat        = 0.5 # LED dat
 
-    ### Diode column
-    # for cidx in range( 1, 9 ):
-    #     col = str( cidx )
-    #     for ridx in range( 1, 4 ):
-    #         # from (top)
-    #         top = col + str( ridx )
-    #         if top not in keys.keys() or top == SW_RJ45:
-    #             continue
-    #         # to (bottom)
-    #         btm = col + str( ridx + 1 )
-    #         if btm not in keys.keys() or btm == SW_RotEnc:
-    #             continue
-    #         # route
-    #         prm_dio = (ZgZg, 0, 60, 1)
-    #         # print( idx, nidx )
-    #         dio_T = 'D' + top
-    #         dio_B = 'D' + btm
-    #         if prm_dio is not None:
-    #             kad.wire_mods( [(dio_T, '2', dio_B, '1', w_col, prm_dio, 'B.Cu')] )
+    # via
+    via_dio = {}
+    via_dio_conn = {}
 
-    ###############
-    ### RGB LED ###
-    ###############
+    # wire to SW
+    for idx in keys.keys():
+        row = idx[1]
+        mod_sw = 'SW' + idx
+        mod_dio = 'D' + idx
+        if not is_SW( idx ):
+            continue
+        via_dio[idx] = kad.add_via_relative( mod_dio, '1', (-1.8, 0), VIA_Size[1] )
+        via_dio_conn[idx] = kad.add_via_relative( mod_dio, '1', (0, 2.4), VIA_Size[1] )
+        for layer in Cu_layers:
+            kad.wire_mods( [
+                (mod_dio, '2', mod_sw, '3' if is_Thumb_key(idx) else '3', w_col, (Dird, 0, 0), layer),
+                (mod_dio, '1', None, via_dio[idx], w_col, (Strt), layer),
+            ] )
+        #
+        prm_dios = []
+        if row == '1' or idx == '13':
+            prm_dios.append( (Dird, 90, 0) )
+        else:
+            prm_dios.append( (Dird, 90, 0, 1) )
+            prm_dios.append( (Dird, 90, ([(180, 5)], 0), 1) )
+        for prm_dio in prm_dios:
+            kad.wire_mods( [(mod_dio, via_dio[idx], mod_dio, via_dio_conn[idx], w_col, prm_dio, 'B.Cu')] )
+    # wire to RotEnc
+
+    # col lines
+    for cidx in range( 1, 9 ):
+        for ridx in range( 1, 4 ):
+            # from (top)
+            top = f'{cidx}{ridx}'
+            if top not in keys.keys() or not is_SW( top ):
+                continue
+            # to (bottom)
+            btm = f'{cidx}{ridx+1}'
+            if btm not in keys.keys() or not is_SW( btm ):
+                continue
+            # route
+            if btm in ['84']:
+                prm_dio = (ZgZg, 0, 70)
+            else:
+                prm_dio = (ZgZg, 0, 30)
+            # print( idx, nidx )
+            dio_T = 'D' + top
+            dio_B = 'D' + btm
+            if prm_dio is not None:
+                kad.wire_mods( [
+                    (dio_T, via_dio_conn[top], dio_B, via_dio_conn[btm], w_col, prm_dio, 'B.Cu'),
+                    ] )
+        # to debounce resister
+        idx = f'{cidx}4'
+        if idx == '74':
+            idx = '73'
+        mod_dio = f'D{idx}'
+        mod_r = f'R{cidx}2'
+        if True:#idx in via_dio_conn:
+            kad.wire_mods( [
+                (mod_dio, via_dio_conn[idx], mod_r, '1', w_col, (Dird, 0, 90), 'B.Cu'),
+                ] )
+
+    for via in via_dio_conn.values():
+        pcb.Delete( via )
+
+def wire_mods_led():
+    GND = pcb.FindNet( 'GND' )
+    Cu_layers = ['F.Cu', 'B.Cu']
+
+    w_row, r_row = 0.8, 2.3 # SW row
+    w_led        = 0.7 # LED power
+    w_dat        = 0.5 # LED dat
 
     dy_via_1st = 0.15
     dy_via_2nd = 0.1
@@ -1049,8 +1100,8 @@ def wire_mods( board ):
             (mod_sw, via_led_pwr_1st[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx],   w_led, (Dird, ([pwr_offset], 0), 90), 'B.Cu'),
             (mod_sw, via_led_pwr_2nd[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx^1], w_led, (Strt), 'F.Cu'),
             # cap pwr via pad <-> led pad
-            (mod_cap, via_cap_vcc[idx], mod_led, '48'[lrx],   w_led, (ZgZg, 90, 45, kad.inf), Cu_layers[lrx]),
-            (mod_cap, via_cap_gnd[idx], mod_led, '26'[lrx^1], w_led, (ZgZg, 90, 45, kad.inf), Cu_layers[lrx^1]),
+            (mod_cap, via_cap_vcc[idx], mod_led, '48'[lrx],   w_led, (ZgZg, 90, 45), Cu_layers[lrx]),
+            (mod_cap, via_cap_gnd[idx], mod_led, '26'[lrx^1], w_led, (ZgZg, 90, 45), Cu_layers[lrx^1]),
             # cap pwr via <-> sw pins
             (mod_cap, via_cap_vcc[idx], mod_sw, '54'[lrx],   w_led, (Dird, 0, +35 * lrs), Cu_layers[lrx^1]),
             (mod_cap, via_cap_gnd[idx], mod_sw, '54'[lrx^1], w_led, (Dird, 0, -35 * lrs), Cu_layers[lrx]),
@@ -1122,7 +1173,8 @@ def wire_mods( board ):
         pcb.Delete( via )
     for via in via_led_left.values():
         pcb.Delete( via )
-    return
+
+def wire_mods_old( board ):
     if False:
         # thumb column (Row5)
         if isThumb:
@@ -1861,8 +1913,11 @@ def wire_mods( board ):
 
 ### Ref
 def setRefs( board ):
+    # GraphicalItems
     for mod in pcb.GetFootprints():
         ref = mod.Reference()
+        val = mod.Value()
+        val.SetVisible( False )
         # ref.SetVisible( False )
     return
     if board == BDC:
@@ -1952,9 +2007,9 @@ def main():
         sw_pos = (px, -py)
         sw_pos_angles.append( (sw_pos, 180 - angle) )
         # col = int( name[0] )
-        row = int( name[1] )
+        # row = int( name[1] )
         isL2R = is_L2R_key( name )
-        isThumbRow = is_Thumb_key( name )
+        isThumb = is_Thumb_key( name )
         # SW & LED & Diode
         if board in [BDC]:
             # RJ45
@@ -1989,15 +2044,11 @@ def main():
             kad.set_mod_pos_angle( 'C' + name, pos, angle + (0 if isL2R else 180))
 
             ### Diode
-            diode_sign = -1 if isThumbRow else +1
+            diode_sign = -1 if isThumb else +1
             Dx = -5.4 * diode_sign
             Dy = 0
             pos = vec2.mult( mat2.rotate( angle ), (Dx, Dy), sw_pos )
             kad.set_mod_pos_angle( 'D' + name, pos, angle - 90 )
-            # wire to SW
-            mod_d = 'D' + name
-            for layer in ('F.Cu', 'B.Cu'):
-                kad.wire_mods( [(mod_d, '2', mod_sw, '2' if isThumbRow else '3', 0.5, (Dird, 0, 0), layer)])
             ### GND Vias
             # if name[0] not in ['1', '8', '9'] and name[1] not in ['1']:
             #     if board != BDC or name[0] != '7':
@@ -2013,7 +2064,8 @@ def main():
     # place & route
     place_mods( board )
     if board in [BDC]:
-        wire_mods( board )
+        wire_mods_diode()
+        wire_mods_led()
 
     setRefs( board )
     drawEdgeCuts( board )

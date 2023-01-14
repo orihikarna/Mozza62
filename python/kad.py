@@ -364,7 +364,7 @@ def __wire_mod_sub( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, 
         add_wire_offsets_directed( prms2_a, prms2_b, net, layer, width, radius, arc_ctr_mid )
     elif prms[0] == ZigZag:
         dangle, delta_angle = prms[1:3]
-        radius = prms[3] if len( prms ) > 3 else 0
+        radius = prms[3] if len( prms ) > 3 else inf
         add_wire_zigzag( pos_a, pos_b, angle_a + dangle * sign_a, delta_angle, net, layer, width, radius )
 
 def wire_mods( tracks ):
