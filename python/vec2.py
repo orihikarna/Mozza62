@@ -153,6 +153,7 @@ def make_arc_corner( corner, auvec, buvec, max_side_len, radius, num_divs, debug
     else:
         arc_theta = -(180 + theta)
     arc_center = scale( arc_radius, aperp, afoot )
+    # kad.add_arc( arc_center, add( arc_center, (0.6, 0) ), 360, 'F.Fab', 0.1 )
 
     pnts = [afoot]
     for i in range( 1, num_divs ):
