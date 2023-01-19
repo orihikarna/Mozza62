@@ -289,6 +289,7 @@ def add_wire_offsets_directed( prms_a, prms_b, net, layer, width, radius, arc_ct
                 #
                 off_len += arc_rad * math.tan( ctr_angle / 180 * math.pi )
                 if True:# debug
+                # if vec2.distance( arc_ctr, (183, 133) ) < 10:# debug
                     # arc_rad = 0
                     # print( f'{arc_rad = :.2f}, {off_len = :.2f}' )
                     # print( f'{ctr_angle = :.2f}, {off_angle = :.1f}, {next_off_angle = :.1f}' )

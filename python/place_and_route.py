@@ -782,6 +782,14 @@ def add_zone( net_name, layer_name, rect, zones ):
     zones.append( zone )
     #polys.append( poly )
 
+
+GND = pcb.FindNet( 'GND' )
+VCC = pcb.FindNet( '3V3' )
+
+
+# debounce row
+via_row_vcc = {}# col: str
+
 ### Set mod positios
 def place_mods( board ):
     # I/O expanders
@@ -845,6 +853,16 @@ def place_mods( board ):
                         (f'JP{"FB"[side]}{4 * idx + 3}', (0, 2.54 * (2 * idx - 1) * [-1, +1][side]), 0),
                     ] ),
                 ] )
+
+    # row vcc vias
+    for cidx in range( 1, 9 ):
+        idx = f'{cidx}4'
+        dx = 2.5
+        if idx not in keys.keys():
+            continue
+        pos_via = kad.calc_pos_from_pad( 'SW' + idx, '1', (0, -1.8) )
+        via_row_vcc[cidx] = kad.add_via( pos_via, VCC, VIA_Size[1] )
+
     return
     if board == BDR:
         kad.move_mods( (0, 0), 0, [
@@ -900,11 +918,7 @@ def place_mods( board ):
 
 Cu_layers = ['F.Cu', 'B.Cu']
 
-via_row_vcc = {} # col: str
-
 def wire_mods_debounce():
-    GND = pcb.FindNet( 'GND' )
-
     w_exp, r_exp = 0.44, 0.4
     w_pwr, r_pwr = 0.75, 1
     w_dbn, r_dbn = 0.6, 1
@@ -917,17 +931,36 @@ def wire_mods_debounce():
         mod_r2 = f'R{cidx}2'
         for layer in Cu_layers:
             kad.wire_mods( [
-                (mod_r1, '1', mod_r2, '1', w_col, (Strt), layer),
-                (mod_r1, '2', mod_c, '2', w_col, (Strt), layer),
+                # (mod_r1, '1', mod_r2, '1', w_col, (Strt), layer),
+                # (mod_r1, '2', mod_c, '2', w_col, (Strt), layer),
             ] )
-    
+
 
 def wire_mods_col_diode():
+    w_row = 0.8 # SW row
     w_col, r_col = 0.6, 1
 
     # via
     via_dio = {}
     via_dio_col = {}
+    via_row_cap = {}
+    via_row_dat = {}
+
+    # resister and cap vias
+    for cidx in range( 1, 9 ):
+        # csrc = cidx if cidx != 7 else 6
+        mod_c = f'CD{cidx}'
+        mod_r1 = f'R{cidx}1'
+        mod_r2 = f'R{cidx}2'
+        via_row_cap[cidx] = kad.add_via_relative( mod_c, '1', (-1, -1.5), VIA_Size[1] )
+        via_row_dat[cidx] = kad.add_via_relative( mod_r2, '1', (0, +1.5), VIA_Size[1] )
+        for layer in Cu_layers:
+            kad.wire_mods( [
+                (mod_r1, '1', mod_r2, '1', w_col, (Strt), layer),
+                (mod_r1, '2', mod_c, '2', w_col, (Strt), layer),
+                (mod_r2, '1', mod_c, via_row_dat[cidx], w_col, (Dird, 90, 0), layer),
+                (mod_c, '1', mod_c, via_row_cap[cidx], w_col, (Dird, 90, 0), layer),
+                ] )
 
     # place vias and wire them
     for idx in keys.keys():
@@ -983,14 +1016,13 @@ def wire_mods_col_diode():
             prm = (Dird, 0, 90)
         mod_dio = f'D{idx}'
         mod_r = f'R{cidx}2'
-        kad.wire_mods( [(mod_dio, via_dio_col[idx], mod_r, '1', w_col, prm, 'B.Cu')] )
+        kad.wire_mods( [(mod_dio, via_dio_col[idx], mod_r, via_row_dat[cidx], w_col, prm, 'B.Cu')] )
 
     for via in via_dio_col.values():
         pcb.Delete( via )
 
 def wire_mods_row_led():
     # GND = pcb.FindNet( 'GND' )
-    VCC = pcb.FindNet( '3V3' )
 
     w_row = 0.8 # SW row
     w_led = 0.7 # LED power
@@ -1082,14 +1114,6 @@ def wire_mods_row_led():
             (mod_led, [via_led_in[idx], via_led_out[idx]][lrx^1], mod_led, via_led_rght[idx], w_dat, (Dird,  70, ([(-90 * lrs, dy_via_dat)], 0)), 'B.Cu'),
         ] )
 
-    # row vcc vias
-    for cidx in range( 1, 9 ):
-        idx = f'{cidx}4'
-        if idx not in keys.keys():
-            continue
-        pos_via = kad.calc_pos_from_pad( 'SW' + idx, '1', (0, -1.8) )
-        via_row_vcc[cidx] = kad.add_via( pos_via, VCC, VIA_Size[1] )
-
     # Row horizontal lines (ROW1-4, LED Pwr)
     row_angle = 90 + 4
     for ridx in range( 1, 5 ):
@@ -1128,8 +1152,8 @@ def wire_mods_row_led():
             else:
                 ### sw row
                 sangle = row_angle - (0 if cidx in [1, 5] else angle_M_Comm)
-                prm_sw = (Dird, 0, ([(0, ctr_vcc_left[rght])], sangle), kad.inf, ctr_vcc_rght[left])
-                prm_row_vcc = (Dird, 0, ([(0, ctr_vcc_left[rght])], sangle), kad.inf, ctr_vcc_rght[left])
+                prm_sw = (Dird, 0, ([(0, ctr_vcc_left[rght])], sangle + 180), kad.inf, ctr_vcc_rght[left])
+                prm_row_vcc = (Dird, 0, ([(0, ctr_vcc_left[rght])], sangle + 180), kad.inf, ctr_vcc_rght[left])
                 ### led
                 # wiring corner
                 lcnr = (180, ctr_led_rght[left])
