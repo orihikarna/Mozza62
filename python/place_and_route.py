@@ -815,9 +815,9 @@ def place_mods( board ):
             mod_sw = f'SW{col}4'
             if col == '7':
                 mod_sw = 'SW64'
-                dx, dy = 11, -11.0
+                dx, dy = 10.5, -9.0
             else:
-                dx, dy = 11, 4.0
+                dx, dy = 10.5, 4.0
             pos, angle = kad.get_mod_pos_angle( mod_sw )
             kad.move_mods( pos, angle + 90, [
                 (None, (dx, dy), 0, [
@@ -860,7 +860,7 @@ def place_mods( board ):
         dx = 2.5
         if idx not in keys.keys():
             continue
-        pos_via = kad.calc_pos_from_pad( 'SW' + idx, '1', (0, -1.8) )
+        pos_via = kad.calc_pos_from_pad( 'SW' + idx, '1', (-2, -1.8) )
         via_row_vcc[cidx] = kad.add_via( pos_via, VCC, VIA_Size[1] )
 
     return
@@ -938,7 +938,7 @@ def wire_mods_debounce():
 
 def wire_mods_col_diode():
     w_row = 0.8 # SW row
-    w_col, r_col = 0.6, 1
+    w_col, r_col = 0.6, 0.8
 
     # via
     via_dio = {}
@@ -948,21 +948,33 @@ def wire_mods_col_diode():
 
     # resister and cap vias
     for cidx in range( 1, 9 ):
-        # csrc = cidx if cidx != 7 else 6
         mod_c = f'CD{cidx}'
         mod_r1 = f'R{cidx}1'
         mod_r2 = f'R{cidx}2'
-        via_row_cap[cidx] = kad.add_via_relative( mod_c, '1', (-1, -1.5), VIA_Size[1] )
+        via_row_cap[cidx] = kad.add_via_relative( mod_c, '1', (0, -1.5), VIA_Size[1] )
         via_row_dat[cidx] = kad.add_via_relative( mod_r2, '1', (0, +1.5), VIA_Size[1] )
         for layer in Cu_layers:
             kad.wire_mods( [
+                # debounce resisters and cap
                 (mod_r1, '1', mod_r2, '1', w_col, (Strt), layer),
                 (mod_r1, '2', mod_c, '2', w_col, (Strt), layer),
+                # res & cap pads and via
                 (mod_r2, '1', mod_c, via_row_dat[cidx], w_col, (Dird, 90, 0), layer),
                 (mod_c, '1', mod_c, via_row_cap[cidx], w_col, (Dird, 90, 0), layer),
-                ] )
+            ] )
+        # vcc
+        if cidx == 7:
+            csrc = 6
+            d = -13
+        else:
+            csrc = cidx
+            d = 6
+        kad.wire_mods( [
+            (mod_c, via_row_cap[cidx], mod_c, via_row_vcc[csrc], w_row, (Dird, 0, 90, r_col), 'F.Cu'),
+            (mod_c, via_row_cap[cidx], mod_c, via_row_vcc[csrc], w_row, (Dird, 0, ([(-90, d)], 90), r_col), 'F.Cu'),
+        ] )
 
-    # place vias and wire them
+    # diode vias and wire them
     for idx in keys.keys():
         if not is_SW( idx ):
             continue
@@ -982,8 +994,8 @@ def wire_mods_col_diode():
         if is_top_of_col( idx ):
             prm_dios.append( (Dird, 90, 0) )
         else:
-            prm_dios.append( (Dird, 90, 0, 1) )
-            prm_dios.append( (Dird, 90, ([(180, 5)], 0), 1) )
+            prm_dios.append( (Dird, 90, 0, r_col) )
+            prm_dios.append( (Dird, 90, ([(180, 5)], 0), r_col) )
         for prm_dio in prm_dios:
             kad.wire_mods( [(mod_dio, via_dio[idx], mod_dio, via_dio_col[idx], w_col, prm_dio, 'B.Cu')] )
     # wire to RotEnc
@@ -1011,7 +1023,7 @@ def wire_mods_col_diode():
         # to debounce resister
         idx = f'{cidx}{get_btm_row_idx( cidx )}'
         if cidx == 7:
-            prm = (Dird, 0, 0)
+            prm = (Dird, 0, ([(180, 3), (135, 3)], 0))
         else:
             prm = (Dird, 0, 90)
         mod_dio = f'D{idx}'
