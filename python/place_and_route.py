@@ -204,11 +204,11 @@ def is_SW( idx: str ):
 
 def is_L2R_key( idx: str ):
     row = idx[1]
-    return row in '13' or idx == '25'
+    return row in '13'
 
 def is_Thumb_key( idx: str ):
     row = idx[1]
-    return row in ['5']
+    return row in '5'
 
 def get_top_row_idx( cidx: int ):
     if cidx == 1:
@@ -1199,6 +1199,44 @@ def wire_mods_row_led():
                 kad.wire_mods( [(sw_L, via_led_pwr_1st[left], sw_R, via_led_pwr_1st[rght], w_led, prm_led_pwr_1st, 'F.Cu')] )
             if prm_led_pwr_2nd is not None:
                 kad.wire_mods( [(sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_2nd[rght], w_led, prm_led_pwr_2nd, 'F.Cu')] )
+
+    # between rows at right ends
+    for left, rght in [('71', '82'), ('83', '84')]:
+        sw_L, sw_R = f'SW{left}', f'SW{rght}'
+        lcnr = kad.calc_pos_from_pad( sw_L, '4', (-0.4, +0.6))
+        if left == '71':
+            rcnr = kad.calc_pos_from_pad( sw_R, '4', (2.4, 5.4))
+            prm_led_dat = (Dird, ([dat_offset, (180, 3)], 120), ([dat_offset], 90), 2)
+            prm_led_pwr_12 = (Dird, ([pwr_offset, (180, lcnr)], 120), ([(180, rcnr)], -90), kad.inf, rcnr)
+            prm_led_pwr_21 = (Dird, ([(180, lcnr)], 120), ([pwr_offset, (180, rcnr)], -90), kad.inf, rcnr)
+        elif left == '83':
+            rcnr = kad.calc_pos_from_pad( sw_L, '2', (-0.4, -2.8))
+            prm_led_dat = (Dird, ([dat_offset, (180, 3.2), (90, 18)], 0), ([dat_offset], 0), 2)
+            prm_led_pwr_12 = (Dird, ([pwr_offset, (180, lcnr), (90, rcnr)], 0), 180, 2)
+            prm_led_pwr_21 = (Dird, ([(180, lcnr), (90, rcnr)], 0), ([pwr_offset], 180), 2)
+        else:
+            assert False
+        kad.wire_mods( [
+            (sw_L, via_led_rght[left], sw_R, via_led_rght[rght], w_dat, prm_led_dat, 'B.Cu'),
+            (sw_L, via_led_pwr_1st[left], sw_R, via_led_pwr_2nd[rght], w_led, prm_led_pwr_12, 'F.Cu'),
+            (sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_1st[rght], w_led, prm_led_pwr_21, 'F.Cu'),
+        ] )
+
+    # left, rght = '25', '35'
+    # sw_L, sw_R = f'SW{left}', f'SW{rght}'
+    # lcnr = kad.calc_pos_from_pad( sw_L, '4', (-0.4, +0.6))
+    # rcnr = kad.calc_pos_from_pad( sw_L, '2', (-0.4, -4.8))
+    # prm_led_dat = (Dird, ([dat_offset, (180, 3.2), (90, 18)], 0), ([dat_offset], 0), 2)
+    # prm_led_pwr_12 = (Dird, ([pwr_offset, (180, lcnr), (90, rcnr)], 0), 180, 2)
+    # prm_led_pwr_21 = (Dird, ([(180, lcnr), (90, rcnr)], 0), ([pwr_offset], 180), 2)
+    # kad.wire_mods( [
+    #     # (sw_L, via_led_rght[left], sw_R, via_led_rght[rght], w_dat, prm_led_dat, 'B.Cu'),
+    #     (sw_L, via_led_pwr_1st[left], sw_R, via_led_pwr_2nd[rght], w_led, prm_led_pwr_12, 'F.Cu'),
+    #     (sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_1st[rght], w_led, prm_led_pwr_21, 'F.Cu'),
+    # ] )
+
+
+
     # remove temporary vias
     for via in via_led_pwr_2nd.values():
         pcb.Delete( via )
@@ -1293,15 +1331,11 @@ def main():
     ###
     ### Set key positios
     ###
-    GND = pcb.FindNet( 'GND' )
     sw_pos_angles = []
     for name in sorted( keys.keys() ):
-        key = keys[name]
-        px, py, w, h, angle = key
+        px, py, w, h, angle = keys[name]
         sw_pos = (px, -py)
         sw_pos_angles.append( (sw_pos, 180 - angle) )
-        # col = int( name[0] )
-        # row = int( name[1] )
         isL2R = is_L2R_key( name )
         isThumb = is_Thumb_key( name )
         # SW & LED & Diode
@@ -1339,9 +1373,7 @@ def main():
 
             ### Diode
             diode_sign = -1 if isThumb else +1
-            Dx = -5.4 * diode_sign
-            Dy = 0
-            pos = vec2.mult( mat2.rotate( angle ), (Dx, Dy), sw_pos )
+            pos = vec2.mult( mat2.rotate( angle ), (-5.4 * diode_sign, 0), sw_pos )
             kad.set_mod_pos_angle( 'D' + name, pos, angle - 90 )
             ### GND Vias
             # if name[0] not in ['1', '8', '9'] and name[1] not in ['1']:
