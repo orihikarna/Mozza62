@@ -210,6 +210,9 @@ def is_Thumb_key( idx: str ):
     row = idx[1]
     return row in '5'
 
+def get_diode_side( idx: str ):
+    return -1 if idx[0] in '123' or is_Thumb_key( idx ) else +1
+
 def get_top_row_idx( cidx: int ):
     if cidx == 1:
         return 3
@@ -821,18 +824,20 @@ def place_mods( board ):
     if board in [BDC]:
         # Col lines
         for col in '12345678':
-            mod_sw = f'SW{col}4'
+            idx = f'{col}4'
+            lrs = get_diode_side( idx )
+            mod_sw = f'SW{idx}'
             if col == '7':
                 mod_sw = 'SW64'
                 dx, dy = 10.5, -9.0
             else:
-                dx, dy = 10.5, 4.0
+                dx, dy = 10.5, 2 * lrs
             pos, angle = kad.get_mod_pos_angle( mod_sw )
             kad.move_mods( pos, angle + 90, [
                 (None, (dx, dy), 0, [
-                    (f'CD{col}', (0, -1.5), 0),
+                    (f'CD{col}', (0, -1.5 * lrs), 0),
                     (f'R{col}1', (0,  0), 0),
-                    (f'R{col}2', (0, +1.5), 0),
+                    (f'R{col}2', (0, +1.5 * lrs), 0),
                 ] ),
             ] )
         # RotEnc
@@ -845,16 +850,6 @@ def place_mods( board ):
                     (f'R{pin}2', (0, +1.5), 0),
                 ] ),
             ] )
-
-    # row gnd and vcc vias
-    if board in [BDC]:
-        for cidx in range( 1, 9 ):
-            mod_cd = f'CD{cidx}'
-            mod_r2 = f'R{cidx}2'
-            via_dbnc_vcc[cidx] = kad.add_via_relative( mod_cd, '1', (-1.6, 0), VIA_Size[1] )
-            via_dbnc_row[cidx] = kad.add_via_relative( mod_cd, '2', (0, -1.5), VIA_Size[1] )
-            via_dbnc_col[cidx] = kad.add_via_relative( mod_r2, '1', (0, +1.5), VIA_Size[1] )
-            via_dbnc_gnd[cidx] = kad.add_via_relative( mod_r2, '2', (+1.5, 0), VIA_Size[1] )
 
     # RJ45 connector
     if board in [BDC]:
@@ -935,11 +930,20 @@ def wire_mods_debounce():
     w_row, r_row = 0.8, 2.3 # SW row
     w_col, r_col = 0.6, 0.8
 
-    # resister and cap vias
     for cidx in range( 1, 9 ):
         mod_cd = f'CD{cidx}'
         mod_r1 = f'R{cidx}1'
         mod_r2 = f'R{cidx}2'
+
+        lrs = get_diode_side( f'{cidx}4' )
+
+        # row gnd and vcc vias
+        via_dbnc_vcc[cidx] = kad.add_via_relative( mod_cd, '1', (-1.6, 0), VIA_Size[1] )
+        via_dbnc_row[cidx] = kad.add_via_relative( mod_cd, '2', (0, -1.5 * lrs), VIA_Size[1] )
+        via_dbnc_col[cidx] = kad.add_via_relative( mod_r2, '1', (0, +1.5 * lrs), VIA_Size[1] )
+        via_dbnc_gnd[cidx] = kad.add_via_relative( mod_r2, '2', (+1.5, 0), VIA_Size[1] )
+
+        # resister and cap vias
         for layer in Cu_layers:
             kad.wire_mods( [
                 # debounce resisters and cap
@@ -953,7 +957,6 @@ def wire_mods_debounce():
             ] )
 
 def wire_mods_col_diode():
-    w_row = 0.8 # SW row
     w_col, r_col = 0.6, 0.8
 
     # via
@@ -964,15 +967,16 @@ def wire_mods_col_diode():
     for idx in keys.keys():
         if not is_SW( idx ):
             continue
+        lrs = get_diode_side( idx )  
         mod_sw = 'SW' + idx
         mod_dio = 'D' + idx
         # vias
         via_dio[idx] = kad.add_via_relative( mod_dio, '1', (-1.8, 0), VIA_Size[1] )
-        via_dio_col[idx] = kad.add_via_relative( mod_dio, '1', (0, 2.4), VIA_Size[1] )
+        via_dio_col[idx] = kad.add_via_relative( mod_dio, '1', (0, 2.0 * lrs), VIA_Size[1] )
         # wire to SW pad & diode via
         for layer in Cu_layers:
             kad.wire_mods( [
-                (mod_dio, '2', mod_sw, '3' if is_Thumb_key(idx) else '3', w_col, (Dird, 0, 0), layer),
+                (mod_dio, '2', mod_sw, '3' if lrs > 0 else '2', w_col, (Dird, 0, 0), layer),
                 (mod_dio, '1', None, via_dio[idx], w_col, (Strt), layer),
             ] )
         # wire from diode via to connection via
@@ -1060,7 +1064,9 @@ def wire_mods_row_led():
         lrs = [+1, -1][lrx] # L/R sign
 
         ### Making Vias
-        via_led_pwr_1st[idx] = kad.add_via_relative( mod_cap, '12'[lrx],   vec2.scale( lrs, (0.8625, -(0.05 + sep_led * 2 + dy_via_1st)) ), VIA_Size[1] )
+        col = idx[0]
+        dx = 0.8625 if col in '145' else -1.5
+        via_led_pwr_1st[idx] = kad.add_via_relative( mod_cap, '12'[lrx],   vec2.scale( lrs, (dx, -(0.05 + sep_led * 2 + dy_via_1st)) ), VIA_Size[1] )
         via_led_pwr_2nd[idx] = kad.add_via_relative( mod_cap, '12'[lrx^1], vec2.scale( lrs, (1.5, -(0.05 + sep_led)) ), VIA_Size[1] )
         via_cap_vcc[idx] = kad.add_via_relative( mod_cap, '1', (-1.5, dy_via_2nd * lrs), VIA_Size[1] )
         via_cap_gnd[idx] = kad.add_via_relative( mod_cap, '2', (+1.5, dy_via_2nd * lrs), VIA_Size[1] )
@@ -1201,15 +1207,23 @@ def wire_mods_led_ends_thumbs():
             (sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_1st[rght], w_led, prm_led_pwr_21, 'F.Cu'),
         ] )
 
+    # between rows at left ends
+    for left, rght in [('22', '13')]:
+        sw_L, sw_R = f'SW{left}', f'SW{rght}'
+        # lcnr = kad.calc_pos_from_pad( sw_L, '4', (-0.4, +0.6))
+        # rcnr = kad.calc_pos_from_pad( sw_R, '4', (2.4, 5.4))
+        prm_led_dat = (Dird, ([dat_offset], 0), ([dat_offset, (-90, 3.6), (180, 11.8)], 90), 2)
+        prm_led_pwr_12 = (Dird, ([pwr_offset], 0), ([(0, 4), (-90, 2.4), (180, 8.0)], 90), 1)
+        prm_led_pwr_21 = (Dird, 0, ([pwr_offset, (180, 7.6)], 90), 1)
+        kad.wire_mods( [
+            (sw_L, via_led_left[left], sw_R, via_led_left[rght], w_dat, prm_led_dat, 'B.Cu'),
+            (sw_L, via_led_pwr_1st[left], sw_R, via_led_pwr_2nd[rght], w_led, prm_led_pwr_12, 'F.Cu'),
+            (sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_1st[rght], w_led, prm_led_pwr_21, 'F.Cu'),
+        ] )
+
     # thumbs
     for left, rght in [('15', '25'), ('25', '35')]:
         sw_L, sw_R = f'SW{left}', f'SW{rght}'
-        if left == '15':
-            prm_led_dat = (Dird, ([dat_offset, (180, 3)], 120), ([dat_offset], 90), 2)
-        elif left == '25':
-            prm_led_dat = (Dird, ([dat_offset, (180, 3.2), (90, 18)], 0), ([dat_offset], 0), 2)
-        else:
-            assert False
         prm_led_dat = (Dird, ([(0, 2.4)], 90), ([dat_offset, (-90, 4)], 0), 2)
         prm_led_pwr_1st = (Dird, ([pwr_offset, (0, 8.5)], 90), ([pwr_offset], 0), r_led)
         prm_led_pwr_2nd = (Dird, ([(0, 11)], 90), 0, r_led)
@@ -1219,6 +1233,19 @@ def wire_mods_led_ends_thumbs():
             (sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_2nd[rght], w_led, prm_led_pwr_2nd, 'F.Cu'),
         ] )
 
+    # row4 --> thumb
+    for left, rght in [('14', '15')]:
+        sw_L, sw_R = f'SW{left}', f'SW{rght}'
+        lctr = kad.calc_pos_from_pad( 'SW14', '5', (+2, 0))
+        rctr = kad.calc_pos_from_pad( 'SW15', '4', (-8, 0))
+        prm_led_dat = (Dird, ([(0, lctr)], 60), ([dat_offset, (180, rctr)], 135), kad.inf, lctr)
+        prm_led_pwr_1st = (Dird, ([pwr_offset, (0, lctr)], 60), ([pwr_offset, (180, rctr)], 135), kad.inf, lctr)
+        prm_led_pwr_2nd = (Dird, ([(0, lctr)], 60), ([(180, rctr)], 135), kad.inf, lctr)
+        kad.wire_mods( [
+            (sw_L, via_led_left[left], sw_R, via_led_rght[rght], w_dat, prm_led_dat, 'F.Cu'),
+            (sw_L, via_led_pwr_1st[left], sw_R, via_led_pwr_1st[rght], w_led, prm_led_pwr_1st, 'F.Cu'),
+            (sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_2nd[rght], w_led, prm_led_pwr_2nd, 'F.Cu'),
+        ] )
 
     # left, rght = '25', '35'
     # sw_L, sw_R = f'SW{left}', f'SW{rght}'
@@ -1329,26 +1356,30 @@ def main():
     ### Set key positios
     ###
     sw_pos_angles = []
-    for name in sorted( keys.keys() ):
-        px, py, w, h, angle = keys[name]
+    for idx in sorted( keys.keys() ):
+        px, py, w, h, angle = keys[idx]
         sw_pos = (px, -py)
         sw_pos_angles.append( (sw_pos, 180 - angle) )
-        isL2R = is_L2R_key( name )
-        isThumb = is_Thumb_key( name )
+        isL2R = is_L2R_key( idx )
+        isThumb = is_Thumb_key( idx )
         # SW & LED & Diode
         if board in [BDC]:
             # RJ45
-            if name == SW_RJ45:
+            if idx == SW_RJ45:
                 kad.set_mod_pos_angle( 'J1', vec2.scale( 6.2, vec2.rotate( -angle - 90 ), sw_pos ), angle )
                 continue
             # RotaryEncoder
-            if name == SW_RotEnc:
+            if idx == SW_RotEnc:
                 kad.set_mod_pos_angle( 'RE1', sw_pos, angle + 180 )
                 continue
             # print( name )
 
+            mod_sw = f'SW{idx}'
+            mod_led = f'L{idx}'
+            mod_cap = f'C{idx}'
+            mod_dio = f'D{idx}'
+
             ### SW
-            mod_sw = 'SW' + name
             kad.set_mod_pos_angle( mod_sw, sw_pos, angle + 180 )
             # SW rectangle
             corners = []
@@ -1362,16 +1393,16 @@ def main():
             ### LED
             # original scale was 4.93
             pos = vec2.scale( 4.7, vec2.rotate( - angle - 90 ), sw_pos )
-            kad.set_mod_pos_angle( 'L' + name, pos, angle + (180 if isL2R else 0))
+            kad.set_mod_pos_angle( mod_led, pos, angle + (180 if isL2R else 0))
 
             ### LED Caps
             pos = vec2.mult( mat2.rotate( angle ), (0, -7.2), sw_pos )
-            kad.set_mod_pos_angle( 'C' + name, pos, angle + (0 if isL2R else 180))
+            kad.set_mod_pos_angle( mod_cap, pos, angle + (0 if isL2R else 180))
 
             ### Diode
-            diode_sign = -1 if isThumb else +1
+            diode_sign = get_diode_side( idx )
             pos = vec2.mult( mat2.rotate( angle ), (-5.4 * diode_sign, 0), sw_pos )
-            kad.set_mod_pos_angle( 'D' + name, pos, angle - 90 )
+            kad.set_mod_pos_angle( mod_dio, pos, angle - 90 )
             ### GND Vias
             # if name[0] not in ['1', '8', '9'] and name[1] not in ['1']:
             #     if board != BDC or name[0] != '7':
