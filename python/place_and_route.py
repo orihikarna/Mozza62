@@ -815,11 +815,6 @@ def place_mods( board ):
             ] ),
         ] )
 
-    # RotEnc diode
-    if board in [BDC]:
-        pos, angle = kad.get_mod_pos_angle( 'RE1' )
-        kad.move_mods( pos, angle + 90, [('D45', (0, 11), 0)] )
-
     # Debounce RRCs
     if board in [BDC]:
         # Col lines
@@ -840,16 +835,25 @@ def place_mods( board ):
                     (f'R{col}2', (0, +1.5 * lrs), 0),
                 ] ),
             ] )
-        # RotEnc
-        pos, angle = kad.get_mod_pos_angle( 'RE1' )
-        for i, pin in enumerate( 'AB' ):
-            kad.move_mods( pos, angle + 90, [
-                (None, (10, 10*i), 0, [
-                    (f'C{pin}1', (0, -1.5), 0),
-                    (f'R{pin}1', (0,  0), 0),
-                    (f'R{pin}2', (0, +1.5), 0),
-                ] ),
+
+    # RotEnc
+    if board in [BDC]:
+        _, angle = kad.get_mod_pos_angle( 'RE1' )
+        for i in range( 2 ):
+            sgn = [+1, -1][i]
+            cidx = [11, 12][i]
+            pos = kad.calc_pos_from_pad( 'RE1', 'AB'[i], (-5, -1 * sgn) )
+            kad.move_mods( pos, angle + 90 * sgn, [
+                (f'CD{cidx}', (0, -1.5 * sgn), 0),
+                (f'R{cidx}1', (0,  0), 0),
+                (f'R{cidx}2', (0, +1.5 * sgn), 0),
             ] )
+
+    # RotEnc diode
+    if board in [BDC]:
+        _, angle = kad.get_mod_pos_angle( 'RE1' )
+        pos = kad.calc_pos_from_pad( 'RE1', 'S2', (4, 3))
+        kad.move_mods( pos, angle, [('D45', (0, 0), 90)] )
 
     # RJ45 connector
     if board in [BDC]:
@@ -955,6 +959,41 @@ def wire_mods_debounce():
                 (mod_r2, '1', mod_cd, via_dbnc_col[cidx], w_col, (Dird, 90, 0), layer),
                 (mod_r2, '2', mod_r2, via_dbnc_gnd[cidx], w_col, (Dird, 90, 0), layer),
             ] )
+
+    mod_re = 'RE1'
+    for i in range( 2 ):
+        cidx = [11, 12][i]
+        mod_cd = f'CD{cidx}'
+        mod_r1 = f'R{cidx}1'
+        mod_r2 = f'R{cidx}2'
+
+        # lrs = get_diode_side( f'{cidx}4' )
+
+        # # row gnd and vcc vias
+        # via_dbnc_vcc[cidx] = kad.add_via_relative( mod_cd, '1', (-1.6, 0), VIA_Size[1] )
+        # via_dbnc_row[cidx] = kad.add_via_relative( mod_cd, '2', (0, -1.5 * lrs), VIA_Size[1] )
+        # via_dbnc_col[cidx] = kad.add_via_relative( mod_r2, '1', (0, +1.5 * lrs), VIA_Size[1] )
+        # via_dbnc_gnd[cidx] = kad.add_via_relative( mod_r2, '2', (+1.5, 0), VIA_Size[1] )
+
+        # resister and cap vias
+        for layer in Cu_layers:
+            kad.wire_mods( [
+                # debounce resisters and cap
+                (mod_r1, '1', mod_r2, '1', w_col, (Strt), layer),
+                (mod_r1, '2', mod_cd, '2', w_col, (Strt), layer),
+                # rotenc
+                (mod_re, 'C', mod_cd, '1', w_col, (Dird, 0, 0, r_col), layer),
+                (mod_re, 'AB'[i], mod_r2, '1', w_col, (Dird, 90, 90), layer),
+                # res & cap pads and via
+                # (mod_cd, '1', mod_cd, via_dbnc_vcc[cidx], w_col, (Dird, 90, 0), layer),
+                # (mod_cd, '2', mod_cd, via_dbnc_row[cidx], w_col, (Dird, 90, 0), layer),
+                # (mod_r2, '1', mod_cd, via_dbnc_col[cidx], w_col, (Dird, 90, 0), layer),
+                # (mod_r2, '2', mod_r2, via_dbnc_gnd[cidx], w_col, (Dird, 90, 0), layer),
+            ] )
+    for layer in Cu_layers:
+        kad.wire_mods( [
+            ('CD11', '1', 'CD12', '1', w_col, (Strt), layer),
+        ] )
 
 def wire_mods_col_diode():
     w_col, r_col = 0.6, 0.8
@@ -1181,7 +1220,7 @@ def wire_mods_row_led():
             if prm_led_pwr_2nd is not None:
                 kad.wire_mods( [(sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_2nd[rght], w_led, prm_led_pwr_2nd, 'F.Cu')] )
 
-def wire_mods_led_ends_thumbs():
+def wire_mods_led_ends():
     w_led, r_led = 0.7, 1.2 # LED power
     w_dat = 0.5 # LED dat
 
@@ -1221,18 +1260,6 @@ def wire_mods_led_ends_thumbs():
             (sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_1st[rght], w_led, prm_led_pwr_21, 'F.Cu'),
         ] )
 
-    # thumbs
-    for left, rght in [('15', '25'), ('25', '35')]:
-        sw_L, sw_R = f'SW{left}', f'SW{rght}'
-        prm_led_dat = (Dird, ([(0, 2.4)], 90), ([dat_offset, (-90, 4)], 0), 2)
-        prm_led_pwr_1st = (Dird, ([pwr_offset, (0, 8.5)], 90), ([pwr_offset], 0), r_led)
-        prm_led_pwr_2nd = (Dird, ([(0, 11)], 90), 0, r_led)
-        kad.wire_mods( [
-            (sw_L, via_led_left[left], sw_R, via_led_rght[rght], w_dat, prm_led_dat, 'F.Cu'),
-            (sw_L, via_led_pwr_1st[left], sw_R, via_led_pwr_1st[rght], w_led, prm_led_pwr_1st, 'B.Cu'),
-            (sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_2nd[rght], w_led, prm_led_pwr_2nd, 'F.Cu'),
-        ] )
-
     # row4 --> thumb
     for left, rght in [('14', '15')]:
         sw_L, sw_R = f'SW{left}', f'SW{rght}'
@@ -1246,6 +1273,30 @@ def wire_mods_led_ends_thumbs():
             (sw_L, via_led_pwr_1st[left], sw_R, via_led_pwr_1st[rght], w_led, prm_led_pwr_1st, 'F.Cu'),
             (sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_2nd[rght], w_led, prm_led_pwr_2nd, 'F.Cu'),
         ] )
+
+def wire_mods_row_led_thumb():
+    w_row, r_row = 0.8, 2 # SW row
+    w_led, r_led = 0.7, 1.2 # LED power
+    w_dat = 0.5 # LED dat
+
+    # thumbs
+    for left, rght in [('15', '25'), ('25', '35')]:
+        sw_L, sw_R = f'SW{left}', f'SW{rght}'
+        prm_row = (Dird, 0, ([(180, 7.4)], 90), r_led)
+        prm_led_dat = (Dird, ([(0, 2.4)], 90), ([dat_offset, (-90, 4)], 0), 2)
+        prm_led_pwr_1st = (Dird, ([pwr_offset, (0, 8.5)], 90), ([pwr_offset], 0), r_led)
+        prm_led_pwr_2nd = (Dird, ([(0, 11)], 90), 0, r_led)
+        kad.wire_mods( [
+            (sw_L, '1', sw_R, '1', w_row, prm_row, 'F.Cu'),
+            (sw_L, via_led_left[left], sw_R, via_led_rght[rght], w_dat, prm_led_dat, 'F.Cu'),
+            (sw_L, via_led_pwr_1st[left], sw_R, via_led_pwr_1st[rght], w_led, prm_led_pwr_1st, 'B.Cu'),
+            (sw_L, via_led_pwr_2nd[left], sw_R, via_led_pwr_2nd[rght], w_led, prm_led_pwr_2nd, 'F.Cu'),
+        ] )
+
+    # thumb and RotEnd
+    kad.wire_mods( [
+        ('SW35', '1', 'RE1', 'S1', w_row, (Dird, 0, 0, r_row), 'F.Cu')
+    ] )
 
     # left, rght = '25', '35'
     # sw_L, sw_R = f'SW{left}', f'SW{rght}'
@@ -1421,7 +1472,8 @@ def main():
         wire_mods_debounce()
         wire_mods_col_diode()
         wire_mods_row_led()
-        wire_mods_led_ends_thumbs()
+        wire_mods_led_ends()
+        wire_mods_row_led_thumb()
         remove_temporary_vias()
 
     setRefs( board )
