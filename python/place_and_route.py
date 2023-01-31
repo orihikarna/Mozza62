@@ -785,6 +785,7 @@ def add_zone( net_name, layer_name, rect, zones ):
     zones.append( zone )
     #polys.append( poly )
 
+Cu_layers = ['F.Cu', 'B.Cu']
 
 GND = pcb.FindNet( 'GND' )
 VCC = pcb.FindNet( '3V3' )
@@ -927,8 +928,6 @@ def place_mods( board ):
                         corners.append( [(pos, deg + 90), Linear, [0]] )
                     kad.draw_closed_corners( corners, 'F.Fab', 0.1 )
 
-Cu_layers = ['F.Cu', 'B.Cu']
-
 def wire_mods_debounce():
     w_exp, r_exp = 0.44, 0.4
     w_pwr, r_pwr = 0.75, 1
@@ -1064,15 +1063,14 @@ def wire_mods_col_diode():
     for via in via_dio_col.values():
         pcb.Delete( via )
 
-
-dy_via_1st = 0.15
-dy_via_2nd = 0.1
-dy_via_dat = 0.12
-
 def wire_mods_row_led():
     w_row = 0.8 # SW row
     w_led, r_led = 0.7, 1.2 # LED power
     w_dat = 0.5 # LED dat
+
+    dy_via_1st = 0.15
+    dy_via_2nd = 0.1
+    dy_via_dat = 0.12
 
     sep_led = 1.1
     sep_led_cnr = 1.4
@@ -1182,7 +1180,7 @@ def wire_mods_row_led():
                 lctr = ctr_vcc_rght[left]
                 rctr = ctr_vcc_left[rght]
                 prm_row = (Dird, 0, ([(0, rctr)], sangle + 180), kad.inf, lctr)
-                prm_gnd = (Dird, 0, ([(0, rctr)], sangle + 180), kad.inf, lctr)
+                prm_gnd = (Dird, 0, ([(0, 10 if cidx in [1] else 3)], sangle - 135), 3)
                 ### led
                 sangle = row_angle - (angle_Inner_Index if cidx in [1] else angle_M_Comm)
                 lctr = ctr_led_rght[left]
@@ -1290,13 +1288,13 @@ def wire_mods_row_led_thumb():
     # ] )
 
 def remove_temporary_vias():
-    for via in wire_via_led_pwr_1st.values():
+    for idx, via in wire_via_led_pwr_1st.items():
         pcb.Delete( via )
-    for via in wire_via_led_pwr_2nd.values():
+    for idx, via in wire_via_led_pwr_2nd.items():
         pcb.Delete( via )
-    for via in wire_via_led_left.values():
+    for idx, via in wire_via_led_left.items():
         pcb.Delete( via )
-    for via in wire_via_led_rght.values():
+    for idx, via in wire_via_led_rght.items():
         pcb.Delete( via )
 
 ### Ref
