@@ -855,8 +855,8 @@ def place_mods( board ):
     # RotEnc diode
     if board in [BDC]:
         _, angle = kad.get_mod_pos_angle( 'RE1' )
-        pos = kad.calc_pos_from_pad( 'RE1', 'S2', (4, 3))
-        kad.move_mods( pos, angle, [('D45', (0, 0), 90)] )
+        pos = kad.calc_pos_from_pad( 'RE1', 'S2', (5, 0))
+        kad.move_mods( pos, angle, [('D45', (0, 0), 180)] )
 
     # RJ45 connector
     if board in [BDC]:
@@ -874,22 +874,13 @@ def place_mods( board ):
                         (f'JP{"FB"[side]}{4 * idx + 3}', (0, 2.54 * (2 * idx - 1) * [-1, +1][side]), 0),
                     ] ),
                 ] )
-
+    # DL1
+    if board in [BDC]:
+        mod_sw = 'SW21'
+        _, angle = kad.get_mod_pos_angle( mod_sw )
+        pos = kad.calc_pos_from_pad( mod_sw, '5', (1, 4.05) )
+        kad.set_mod_pos_angle( 'DL1', pos, angle )
     return
-    if board == BDR:
-        kad.move_mods( (0, 0), 0, [
-            (None, (U1_x, U1_y), 0, [
-                # expander
-                ('U1', (0, 0), +90),
-                ('C1', (-1.27, 6.4), 180),
-                # LED R1
-                ('R1', (3.2, 6.4), 180),
-            ] ),
-            # Pin headers
-            (None, (J3_x, J3_y), J3_angle, [
-                ('D1', (-3.6, 0), 0),# LED
-            ] ),
-        ] )
 
     # dummy pads
     if board in [BDM, BDS]:
@@ -1026,9 +1017,22 @@ def wire_mods_col_diode():
         else:
             prm_dios.append( (Dird, 90, 0, r_col) )
             prm_dios.append( (Dird, 90, ([(180, 5)], 0), r_col) )
-        for prm_dio in prm_dios:
-            kad.wire_mods( [(mod_dio, via_dio[idx], mod_dio, via_dio_col[idx], w_col, prm_dio, 'B.Cu')] )
-    # wire to RotEnc
+        row = idx[1]
+        if row not in ['5']:
+            for prm_dio in prm_dios:
+                kad.wire_mods( [(mod_dio, via_dio[idx], mod_dio, via_dio_col[idx], w_col, prm_dio, 'B.Cu')] )
+
+    # RotEnc diode
+    if True:
+        idx = '45'
+        mod_re = 'RE1'
+        mod_dio = f'D{idx}'
+        via_dio[idx] = kad.add_via_relative( mod_dio, '1', (-2, 0), VIA_Size[1] )
+        for layer in Cu_layers:
+            kad.wire_mods( [
+                (mod_dio, '1', None, via_dio[idx], w_col, (Strt), layer),
+                (mod_dio, '2', mod_re, 'S2', w_col, (Dird, 0, 90), layer),
+            ] )
 
     # col lines
     for cidx in range( 1, 9 ):
@@ -1050,15 +1054,23 @@ def wire_mods_col_diode():
             dio_T = 'D' + top
             dio_B = 'D' + btm
             kad.wire_mods( [(dio_T, via_dio_col[top], dio_B, via_dio_col[btm], w_col, prm_dio, 'B.Cu')] )
-        # to debounce resister
+
+        mod_r = f'R{cidx}2'
+        # row4 to debounce resister
         idx = f'{cidx}{get_btm_row_idx( cidx )}'
+        mod_dio = f'D{idx}'
         if cidx == 7:
             prm = (Dird, 0, ([(180, 3), (135, 3)], 0))
         else:
             prm = (Dird, 0, 90)
-        mod_dio = f'D{idx}'
-        mod_r = f'R{cidx}2'
         kad.wire_mods( [(mod_dio, via_dio_col[idx], mod_r, via_dbnc_col[cidx], w_col, prm, 'B.Cu')] )
+
+        # thumb & RotEnc to debounce resister
+        if cidx < 5:
+            idx = f'{cidx}5'
+            mod_dio = f'D{idx}'
+            prm = (Dird, ([(90, 2)], 0), 0, 3)
+            kad.wire_mods( [(mod_dio, via_dio[idx], mod_r, via_dbnc_col[cidx], w_col, prm, 'B.Cu')] )
 
     for via in via_dio_col.values():
         pcb.Delete( via )
@@ -1180,7 +1192,7 @@ def wire_mods_row_led():
                 lctr = ctr_vcc_rght[left]
                 rctr = ctr_vcc_left[rght]
                 prm_row = (Dird, 0, ([(0, rctr)], sangle + 180), kad.inf, lctr)
-                prm_gnd = (Dird, 0, ([(0, 10 if cidx in [1] else 3)], sangle - 135), 3)
+                prm_gnd = (Dird, 0, ([(0, 8 if cidx in [1] else 1)], sangle - 135), 3)
                 ### led
                 sangle = row_angle - (angle_Inner_Index if cidx in [1] else angle_M_Comm)
                 lctr = ctr_led_rght[left]
@@ -1438,12 +1450,6 @@ def main():
             #     if board != BDC or name[0] != '7':
             #         pos = vec2.mult( mat2.rotate( angle ), (-5, 0), sw_pos )
             #         kad.add_via( pos, GND, VIA_Size[1] )
-            ### DL1
-            # if board == BDC and name == '82':
-            #     pos = vec2.mult( mat2.rotate( angle ), (-Dx, -Dy), sw_pos )
-            #     kad.set_mod_pos_angle( 'D0', pos, angle - 90 )
-            #     # wire to SW
-            #     kad.wire_mods( [('D0', '1', 'SW' + name, '3', 0.5, (Dird, 0, 0))])
 
     # place & route
     place_mods( board )
