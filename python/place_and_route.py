@@ -1210,8 +1210,63 @@ def wire_mods_row_led():
             if ridx == 4:
                 kad.wire_mods( [
                     (sw_L, via_dbnc_vcc[cidx], sw_R, via_dbnc_vcc[ncidx], w_row, prm_row, 'F.Cu'),
-                    (sw_L, via_dbnc_gnd[cidx], sw_R, via_dbnc_gnd[ncidx], w_row, prm_gnd, 'F.Cu'),
+                    # (sw_L, via_dbnc_gnd[cidx], sw_R, via_dbnc_gnd[ncidx], w_row, prm_gnd, 'F.Cu'),
                 ] )
+
+def wire_col_horz_lins():
+    w_row = 0.8 # SW row
+
+    # horizontal col lines
+    via_col_horz = {}
+    wire_via_col_horz_set = {}
+    for cidx in range( 1, 9 ):
+        wire_via_col_horz = {}
+        lrs = get_diode_side( f'{cidx}4' )
+        for i, clane in enumerate( range( 8, cidx-1, -1 ) ):
+            net = kad.get_pad_net( f'CD{clane}', '2' )
+            pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * i, -1.5 * lrs) )
+            wire_via_col_horz[clane] = kad.add_via( pos, net, VIA_Size[2] )
+        pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * (8 - cidx) + 0.2, -1.5 * lrs) )
+        via_col_horz[cidx] = kad.add_via( pos, net, VIA_Size[2] )
+        wire_via_col_horz_set[cidx] = wire_via_col_horz
+
+    for cidx in range( 1, 8 ):
+        ncidx = cidx + 1
+        # route
+        prm_row = None
+        if cidx in [2, 6]:# straight
+            prm_row = (Dird, 0, 90)
+        elif cidx in [3, 4]:
+            # wctr = ctr_row_sw[rght]
+            prm_row = (Dird, 90, 90, 2)#, wctr)
+        elif cidx in [1, 5, 7]:
+            lctr = kad.calc_pos_from_pad( f'R{cidx}2', '2', (8, -4) )
+            rctr = kad.calc_pos_from_pad( f'R{ncidx}2', '2', (-2, 0) )
+            prm_row = (Dird, 90, ([(-90, rctr)], -135), kad.inf, lctr)
+        # print( idx, nidx )
+        mod_rL = f'R{cidx}1'
+        mod_rR = f'R{ncidx}1'
+        if prm_row != None:
+            kad.wire_mods( [
+                (mod_rL, via_dbnc_gnd[cidx], mod_rR, via_dbnc_gnd[ncidx], w_row, prm_row, 'F.Cu'),
+                (mod_rL, via_dbnc_row[cidx], mod_rL, via_col_horz[cidx], w_row, (Strt), 'B.Cu'),
+            ] )
+        if cidx not in wire_via_col_horz_set:
+            continue
+        if ncidx not in wire_via_col_horz_set:
+            continue
+        for clane in range( 1, 9 ):
+            if clane not in wire_via_col_horz_set[cidx]:
+                continue
+            if clane not in wire_via_col_horz_set[ncidx]:
+                continue
+            kad.wire_mods( [
+                (mod_rL, wire_via_col_horz_set[cidx][clane], mod_rR, wire_via_col_horz_set[ncidx][clane], 0.5, prm_row, 'F.Cu'),
+            ] )
+    for vias in wire_via_col_horz_set.values():
+        for via in vias.values():
+            pcb.Delete( via )
+
 
 def wire_mods_led_ends():
     w_led, r_led = 0.7, 2 # LED power
@@ -1457,6 +1512,7 @@ def main():
         wire_mods_debounce()
         wire_mods_col_diode()
         wire_mods_row_led()
+        wire_col_horz_lins()
         wire_mods_led_ends()
         wire_mods_row_led_thumb()
         remove_temporary_vias()
