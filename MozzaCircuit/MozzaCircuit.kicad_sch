@@ -2302,9 +2302,6 @@
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/05c1301c-6322-4f07-a694-6f14d63cc337"
       (reference "D44") (unit 1) (value "D_Small") (footprint "00_KeyParts:D_SOD-323_both_sides")
     )
-    (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/c9654c5a-686c-4e37-afbd-656548c0ece2"
-      (reference "D45") (unit 1) (value "D_Small") (footprint "00_KeyParts:D_SOD-323_both_sides")
-    )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/c2ce13a1-730b-4514-8f79-1a78a750c957"
       (reference "D51") (unit 1) (value "D_Small") (footprint "00_KeyParts:D_SOD-323_both_sides")
     )
@@ -2328,6 +2325,9 @@
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/f67e2ac4-9b2d-4b28-8b8c-4c0770e5a8f9"
       (reference "D64") (unit 1) (value "D_Small") (footprint "00_KeyParts:D_SOD-323_both_sides")
+    )
+    (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/c9654c5a-686c-4e37-afbd-656548c0ece2"
+      (reference "D65") (unit 1) (value "D_Small") (footprint "00_KeyParts:D_SOD-323_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/7e22b367-399b-498c-ad16-ec692410dc0f"
       (reference "D71") (unit 1) (value "D_Small") (footprint "00_KeyParts:D_SOD-323_both_sides")

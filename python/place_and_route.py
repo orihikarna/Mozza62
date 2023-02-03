@@ -72,7 +72,6 @@ keys = {
     '42' : [145.678, -61.192, 17.000, 17.000, -24.0], # I
     '43' : [141.502, -77.942, 17.000, 17.000, -24.0], # K
     '44' : [137.326, -94.691, 17.000, 17.000, -24.0], # <
-    '45' : [133.134, -125.721, 13.700, 12.700, -6.0], # R
     '51' : [167.274, -52.219, 17.000, 17.000, -26.0], # )
     '52' : [162.516, -68.813, 17.000, 17.000, -26.0], # O
     '53' : [157.758, -85.406, 17.000, 17.000, -26.0], # L
@@ -81,6 +80,7 @@ keys = {
     '62' : [177.665, -81.576, 17.000, 17.000, -8.0], # P
     '63' : [172.950, -98.081, 17.000, 17.000, -8.0], # +
     '64' : [167.402, -119.156, 22.800, 17.000, -22.0], # ?
+    '65' : [133.134, -125.721, 13.700, 12.700, -6.0 + 180], # R
     '71' : [198.220, -74.508, 17.000, 17.000, -8.0], # =
     '72' : [193.506, -91.013, 17.000, 17.000, -8.0], # `
     '73' : [188.791, -107.517, 17.000, 17.000, -8.0], # *
@@ -180,7 +180,7 @@ EdgeCuts = [
 ]
 
 SW_RJ45 = '11'
-SW_RotEnc = '45'
+SW_RotEnc = '65'
 
 angle_M_Comm = -18
 angle_Inner_Index = -15.2
@@ -856,7 +856,7 @@ def place_mods( board ):
     if board in [BDC]:
         _, angle = kad.get_mod_pos_angle( 'RE1' )
         pos = kad.calc_pos_from_pad( 'RE1', 'S2', (5, 0))
-        kad.move_mods( pos, angle, [('D45', (0, 0), 180)] )
+        kad.move_mods( pos, angle, [(f'D{SW_RotEnc}', (0, 0), 180)] )
 
     # RJ45 connector
     if board in [BDC]:
@@ -1024,7 +1024,7 @@ def wire_mods_col_diode():
 
     # RotEnc diode
     if True:
-        idx = '45'
+        idx = SW_RotEnc
         mod_re = 'RE1'
         mod_dio = f'D{idx}'
         via_dio[idx] = kad.add_via_relative( mod_dio, '1', (-2, 0), VIA_Size[1] )
@@ -1065,11 +1065,15 @@ def wire_mods_col_diode():
             prm = (Dird, 0, 90)
         kad.wire_mods( [(mod_dio, via_dio_col[idx], mod_r, via_dbnc_col[cidx], w_col, prm, 'B.Cu')] )
 
-        # thumb & RotEnc to debounce resister
-        if cidx < 5:
-            idx = f'{cidx}5'
-            mod_dio = f'D{idx}'
+        # thumb / RotEnc to debounce resister
+        idx = f'{cidx}5'
+        mod_dio = f'D{idx}'
+        prm = None
+        if cidx in [1, 2, 3]:
             prm = (Dird, ([(90, 2)], 0), 0, 3)
+        elif idx == SW_RotEnc:
+            prm = (Dird, 0, 0, 3)
+        if prm != None:
             kad.wire_mods( [(mod_dio, via_dio[idx], mod_r, via_dbnc_col[cidx], w_col, prm, 'B.Cu')] )
 
     for via in via_dio_col.values():
@@ -1222,11 +1226,16 @@ def wire_col_horz_lins():
     for cidx in range( 1, 9 ):
         wire_via_col_horz = {}
         lrs = get_diode_side( f'{cidx}4' )
-        for i, clane in enumerate( range( 8, cidx-1, -1 ) ):
+        # for i, clane in enumerate( range( 8, cidx-1, -1 ) ):
+        #     net = kad.get_pad_net( f'CD{clane}', '2' )
+        #     pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * i, -1.5 * lrs) )
+        #     wire_via_col_horz[clane] = kad.add_via( pos, net, VIA_Size[2] )
+        # pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * (8 - cidx) + 0.2, -1.5 * lrs) )
+        for i, clane in enumerate( range( cidx, 9 ) ):
             net = kad.get_pad_net( f'CD{clane}', '2' )
             pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * i, -1.5 * lrs) )
             wire_via_col_horz[clane] = kad.add_via( pos, net, VIA_Size[2] )
-        pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * (8 - cidx) + 0.2, -1.5 * lrs) )
+        pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 - 0.1, -1.5 * lrs) )
         via_col_horz[cidx] = kad.add_via( pos, net, VIA_Size[2] )
         wire_via_col_horz_set[cidx] = wire_via_col_horz
 
@@ -1234,11 +1243,19 @@ def wire_col_horz_lins():
         ncidx = cidx + 1
         # route
         prm_row = None
-        if cidx in [2, 6]:# straight
+        if cidx in [2]:# straight
             prm_row = (Dird, 0, 90)
-        elif cidx in [3, 4]:
+        elif cidx in [3]:
             # wctr = ctr_row_sw[rght]
             prm_row = (Dird, 90, 90, 2)#, wctr)
+        elif cidx in []:
+            lctr = kad.calc_pos_from_pad( f'R{cidx}2', '2', (-4, +2) )
+            rctr = kad.calc_pos_from_pad( f'R{ncidx}2', '2', (10, 0) )
+            prm_row = (Dird, ([(90, lctr)], 110), -90, kad.inf, rctr)
+        elif cidx in [4, 6]:
+            lctr = kad.calc_pos_from_pad( f'R{cidx}2', '2', (-4, -4) )
+            rctr = kad.calc_pos_from_pad( f'R{ncidx}2', '2', (10, 0) )
+            prm_row = (Dird, ([(90, lctr)], 120), -90, kad.inf, rctr)
         elif cidx in [1, 5, 7]:
             lctr = kad.calc_pos_from_pad( f'R{cidx}2', '2', (8, -4) )
             rctr = kad.calc_pos_from_pad( f'R{ncidx}2', '2', (-2, 0) )
@@ -1339,7 +1356,7 @@ def wire_mods_row_led_thumb():
 
     # thumb and RotEnd
     kad.wire_mods( [
-        ('SW35', '1', 'RE1', 'S1', w_row, (Dird, 0, 0, r_row), 'F.Cu')
+        ('SW35', '1', 'RE1', 'S1', w_row, (Dird, 0, ([(180, 3), (-90, 12)], 0), r_row), 'F.Cu')
     ] )
 
     # left, rght = '25', '35'

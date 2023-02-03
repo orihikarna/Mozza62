@@ -214,9 +214,9 @@ class keyboard_layout:
             ['rj45', None, '|', 'Entr', 'Raise'],
             ['6', 'Y', 'H', 'N', 'Shift'],
             ['7', 'U', 'J', 'M', 'Space'],
-            ['8', 'I', 'K', ',', 'RE'],
+            ['8', 'I', 'K', ','],
             ['9', 'O', 'L', '.'],
-            ['0', 'P', ';', '/'],
+            ['0', 'P', ';', '/', 'RE'],
             ['-', '@', ':'],
             [None, '[', ']', '_'],
         ]
@@ -457,7 +457,8 @@ def make_kbd_layout( unit, output_type ):
         + vec2( +0.5, dy_Scln - 0.5) @ mat2_rot( angle_PinkyTop )
     dx_Scln_P = dy_Scln * np.tan( np.deg2rad( -angle_Dot_Scln ) )
     print( f'dx_Pinky = {dx_Scln_P * unit:.6f}' )
-    exit()
+    # exit()
+
     # Cln(:), RBrc(])
     org_Cln = org_Scln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
     org_RBrc = org_Cln + vec2( +1, dy_Cln ) @ mat2_rot( angle_PinkyTop )
@@ -513,7 +514,7 @@ def make_kbd_layout( unit, output_type ):
     maker.add_col( angle_Inner, org_Conn, 0, {'rj45'}, {'rj45'}, keyw = (15.24+1.27+0.4) / unit, keyh = (15.08+0.4) / unit )
     #
     # Rotary encoder
-    angle_RotEnc = angle_Index
+    angle_RotEnc = angle_Index + 180
     org_RotEnc = org_Dot + vec2( -0.5, 1.75 ) @ mat2_rot( angle_Comm )
     maker.add_col( angle_RotEnc, org_RotEnc, 0, {'RE_R'}, {'RE_L'}, keyw = 13.7 / unit, keyh = 12.7 / unit )
 
