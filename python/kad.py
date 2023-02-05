@@ -368,7 +368,7 @@ def __wire_mod_sub( pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, 
         radius = prms[3] if len( prms ) > 3 else inf
         add_wire_zigzag( pos_a, pos_b, angle_a + dangle * sign_a, delta_angle, net, layer, width, radius )
 
-def wire_mods( tracks ):
+def wire_mod_pads( tracks ):
     def _get_pad_props( pad, mod ):
         if type( pad ) is pcbnew.PCB_VIA:# pad is Via
             pos, net = get_via_pos_net( pad )
