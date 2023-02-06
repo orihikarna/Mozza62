@@ -794,6 +794,7 @@ VCC = pcb.FindNet( '3V3' )
 via_led_pwr_1st = {}
 wire_via_led_pwr_1st = {}
 wire_via_led_pwr_2nd = {}
+
 # led dat connection
 via_led_rght = {}
 wire_via_led_left = {}
@@ -805,36 +806,86 @@ via_dbnc_gnd = {}
 via_dbnc_row = {}
 via_dbnc_col = {}
 
+# exp vias
 via_exp = {}
 
+
 ### Set mod positios
-def place_mods( board ):
+def place_key_switchs():
+    ###
+    ### Set key positios
+    ###
+    sw_pos_angles = []
+    for idx in sorted( keys.keys() ):
+        px, py, w, h, angle = keys[idx]
+        sw_pos = (px, -py)
+        sw_pos_angles.append( (sw_pos, 180 - angle) )
+        isL2R = is_L2R_key( idx )
+        isThumb = is_Thumb_key( idx )
+        # SW & LED & Diode
+        if True:
+            # RJ45
+            if idx == SW_RJ45:
+                kad.set_mod_pos_angle( 'J1', vec2.scale( 6.2, vec2.rotate( -angle - 90 ), sw_pos ), angle )
+                continue
+            # RotaryEncoder
+            if idx == SW_RotEnc:
+                kad.set_mod_pos_angle( 'RE1', sw_pos, angle + 180 )
+                continue
+            # print( name )
+
+            mod_sw = f'SW{idx}'
+            mod_led = f'L{idx}'
+            mod_cap = f'C{idx}'
+            mod_dio = f'D{idx}'
+
+            ### SW
+            kad.set_mod_pos_angle( mod_sw, sw_pos, angle + 180 )
+            # SW rectangle
+            corners = []
+            for pnt in make_rect( (w, h), (-w/2, -h/2) ):
+                pt = vec2.mult( mat2.rotate( angle ), pnt, sw_pos )
+                corners.append( [(pt, 0), Line, [0]] )
+            kad.draw_closed_corners( corners, 'F.Fab', 0.1 )
+            # wire 2-3
+            kad.wire_mod_pads( [(mod_sw, '2', mod_sw, '3', 0.8, (Strt))])
+
+            ### LED
+            # original scale was 4.93
+            pos = vec2.scale( 4.7, vec2.rotate( - angle - 90 ), sw_pos )
+            kad.set_mod_pos_angle( mod_led, pos, angle + (180 if isL2R else 0))
+
+            ### LED Caps
+            pos = vec2.mult( mat2.rotate( angle ), (0, -7.2), sw_pos )
+            kad.set_mod_pos_angle( mod_cap, pos, angle + (0 if isL2R else 180))
+
+            ### Diode
+            diode_sign = get_diode_side( idx )
+            pos = vec2.mult( mat2.rotate( angle ), (-5.4 * diode_sign, 0), sw_pos )
+            kad.set_mod_pos_angle( mod_dio, pos, angle - 90 )
+            ### GND Vias
+            # if name[0] not in ['1', '8', '9'] and name[1] not in ['1']:
+            #     if board != BDC or name[0] != '7':
+            #         pos = vec2.mult( mat2.rotate( angle ), (-5, 0), sw_pos )
+            #         kad.add_via( pos, GND, VIA_Size[1] )
+
+def place_mods():
     # I/O expanders
     kad.move_mods( (70, 100), -90, [
-        (None, (0, 0), 0, [
+        (None, (0, 0), -20, [
             (f'U1', (0, 0), 0),
-            (f'U2', (0, 0), 0),
+            (f'U2', (0, 0), 180),
             (f'C1', (0, 8), 0),
             (f'C2', (0, 8), 0),
         ] ),
     ] )
-    exp_pads = [f'{((i+18-1) % 28) + 1}' for i in range( 15 )]
-    exp_nets = [kad.get_pad_net( 'U1', pad ) for pad in exp_pads]
-    for i in range( 15 ):
-        # dpos = vec2.scale( 7, vec2.rotate( 90 / 7 * i - 180 ) )
-        # dpos = ((i - 7) * 1.2, (abs(i - 7) - 7) * 1.2)
-        dpos = ((i - 7) * 1.2, (abs(i - 7)**2 - 7**2) * 0.16)
-        pos = kad.calc_pos_from_pad( 'U1', '29', dpos )
-        net = exp_nets[14-i]
-        via_exp[i] = kad.add_via( pos, net, VIA_Size[2]) 
-        kad.wire_mod_pads( [('U1', exp_pads[14-i], 'U1', via_exp[i], 0.35, (Strt))] )
 
     # Debounce RRCs
-    for col in '12345678':
-        idx = f'{col}4'
+    for cidx in range( 1, 9 ):
+        idx = f'{cidx}4'
         lrs = get_diode_side( idx )
         mod_sw = f'SW{idx}'
-        if col == '7':
+        if cidx == 7:
             mod_sw = 'SW64'
             dx, dy = 10.5, -9.0
         else:
@@ -842,9 +893,9 @@ def place_mods( board ):
         pos, angle = kad.get_mod_pos_angle( mod_sw )
         kad.move_mods( pos, angle + 90, [
             (None, (dx, dy), 0, [
-                (f'CD{col}', (0, -1.5 * lrs), 0),
-                (f'R{col}1', (0,  0), 0),
-                (f'R{col}2', (0, +1.5 * lrs), 0),
+                (f'CD{cidx}', (0, -1.5 * lrs), 0),
+                (f'R{cidx}1', (0,  0), 0),
+                (f'R{cidx}2', (0, +1.5 * lrs), 0),
             ] ),
         ] )
 
@@ -924,6 +975,41 @@ def place_mods( board ):
                         pos = vec2.scale( 2.0, vec2.rotate( deg ), ctr )
                         corners.append( [(pos, deg + 90), Linear, [0]] )
                     kad.draw_closed_corners( corners, 'F.Fab', 0.1 )
+
+def wire_mods_exp():
+    w_exp = 0.35
+
+    # GND
+    wire_via_gnd = kad.add_via_relative( 'U1', '29', (0, 0), VIA_Size[1] )
+    for mod_exp in ['U1', 'U2']:
+        gnd_pad_nums = [6, 12, 13]
+        if mod_exp == 'U1':
+            gnd_pad_nums.append( 11 )
+        for gnd_pad_num in gnd_pad_nums:
+            base_angle = (((gnd_pad_num + 5) // 7) % 2) * 90 # not correct-worthy, but enough
+            kad.wire_mod_pads( [(mod_exp, wire_via_gnd, mod_exp, str(gnd_pad_num), w_exp, (Dird, base_angle, base_angle + 90, 0))] )
+    pcb.Delete( wire_via_gnd )
+
+    # 4, 3, 2, 1, 28, ..., 18
+    exp_pads = [f'{((4 - i - 1 + 28) % 28) + 1}' for i in range( 15 )]
+    exp_nets = [kad.get_pad_net( 'U1', pad ) for pad in exp_pads]
+    for i in range( 15 ):
+        # dpos = vec2.scale( 7, vec2.rotate( 90 / 7 * i - 180 ) )
+        # dpos = ((i - 7) * 1.2, (abs(i - 7) - 7) * 1.2)
+        ny = abs( i - 7 )
+        sy = vec2.sign( i - 7 )
+        dpos = (ny * sy * 1.2, (ny**2 - 7**2) * 0.16)
+        pos = kad.calc_pos_from_pad( 'U1', '29', dpos )
+        net = exp_nets[i]
+        via_exp[i] = kad.add_via( pos, net, VIA_Size[2])
+        if ny in [0, 7]:
+            prm = (Strt)
+        elif ny <= 3:
+            prm = (Dird, 90, 45 * sy, 1)
+        else:
+            prm = (Dird, 0, 80 * sy, 1)
+        kad.wire_mod_pads( [('U1', exp_pads[i], 'U1', via_exp[i], 0.35, prm)] )
+        kad.wire_mod_pads( [('U2', exp_pads[14-i], 'U1', via_exp[i], 0.35, prm)] )
 
 def wire_mods_debounce():
     w_exp, r_exp = 0.44, 0.4
@@ -1221,8 +1307,26 @@ def wire_mods_row_led():
                     # (sw_L, via_dbnc_gnd[cidx], sw_R, via_dbnc_gnd[ncidx], w_row, prm_gnd, 'F.Cu'),
                 ] )
 
-def wire_col_horz_lins():
+def wire_col_horz_lines():
     w_row = 0.8 # SW row
+
+    exp_cidx_pad_nets = [
+        (0, 4, 'ROW3'),
+        (0, 3, 'ROW4'),
+        (1, 2, 'COL1'),
+        (1, 1, 'ROW2'),
+        (2, 28, 'COL2'),
+        (2, 27, 'ROW1'),
+        (3, 26, 'COL3'),
+        (3, 25, 'REA'),
+        (3, 24, 'REB'),
+        (4, 23, 'COL4'),
+        (5, 22, 'COL5'),
+        (6, 21, 'COL6'),
+        (7, 20, 'COL7'),
+        (8, 19, 'COL8'),
+        # (9, 18, 'ROW5'),
+    ]
 
     # horizontal col lines
     via_col_horz = {}
@@ -1230,11 +1334,6 @@ def wire_col_horz_lins():
     for cidx in range( 1, 9 ):
         wire_via_col_horz = {}
         lrs = get_diode_side( f'{cidx}4' )
-        # for i, clane in enumerate( range( 8, cidx-1, -1 ) ):
-        #     net = kad.get_pad_net( f'CD{clane}', '2' )
-        #     pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * i, -1.5 * lrs) )
-        #     wire_via_col_horz[clane] = kad.add_via( pos, net, VIA_Size[2] )
-        # pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * (8 - cidx) + 0.2, -1.5 * lrs) )
         for i, clane in enumerate( range( cidx, 9 ) ):
             net = kad.get_pad_net( f'CD{clane}', '2' )
             pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * i, -1.5 * lrs) )
@@ -1469,70 +1568,15 @@ def main():
             'F.Cu', (1.2, 1.2), 0.2,
             pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER )
 
-    ###
-    ### Set key positios
-    ###
-    sw_pos_angles = []
-    for idx in sorted( keys.keys() ):
-        px, py, w, h, angle = keys[idx]
-        sw_pos = (px, -py)
-        sw_pos_angles.append( (sw_pos, 180 - angle) )
-        isL2R = is_L2R_key( idx )
-        isThumb = is_Thumb_key( idx )
-        # SW & LED & Diode
-        if board in [BDC]:
-            # RJ45
-            if idx == SW_RJ45:
-                kad.set_mod_pos_angle( 'J1', vec2.scale( 6.2, vec2.rotate( -angle - 90 ), sw_pos ), angle )
-                continue
-            # RotaryEncoder
-            if idx == SW_RotEnc:
-                kad.set_mod_pos_angle( 'RE1', sw_pos, angle + 180 )
-                continue
-            # print( name )
-
-            mod_sw = f'SW{idx}'
-            mod_led = f'L{idx}'
-            mod_cap = f'C{idx}'
-            mod_dio = f'D{idx}'
-
-            ### SW
-            kad.set_mod_pos_angle( mod_sw, sw_pos, angle + 180 )
-            # SW rectangle
-            corners = []
-            for pnt in make_rect( (w, h), (-w/2, -h/2) ):
-                pt = vec2.mult( mat2.rotate( angle ), pnt, sw_pos )
-                corners.append( [(pt, 0), Line, [0]] )
-            kad.draw_closed_corners( corners, 'F.Fab', 0.1 )
-            # wire 2-3
-            kad.wire_mod_pads( [(mod_sw, '2', mod_sw, '3', 0.8, (Strt))])
-
-            ### LED
-            # original scale was 4.93
-            pos = vec2.scale( 4.7, vec2.rotate( - angle - 90 ), sw_pos )
-            kad.set_mod_pos_angle( mod_led, pos, angle + (180 if isL2R else 0))
-
-            ### LED Caps
-            pos = vec2.mult( mat2.rotate( angle ), (0, -7.2), sw_pos )
-            kad.set_mod_pos_angle( mod_cap, pos, angle + (0 if isL2R else 180))
-
-            ### Diode
-            diode_sign = get_diode_side( idx )
-            pos = vec2.mult( mat2.rotate( angle ), (-5.4 * diode_sign, 0), sw_pos )
-            kad.set_mod_pos_angle( mod_dio, pos, angle - 90 )
-            ### GND Vias
-            # if name[0] not in ['1', '8', '9'] and name[1] not in ['1']:
-            #     if board != BDC or name[0] != '7':
-            #         pos = vec2.mult( mat2.rotate( angle ), (-5, 0), sw_pos )
-            #         kad.add_via( pos, GND, VIA_Size[1] )
-
     # place & route
-    place_mods( board )
+    place_key_switchs()
+    place_mods()
     if board in [BDC]:
+        wire_mods_exp()
         wire_mods_debounce()
         wire_mods_col_diode()
         wire_mods_row_led()
-        wire_col_horz_lins()
+        wire_col_horz_lines()
         wire_mods_led_ends()
         wire_mods_row_led_thumb()
         remove_temporary_vias()
