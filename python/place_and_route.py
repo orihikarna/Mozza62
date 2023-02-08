@@ -1318,13 +1318,13 @@ def wire_col_horz_lines():
         (2, 28, 'COL2'),
         (2, 27, 'ROW1'),
         (3, 26, 'COL3'),
-        (3, 25, 'REA'),
-        (3, 24, 'REB'),
-        (4, 23, 'COL4'),
-        (5, 22, 'COL5'),
-        (6, 21, 'COL6'),
-        (7, 20, 'COL7'),
-        (8, 19, 'COL8'),
+        (4, 25, 'COL4'),
+        (5, 24, 'COL5'),
+        (6, 23, 'COL6'),
+        (7, 22, 'COL7'),
+        (8, 21, 'COL8'),
+        (3, 20, 'COLA'),
+        (3, 19, 'COLB'),
         # (9, 18, 'ROW5'),
     ]
 
@@ -1332,14 +1332,21 @@ def wire_col_horz_lines():
     via_col_horz = {}
     wire_via_col_horz_set = {}
     for cidx in range( 1, 9 ):
-        wire_via_col_horz = {}
         lrs = get_diode_side( f'{cidx}4' )
-        for i, clane in enumerate( range( cidx, 9 ) ):
-            net = kad.get_pad_net( f'CD{clane}', '2' )
-            pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * i, -1.5 * lrs) )
-            wire_via_col_horz[clane] = kad.add_via( pos, net, VIA_Size[2] )
-        pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 - 0.1, -1.5 * lrs) )
-        via_col_horz[cidx] = kad.add_via( pos, net, VIA_Size[2] )
+        # wire vias
+        wire_via_col_horz = {}
+        n = 0
+        for cidx0, pad, net_name in exp_cidx_pad_nets:
+            if cidx0 < cidx:
+                continue
+            net = kad.get_pad_net( f'U1', f'{pad}' )
+            pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * n, -1.6 * lrs) )
+            wire_via_col_horz[net_name] = kad.add_via( pos, net, VIA_Size[2] )
+            n += 1
+            if net_name == f'COL{cidx}':
+                # col line real via (offset)
+                pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 - 0.1, -1.6 * lrs) )
+                via_col_horz[cidx] = kad.add_via( pos, net, VIA_Size[2] )
         wire_via_col_horz_set[cidx] = wire_via_col_horz
 
     for cidx in range( 1, 8 ):
@@ -1375,17 +1382,18 @@ def wire_col_horz_lines():
             continue
         if ncidx not in wire_via_col_horz_set:
             continue
-        for clane in range( 1, 9 ):
-            if clane not in wire_via_col_horz_set[cidx]:
+        for _, _, net in exp_cidx_pad_nets:
+            if net not in wire_via_col_horz_set[cidx]:
                 continue
-            if clane not in wire_via_col_horz_set[ncidx]:
+            if net not in wire_via_col_horz_set[ncidx]:
                 continue
             kad.wire_mod_pads( [
-                (mod_rL, wire_via_col_horz_set[cidx][clane], mod_rR, wire_via_col_horz_set[ncidx][clane], 0.5, prm_row, 'F.Cu'),
+                (mod_rL, wire_via_col_horz_set[cidx][net], mod_rR, wire_via_col_horz_set[ncidx][net], 0.5, prm_row, 'F.Cu'),
             ] )
     for vias in wire_via_col_horz_set.values():
         for via in vias.values():
-            pcb.Delete( via )
+            pass
+            # pcb.Delete( via )
 
 def wire_mods_led_ends():
     w_led, r_led = 0.7, 2 # LED power
