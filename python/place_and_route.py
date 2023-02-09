@@ -871,8 +871,8 @@ def place_key_switchs():
 
 def place_mods():
     # I/O expanders
-    kad.move_mods( (70, 100), -90, [
-        (None, (0, 0), -20, [
+    kad.move_mods( (70, 91), -90, [
+        (None, (0, 0), -21.2, [
             (f'U1', (0, 0), 0),
             (f'U2', (0, 0), 180),
             (f'C1', (0, 8), 0),
@@ -998,7 +998,7 @@ def wire_mods_exp():
         # dpos = ((i - 7) * 1.2, (abs(i - 7) - 7) * 1.2)
         ny = abs( i - 7 )
         sy = vec2.sign( i - 7 )
-        dpos = (ny * sy * 1.2, (ny**2 - 7**2) * 0.16)
+        dpos = (ny * sy * 0.9, (ny**2 - 7**2) * 0.16)
         pos = kad.calc_pos_from_pad( 'U1', '29', dpos )
         net = exp_nets[i]
         via_exp[i] = kad.add_via( pos, net, VIA_Size[2])
@@ -1045,16 +1045,13 @@ def wire_mods_debounce():
             ] )
 
     mod_re = 'RE1'
-    for i in range( 2 ):
-        cidx = [11, 12][i]
+    for i, cidx in enumerate( [11, 12] ):
         mod_cd = f'CD{cidx}'
         mod_r1 = f'R{cidx}1'
         mod_r2 = f'R{cidx}2'
 
         # # row gnd and vcc vias
-        # via_dbnc_vcc[cidx] = kad.add_via_relative( mod_cd, '1', (-1.6, 0), VIA_Size[1] )
         via_dbnc_row[cidx] = kad.add_via_relative( mod_cd, '2', (+1.6, 0), VIA_Size[1] )
-        # via_dbnc_col[cidx] = kad.add_via_relative( mod_r2, '1', (0, +1.5 * lrs), VIA_Size[1] )
         via_dbnc_gnd[cidx] = kad.add_via_relative( mod_r2, '2', (+1.6, 0), VIA_Size[1] )
 
         # resister and cap vias
@@ -1063,15 +1060,14 @@ def wire_mods_debounce():
                 # debounce resisters and cap
                 (mod_r1, '1', mod_r2, '1', w_col, (Strt), layer),
                 (mod_r1, '2', mod_cd, '2', w_col, (Strt), layer),
+                # res & cap pads and via
+                (mod_cd, '2', mod_cd, via_dbnc_row[cidx], w_col, (Dird, 90, 0), layer),
+                (mod_r2, '2', mod_r2, via_dbnc_gnd[cidx], w_col, (Dird, 90, 0), layer),
                 # rotenc
                 (mod_re, 'C', mod_cd, '1', w_col, (Dird, 0, 0, r_col), layer),
                 (mod_re, 'AB'[i], mod_r2, '1', w_col, (Dird, 90, 90), layer),
-                # res & cap pads and via
-                # (mod_cd, '1', mod_cd, via_dbnc_vcc[cidx], w_col, (Dird, 90, 0), layer),
-                # (mod_cd, '2', mod_cd, via_dbnc_row[cidx], w_col, (Dird, 90, 0), layer),
-                # (mod_r2, '1', mod_cd, via_dbnc_col[cidx], w_col, (Dird, 90, 0), layer),
-                # (mod_r2, '2', mod_r2, via_dbnc_gnd[cidx], w_col, (Dird, 90, 0), layer),
             ] )
+    # cap to rotenc vcc
     for layer in Cu_layers:
         kad.wire_mod_pads( [
             ('CD11', '1', 'CD12', '1', w_col, (Strt), layer),
@@ -1309,6 +1305,7 @@ def wire_mods_row_led():
 
 def wire_col_horz_lines():
     w_row = 0.8 # SW row
+    w_col = 0.5
 
     exp_cidx_pad_nets = [
         (0, 4, 'ROW3'),
@@ -1337,36 +1334,48 @@ def wire_col_horz_lines():
         wire_via_col_horz = {}
         n = 0
         for cidx0, pad, net_name in exp_cidx_pad_nets:
-            if cidx0 < cidx:
+            if cidx > cidx0:
                 continue
+            mod_cd = f'CD{cidx}'
             net = kad.get_pad_net( f'U1', f'{pad}' )
-            pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 + 0.9 * n, -1.6 * lrs) )
+            pos = kad.calc_pos_from_pad( mod_cd, '2', (2.8 + 0.9 * n, -1.6 * lrs) )
             wire_via_col_horz[net_name] = kad.add_via( pos, net, VIA_Size[2] )
-            n += 1
+            # col line real via (offset)
             if net_name == f'COL{cidx}':
-                # col line real via (offset)
-                pos = kad.calc_pos_from_pad( f'CD{cidx}', '2', (2.6 - 0.1, -1.6 * lrs) )
+                pos = kad.calc_pos_from_pad( mod_cd, '2', (2.8 - 0.1, -1.6 * lrs) )
                 via_col_horz[cidx] = kad.add_via( pos, net, VIA_Size[2] )
+            if cidx == cidx0:
+                if net_name == 'COLA' or net_name == 'COLB':
+                    lctr = kad.calc_pos_from_pad( mod_cd, '2', (2.8 + 0.9 * 8, 0) )
+                    if net_name == 'COLA':
+                        kad.wire_mod_pads( [(mod_cd, wire_via_col_horz[net_name], 'CD11', via_dbnc_row[11], w_col, (Dird, 90, 0, kad.inf, lctr))] )
+                    else:
+                        kad.wire_mod_pads( [(mod_cd, wire_via_col_horz[net_name], 'CD12', via_dbnc_row[12], w_col, (Dird, 90, ([(-90, 1.2)], 0), kad.inf, lctr))] )
+            n += 1
         wire_via_col_horz_set[cidx] = wire_via_col_horz
 
     for cidx in range( 1, 8 ):
         ncidx = cidx + 1
         # route
         prm_row = None
-        if cidx in [2]:# straight
+        if cidx in []:# straight
             prm_row = (Dird, 0, 90)
         elif cidx in [3]:
             # wctr = ctr_row_sw[rght]
             prm_row = (Dird, 90, 90, 2)#, wctr)
-        elif cidx in []:
-            lctr = kad.calc_pos_from_pad( f'R{cidx}2', '2', (-4, +2) )
-            rctr = kad.calc_pos_from_pad( f'R{ncidx}2', '2', (10, 0) )
+        elif cidx in [1]:
+            lctr = kad.calc_pos_from_pad( f'R{cidx}2', '2', (15, 0) )
+            rctr = kad.calc_pos_from_pad( f'R{ncidx}2', '2', (0, 8) )
+            prm_row = (Dird, 90, ([(-90, rctr)], -120), kad.inf, lctr)
+        elif cidx in [2]:
+            lctr = kad.calc_pos_from_pad( f'R{cidx}2', '2', (0, 0) )
+            rctr = kad.calc_pos_from_pad( f'R{ncidx}2', '2', (13, 0) )
             prm_row = (Dird, ([(90, lctr)], 110), -90, kad.inf, rctr)
         elif cidx in [4, 6]:
             lctr = kad.calc_pos_from_pad( f'R{cidx}2', '2', (-4, -4) )
             rctr = kad.calc_pos_from_pad( f'R{ncidx}2', '2', (10, 0) )
             prm_row = (Dird, ([(90, lctr)], 120), -90, kad.inf, rctr)
-        elif cidx in [1, 5, 7]:
+        elif cidx in [5, 7]:
             lctr = kad.calc_pos_from_pad( f'R{cidx}2', '2', (8, -4) )
             rctr = kad.calc_pos_from_pad( f'R{ncidx}2', '2', (-2, 0) )
             prm_row = (Dird, 90, ([(-90, rctr)], -135), kad.inf, lctr)
@@ -1388,12 +1397,12 @@ def wire_col_horz_lines():
             if net not in wire_via_col_horz_set[ncidx]:
                 continue
             kad.wire_mod_pads( [
-                (mod_rL, wire_via_col_horz_set[cidx][net], mod_rR, wire_via_col_horz_set[ncidx][net], 0.5, prm_row, 'F.Cu'),
+                (mod_rL, wire_via_col_horz_set[cidx][net], mod_rR, wire_via_col_horz_set[ncidx][net], w_col, prm_row, 'F.Cu'),
             ] )
     for vias in wire_via_col_horz_set.values():
         for via in vias.values():
             pass
-            # pcb.Delete( via )
+            pcb.Delete( via )
 
 def wire_mods_led_ends():
     w_led, r_led = 0.7, 2 # LED power
