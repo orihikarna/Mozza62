@@ -1008,7 +1008,7 @@ def wire_mods_exp():
             prm = (Strt)
         elif ny <= 3:
             # prm = (Dird, 90, 45 * sy, 1)
-            prm = (ZgZg, 90, 45, 1)
+            prm = (ZgZg, 90, 45 - 12 * (3 - ny), 1)
         else:
             prm = (Dird, 0, 45 + 22.5 * (ny - 2), 1)
         kad.wire_mod_pads( [('U1', exp_pads[i], 'U1', via_exp[i], 0.35, prm)] )
@@ -1379,7 +1379,7 @@ def wire_col_horz_lines():
             # rotenc COLA / COLB
             if cidx == cidx0:
                 if net_name == 'COLA' or net_name == 'COLB':
-                    lctr = kad.calc_pos_from_pad( mod_cd, '2', (offset_y + sep_y * 8, 0) )
+                    lctr = kad.calc_pos_from_pad( mod_cd, '2', (offset_y + sep_y * 9, 0) )
                     if net_name == 'COLA':
                         idx = 11
                         prm = (Dird, 90, 0, kad.inf, lctr)
@@ -1415,16 +1415,16 @@ def wire_col_horz_lines():
             else:
                 prm_row = (Dird, 90, -90, kad.inf, rctr)
         elif cidx in [2, 4, 6]:
-            lctr = kad.calc_pos_from_pad( mod_cdL, '2', (y_top_wire_via[cidxL] - ctr_dy, -2) )
+            lctr = kad.calc_pos_from_pad( mod_cdL, '2', (y_top_wire_via[cidxL] - ctr_dy, 0) )
             rctr = kad.calc_pos_from_pad( mod_cdR, '2', (y_btm_wire_via[cidxR] + ctr_dy, 3) )
             if cidx in [2]:
-                prm_row = (Dird, 90, ([(-90, rctr)], -50), kad.inf, lctr)
+                prm_row = (Dird, 90, ([(-90, rctr)], -55), kad.inf, lctr)
             else:
-                prm_row = (Dird, ([(90, lctr)], 180 - 50), -90, kad.inf, rctr)
+                prm_row = (Dird, ([(90, lctr)], 180 - 55), -90, kad.inf, rctr)
         elif cidx in [5, 7]:
-            lctr = kad.calc_pos_from_pad( mod_cdL, '2', (y_btm_wire_via[cidxL] + ctr_dy, -2) )
+            lctr = kad.calc_pos_from_pad( mod_cdL, '2', (y_btm_wire_via[cidxL] + ctr_dy, 0) )
             rctr = kad.calc_pos_from_pad( mod_cdR, '2', (y_top_wire_via[cidxR] - ctr_dy, 0) )
-            prm_row = (Dird, ([(90, lctr)], 50), -90, kad.inf, rctr)
+            prm_row = (Dird, ([(90, lctr)], 55), -90, kad.inf, rctr)
         # wires
         if cidxL not in wire_via_col_horz_set: continue
         if cidxR not in wire_via_col_horz_set: continue
