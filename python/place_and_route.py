@@ -1,7 +1,6 @@
 import pcbnew
 import copy
 import math
-import sys
 import os
 import re
 from enum import Enum
@@ -510,7 +509,7 @@ def get_distance( dist_image, pnt ):
     x, y = vec2.add( (x, y), (w / 2.0, h / 2.0) )
     x = min( max( x, 0. ), w - 1.01 )
     y = min( max( y, 0. ), h - 1.01 )
-    nx = int( math.floor( x ) )
+    nx = int( )
     ny = int( math.floor( y ) )
     # if nx < 0 or w <= nx + 1 or ny < 0 or h <= ny + 1:
     #     return 0
@@ -977,7 +976,7 @@ def wire_rj45():
 
     r_conn = 1.2
     via_conn = {}
-    for idx, pad in enumerate( '462' ):
+    for idx, pad in enumerate( '' ):
         dx = 1.5 * (2 - [2, 1, 3, 0][idx])
         dy = -(8.5 + 1.4 * idx)
         pos = kad.calc_pos_from_pad( 'J1', '5', (dx, dy) )
@@ -992,19 +991,42 @@ def wire_rj45():
             (mod_jpf, '2', mod_jpf, via_conn[pad], w_conn, (Dird, ([(-90, 0.25 * [+1, -1, -1, +1][idx])], 0), 90, r_conn), 'F.Cu'),
             (mod_jpb, '2', mod_jpb, via_conn[pad], w_conn, (Dird, ([(-90, 0.25 * [+1, -1, -1, +1][idx])], 0), 90, r_conn), 'B.Cu'),
         ] )
-    via_conn__4 = kad.add_via_relative( 'JPF4', '2', (1.6, -1.27), VIA_Size[1] )
-    via_conn_F2 = kad.add_via_relative( 'JPF2', '2', (1.6, +(2.54*2)*2/3-1.27*3), VIA_Size[1] )
-    via_conn_B2 = kad.add_via_relative( 'JPB2', '2', (1.6, +(2.54*2)*2/3-1.27*3), VIA_Size[1] )
-    via_conn_B6 = kad.add_via_relative( 'JPB6', '2', (1.6, -(2.54*2)*1/3+1.27*1), VIA_Size[1] )
-    via_conn_F6 = kad.add_via_relative( 'JPF6', '2', (1.6, -(2.54*2)*1/3+1.27*1), VIA_Size[1] )
-    via_conn_F8 = kad.add_via_relative( 'JPF8', '2', (1.6, -(2.54*2)*3/3+1.27*3), VIA_Size[1] )
-    via_conn_B8 = kad.add_via_relative( 'JPB8', '2', (1.6, -(2.54*2)*3/3+1.27*3), VIA_Size[1] )
+    w = 4.5
+    sep_y = 1.27
+    offset_x = 1.6
+    angle__2 = 40
+    angle__6 = 25
+    x__2 =   w*2/3 * math.sin( math.radians( angle__2 ) ) + offset_x
+    y__2 =   w*2/3 * math.cos( math.radians( angle__2 ) ) - sep_y*3
+    x__6 =   w*1/3 * math.sin( math.radians( angle__6 ) ) + offset_x
+    y__6 = -(w*1/3 * math.cos( math.radians( angle__6 ) ) - sep_y*1)
+    via_conn__2 = kad.add_via_relative( 'JPF2', '2', (x__2, y__2), VIA_Size[1] )
+    via_conn__4 = kad.add_via_relative( 'JPF4', '2', (offset_x - 0.0, -sep_y*1), VIA_Size[1] )
+    via_conn__6 = kad.add_via_relative( 'JPF6', '2', (x__6, y__6), VIA_Size[1] )
+    via_conn__8 = kad.add_via_relative( 'JPF8', '2', (offset_x, -w*3/3 + sep_y*3), VIA_Size[1] )
+    wire_via_conn_F2 = kad.add_via_relative( 'JPF2', '2', (offset_x, +w*2/3 - sep_y*3), VIA_Size[1] )
+    wire_via_conn_B2 = kad.add_via_relative( 'JPB2', '2', (offset_x, +w*2/3 - sep_y*3), VIA_Size[1] )
+    wire_via_conn_B6 = kad.add_via_relative( 'JPB6', '2', (offset_x, -w*1/3 + sep_y*1), VIA_Size[1] )
+    wire_via_conn_F6 = kad.add_via_relative( 'JPF6', '2', (offset_x, -w*1/3 + sep_y*1), VIA_Size[1] )
+    wire_via_conn_B8 = kad.add_via_relative( 'JPB8', '2', (offset_x, -w*3/3 + sep_y*3), VIA_Size[1] )
     kad.wire_mod_pads( [
-        ('JPF8', '2', 'JPF8', via_conn_F8, w_conn, (Dird, 90, 0, r_conn), 'F.Cu'),
-        ('JPB8', '2', 'JPB8', via_conn_B8, w_conn, (Dird, 90, 0, r_conn), 'B.Cu'),
-        ('JPB8', via_conn_F8, 'JPB8', via_conn_B8, w_conn, (Dird, ([(0, 4.2)], 90), 0), 'B.Cu'),
+        ('JPF8', '2', 'JPF8', via_conn__8, w_conn, (Dird, 45, 0, r_conn), 'F.Cu'),
+        ('JPB8', '2', 'JPB8', wire_via_conn_B8, w_conn, (Dird, 45, 0, r_conn), 'B.Cu'),
+        ('JPF2', '2', 'JPF2', wire_via_conn_F2, w_conn, (Dird, 45, 0), 'F.Cu'),
+        ('JPF6', '2', 'JPF6', wire_via_conn_F6, w_conn, (Dird, 45, 0), 'F.Cu'),
+        ('JPB2', '2', 'JPB2', wire_via_conn_B2, w_conn, (Dird, 45, 0), 'B.Cu'),
+        ('JPB6', '2', 'JPB6', wire_via_conn_B6, w_conn, (Dird, 45, 0), 'B.Cu'),
+        ('JPF2', wire_via_conn_F2, 'JPF2', via_conn__2, w_conn, (Dird, 0, angle__2), 'F.Cu'),
+        ('JPB2', wire_via_conn_B2, 'JPB2', via_conn__2, w_conn, (Dird, 0, 180 - angle__2), 'B.Cu'),
+        ('JPF4', '2', 'JPF4', via_conn__4, w_conn, (Dird, ([(90, 0.35)], 0), 45), 'F.Cu'),
+        ('JPB4', '2', 'JPB4', via_conn__4, w_conn, (Dird, ([(90, 0.35)], 0), 45), 'B.Cu'),
+        ('JPF6', wire_via_conn_F6, 'JPF6', via_conn__6, w_conn, (Dird, 0, 180 - angle__6), 'F.Cu'),
+        ('JPB6', wire_via_conn_B6, 'JPB6', via_conn__6, w_conn, (Dird, 0, angle__6), 'B.Cu'),
+        ('JPB8', via_conn__8, 'JPB8', wire_via_conn_B8, w_conn, (Dird, ([(0, w)], 90), 0), 'B.Cu'),
         # (mod_jpb, '2', mod_jpb, via_conn[pad], w_conn, (Dird, ([(-90, 0.25 * [+1, -1, -1, +1][idx])], 0), 90, r_conn), 'B.Cu'),
     ] )
+    for via in [wire_via_conn_F2, wire_via_conn_B2, wire_via_conn_B6, wire_via_conn_F6, wire_via_conn_B8]:
+        pcb.Delete( via )
     # r_conn = 2    
     # wire_via_rj45_5 = []
     # for idx, pad in enumerate( '37' ):
