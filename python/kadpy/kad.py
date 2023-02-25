@@ -1,7 +1,5 @@
 import math
-import pnt
-import vec2
-import mat2
+from . import pnt, vec2, mat2
 import pcbnew
 
 UnitMM = True

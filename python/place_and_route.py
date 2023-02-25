@@ -1,20 +1,7 @@
 import pcbnew
-# import copy
 import math
-# import os
 import re
-# from enum import Enum
-
-##
-# sys.dont_write_bytecode = True
-# root_dir = os.path.join( os.path.expanduser( '~' ), 'repos/Mozza62/python' )
-# if not root_dir in sys.path:
-#     sys.path.append( root_dir )
-##
-import kad
-import pnt
-import vec2
-import mat2
+from kadpy import kad, pnt, vec2, mat2
 
 import importlib
 
@@ -1105,7 +1092,7 @@ def wire_mods_exp():
         ('U1', via_exp_SCK_SDA, 'J1', via_rj45_conn['3'], w_exp, (Dird, 0, -45), 'B.Cu'),
         ('U1', via_exp_SCK_SDA, 'U1', '8', w_exp, (Dird, 0, 90, r_exp), 'F.Cu'),
         ('U1', via_exp_SCK_SDA, 'U2', '9', w_exp, (Dird, 0, 90, r_exp), 'B.Cu'),
-        
+
         ('U1', via_exp_SDA_SCK, 'J1', via_rj45_conn['7'], w_exp, (Dird, ([(-90, sep)], 0), -45), 'B.Cu'),
         ('U1', via_exp_SDA_SCK, 'U1', '9', w_exp, (Dird, 0, 90, r_exp), 'F.Cu'),
         ('U1', via_exp_SDA_SCK, 'U2', '8', w_exp, (Dird, 0, 90, r_exp), 'B.Cu'),
