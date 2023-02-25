@@ -368,10 +368,10 @@ def add_wire_zigzag(pos_a, pos_b, angle, delta_angle, net, layer, width, radius)
 def __wire_mod_sub(pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, width, prms):
     def _proc_directed_params(prms, angle, sign):
         offsets = []
-        if type(prms) == type(()):  # tuple
-            for off_angle, off_len_or_arcctr in prms[0]:
+        if type(prms) == type([]):  # array
+            for off_angle, off_len_or_arcctr in prms[0:-1]:
                 offsets.append((angle + off_angle * sign, off_len_or_arcctr))
-            dir_angle = prms[1] * sign
+            dir_angle = prms[-1] * sign
         else:
             dir_angle = prms * sign
         return offsets, dir_angle
