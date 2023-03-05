@@ -794,6 +794,11 @@ Cu_layers = ['F.Cu', 'B.Cu']
 GND = pcb.FindNet('GND')
 VCC = pcb.FindNet('3V3')
 
+# exp vias
+via_exp = {}
+via_exp_cap_vcc = {}
+via_exp_cap_gnd = {}
+
 # RJ45
 via_rj45_conn = {}
 
@@ -813,9 +818,6 @@ wire_via_dbnc_gnd = {}
 
 via_dbnc_row = {}
 via_dbnc_col = {}
-
-# exp vias
-via_exp = {}
 
 
 # Set mod positios
@@ -981,6 +983,81 @@ def place_mods():
                     kad.draw_closed_corners(corners, 'F.Fab', 0.1)
 
 
+def wire_mods_exp():
+    w_exp, r_exp = 0.4, 1.0
+    w_row, r_row = 0.7, 2.0
+    w_conn = 0.8
+
+    # GND
+    wire_via_gnd = kad.add_via_relative('U1', '29', (0, 0), VIA_Size[1])
+    for mod_exp in ['U1', 'U2']:
+        gnd_pad_nums = [6, 12, 13]
+        if mod_exp == 'U1':
+            gnd_pad_nums.append(11)
+        for gnd_pad_num in gnd_pad_nums:
+            base_angle = (((gnd_pad_num + 5) // 7) % 2) * 90  # not correct-worthy, but enough
+            kad.wire_mod_pads([(mod_exp, wire_via_gnd, mod_exp, str(gnd_pad_num), w_exp, (Dird, base_angle, base_angle + 90, 0))])
+    pcb.Delete(wire_via_gnd)
+
+    # pass caps
+    for i in '12':
+        mod_exp = f'U{i}'
+        mod_cap = f'C{i}'
+        via_exp_cap_vcc[mod_cap] = kad.add_via_relative( mod_cap, '1', (0, 2.6), VIA_Size[1])
+        via_exp_cap_gnd[mod_cap] = kad.add_via_relative( mod_cap, '2', (0, 1.4), VIA_Size[1])
+        kad.wire_mod_pads([
+            (mod_cap, '1', mod_exp, '5', w_exp, (Dird, 90, [(180, 1.25), 50], 1)),
+            (mod_cap, '2', mod_exp, '6', w_exp, (Dird, 90, [(180, 1.25), 90], 0.5)),
+            (mod_cap, '1', mod_cap, via_exp_cap_vcc[mod_cap], w_exp, (Dird, 90, 0, 0)),
+            (mod_cap, '2', mod_cap, via_exp_cap_gnd[mod_cap], w_exp, (Dird, 90, 0, 0)),
+        ])
+    kad.wire_mod_pads([
+        ('C1', via_exp_cap_vcc['C1'], 'C2', via_exp_cap_vcc['C2'], w_exp, (Dird, 0, [(0, 9.0), 90], 1)),
+        ('C1', via_exp_cap_gnd['C1'], 'C2', via_exp_cap_gnd['C2'], w_exp, (Dird, 0, [(0, 6.4), 90], 1)),
+    ])
+
+    offset = 0.6
+    sep = 1.4
+    # I2C & Reset
+    via_exp['NRST1'] = kad.add_via_relative('U2', '14', (offset + sep, sep * 3), VIA_Size[1])
+    via_exp['NRST2'] = kad.add_via_relative('U2', '14', (offset + sep, sep * 1), VIA_Size[1])
+    via_exp['SCK_SDA'] = kad.add_via_relative('U1', '8', (-offset, sep * 2), VIA_Size[1])
+    via_exp['SDA_SCK'] = kad.add_via_relative('U1', '9', (-offset - 0.6, sep * 3), VIA_Size[1])
+    kad.wire_mod_pads([
+        ('U1', via_exp['NRST1'], 'U1', '14', w_exp, (Dird, [(-90, sep), 0], 90, r_exp), 'F.Cu'),
+        ('U1', via_exp['NRST1'], 'U1', via_exp['NRST2'], w_exp, (Strt), 'F.Cu'),
+        ('U1', via_exp['NRST2'], 'U2', '14', w_exp, (Dird, 0, 90), 'B.Cu'),
+
+        ('U1', via_exp['SCK_SDA'], 'U1', '8', w_exp, (Dird, 0, 90, r_exp), 'F.Cu'),
+        ('U1', via_exp['SCK_SDA'], 'U2', '9', w_exp, (Dird, 0, 90, r_exp), 'B.Cu'),
+
+        ('U1', via_exp['SDA_SCK'], 'U1', '9', w_exp, (Dird, 0, 90, r_exp), 'F.Cu'),
+        ('U1', via_exp['SDA_SCK'], 'U2', '8', w_exp, (Dird, 0, 90, r_exp), 'B.Cu'),
+    ])
+
+    # ROW & COL
+    # 4, 3, 2, 1, 28, ..., 18
+    exp_pads = [f'{((4 - i - 1 + 28) % 28) + 1}' for i in range(15)]
+    exp_nets = [kad.get_pad_net('U1', pad) for pad in exp_pads]
+    for i in range(15):
+        ny = abs(i - 7)
+        sy = vec2.sign(i - 7)
+        dpos = (ny * sy * 1.2, (ny**2 - 7**2) * 0.16)
+        pos = kad.calc_pos_from_pad('U1', '29', dpos)
+        net = exp_nets[i]
+        via_exp[i] = kad.add_via(pos, net, VIA_Size[2])
+        if ny in [0, 7]:
+            prm = (Strt)
+        elif ny <= 3:
+            prm = (ZgZg, 90, 45 - 12 * (3 - ny), 1)
+        else:
+            # prm = (Dird, 0, 45 + 22.5 * (ny - 2), 1)
+            prm = (Dird, 0, 90, 1)
+        kad.wire_mod_pads([('U1', exp_pads[i], 'U1', via_exp[i], w_exp, prm)])
+        kad.wire_mod_pads([('U2', exp_pads[14-i], 'U1', via_exp[i], w_exp, prm)])
+
+
+
 def wire_rj45():
     w_conn = 0.8
 
@@ -1016,7 +1093,7 @@ def wire_rj45():
 
     # connection vias (rj45 '2' & '6')
     for pidx, pad in enumerate('26'):
-        angle = [60, -65][pidx]
+        angle = [60, -60][pidx]
         rad = sep_via_y * [2, 1][pidx]
         x = rad * math.cos(math.radians(angle)) + offset_x
         y = rad * math.sin(math.radians(angle)) - pos_jmp_y[pad]
@@ -1037,6 +1114,17 @@ def wire_rj45():
         via_rj45_conn[pad] = kad.add_via_relative('J1', pad, ((1.8 - 2.54) * dt, 7), VIA_Size[1])
         kad.wire_mod_pads([('J1', pad, 'J1', via_rj45_conn[pad], w_conn, (ZgZg, 90, 30), 'B.Cu')])
 
+    wire_via_rj45_vcc = kad.add_via(kad.calc_pos_from_pad( 'J1', '9', (2.0, -2)), VCC, VIA_Size[1])
+    wire_via_rj45_gnd = kad.add_via(kad.calc_pos_from_pad( 'J1', '9', (3.5, -2)), GND, VIA_Size[1])
+
+    wire_via_rj45_vcc_hole = kad.add_via(kad.calc_pos_from_pad( 'J1', '9', (4.5, 6.3)), VCC, VIA_Size[1])
+    wire_via_rj45_gnd_hole = kad.add_via(kad.calc_pos_from_pad( 'J1', '9', (6.0, 6.3)), GND, VIA_Size[1])
+    wire_via_rj45_vcc_13 = kad.add_via(kad.calc_pos_from_pad( 'SW13', '3', (3.0, 0)), VCC, VIA_Size[1])
+    wire_via_rj45_gnd_13 = kad.add_via(kad.calc_pos_from_pad( 'SW13', '3', (4.5, 0)), GND, VIA_Size[1])
+    wire_via_rj45_vcc_14 = kad.add_via(kad.calc_pos_from_pad( 'SW14', '3', (4.5, 0)), VCC, VIA_Size[1])
+    wire_via_rj45_gnd_14 = kad.add_via(kad.calc_pos_from_pad( 'SW14', '3', (6.0, 0)), GND, VIA_Size[1])
+
+    sep = 1.4
     kad.wire_mod_pads([
         # '4'
         ('JPF4', '2', 'JPF4', via_rj45_conn['4'], w_conn, (Dird, [(90, 0.35), 0], 45), 'F.Cu'),
@@ -1045,79 +1133,26 @@ def wire_rj45():
         ('JPB8', via_rj45['F8'], 'JPB8', via_rj45['B8'], w_conn, (Dird, [(0, sep_via_y * 3), 90], 0), 'B.Cu'),
         # '1' == '9'
         ('J1', '1', 'J1', '9', w_conn, (Dird, [(-90, 2), 0], 90), 'F.Cu'),
+        # 6 - GND & 8 - VCC
+        ('J1', via_rj45_conn['6'], 'J1', wire_via_rj45_gnd, w_conn, (Dird, [(30, 1.2), (0, 3.0), -45], 90, 1), 'F.Cu'),
+        ('J1', via_rj45['F8'], 'J1', wire_via_rj45_vcc, w_conn, (Dird, -45, 90, 1), 'F.Cu'),
+        ('J1', wire_via_rj45_gnd, 'J1', wire_via_rj45_gnd_hole, w_conn, (ZgZg, 90, 30, 1), 'F.Cu'),
+        ('J1', wire_via_rj45_vcc, 'J1', wire_via_rj45_vcc_hole, w_conn, (ZgZg, 90, 30, 1), 'F.Cu'),
+        ('J1', wire_via_rj45_gnd_hole, 'J1', wire_via_rj45_gnd_13, w_conn, (ZgZg, 90, 30, 1), 'F.Cu'),
+        ('J1', wire_via_rj45_vcc_hole, 'J1', wire_via_rj45_vcc_13, w_conn, (ZgZg, 90, 30, 1), 'F.Cu'),
+        ('J1', wire_via_rj45_gnd_13, 'J1', wire_via_rj45_gnd_14, w_conn, (ZgZg, 90, 30, 1), 'B.Cu'),
+        ('J1', wire_via_rj45_vcc_13, 'J1', wire_via_rj45_vcc_14, w_conn, (ZgZg, 90, 30, 1), 'B.Cu'),
+        ('C1', via_exp_cap_gnd['C1'], 'J1', wire_via_rj45_gnd_14, w_conn, (ZgZg, 90, 30, 1), 'B.Cu'),
+        ('C1', via_exp_cap_vcc['C1'], 'J1', wire_via_rj45_vcc_14, w_conn, (ZgZg, 90, 30, 1), 'B.Cu'),
+        ('U1', via_exp['NRST1'], 'J1', via_rj45_conn['5'], w_conn, (Dird, 0, -45), 'B.Cu'),
+        ('U1', via_exp['SCK_SDA'], 'J1', via_rj45_conn['3'], w_conn, (Dird, 0, -45), 'B.Cu'),
+        ('U1', via_exp['SDA_SCK'], 'J1', via_rj45_conn['7'], w_conn, (Dird, [(-90, sep), 0], -45), 'B.Cu'),
     ])
 
     # remove wire vias
     for name in ['F2', 'B2', 'B6', 'F6', 'B8']:
         pcb.Delete(via_rj45[name])
         del via_rj45[name]
-
-
-def wire_mods_exp():
-    w_exp, r_exp = 0.4, 1.0
-    w_row, r_row = 0.7, 2.0
-
-    # GND
-    wire_via_gnd = kad.add_via_relative('U1', '29', (0, 0), VIA_Size[1])
-    for mod_exp in ['U1', 'U2']:
-        gnd_pad_nums = [6, 12, 13]
-        if mod_exp == 'U1':
-            gnd_pad_nums.append(11)
-        for gnd_pad_num in gnd_pad_nums:
-            base_angle = (((gnd_pad_num + 5) // 7) % 2) * 90  # not correct-worthy, but enough
-            kad.wire_mod_pads([(mod_exp, wire_via_gnd, mod_exp, str(gnd_pad_num), w_exp, (Dird, base_angle, base_angle + 90, 0))])
-    pcb.Delete(wire_via_gnd)
-
-    # pass caps
-    for i in '12':
-        mod_exp = f'U{i}'
-        mod_cap = f'C{i}'
-        kad.wire_mod_pads([
-            (mod_exp, '5', mod_cap, '1', w_exp, (Dird, [(180, 1.25), 50], 90, 1)),
-            (mod_exp, '6', mod_cap, '2', w_exp, (Dird, [(180, 1.25), 90], 90, 0.5)),
-        ])
-
-    sep = 1.4
-    # I2C & Reset
-    via_exp_NRST1 = kad.add_via_relative('U2', '14', (sep * 2, sep * 3), VIA_Size[1])
-    via_exp_NRST2 = kad.add_via_relative('U2', '14', (sep * 2, sep * 1), VIA_Size[1])
-    via_exp_SCK_SDA = kad.add_via_relative('U1', '8', (-sep, sep * 2), VIA_Size[1])
-    via_exp_SDA_SCK = kad.add_via_relative('U1', '9', (-sep - 0.6, sep * 3), VIA_Size[1])
-    kad.wire_mod_pads([
-        ('U1', via_exp_NRST1, 'J1', via_rj45_conn['5'], w_exp, (Dird, 0, -45), 'B.Cu'),
-        ('U1', via_exp_NRST1, 'U1', '14', w_exp, (Dird, [(-90, sep), 0], 90, r_exp), 'F.Cu'),
-        ('U1', via_exp_NRST1, 'U1', via_exp_NRST2, w_exp, (Strt), 'F.Cu'),
-        ('U1', via_exp_NRST2, 'U2', '14', w_exp, (Dird, 0, 90), 'B.Cu'),
-
-        ('U1', via_exp_SCK_SDA, 'J1', via_rj45_conn['3'], w_exp, (Dird, 0, -45), 'B.Cu'),
-        ('U1', via_exp_SCK_SDA, 'U1', '8', w_exp, (Dird, 0, 90, r_exp), 'F.Cu'),
-        ('U1', via_exp_SCK_SDA, 'U2', '9', w_exp, (Dird, 0, 90, r_exp), 'B.Cu'),
-
-        ('U1', via_exp_SDA_SCK, 'J1', via_rj45_conn['7'], w_exp, (Dird, [(-90, sep), 0], -45), 'B.Cu'),
-        ('U1', via_exp_SDA_SCK, 'U1', '9', w_exp, (Dird, 0, 90, r_exp), 'F.Cu'),
-        ('U1', via_exp_SDA_SCK, 'U2', '8', w_exp, (Dird, 0, 90, r_exp), 'B.Cu'),
-    ])
-
-    # ROW & COL
-    # 4, 3, 2, 1, 28, ..., 18
-    exp_pads = [f'{((4 - i - 1 + 28) % 28) + 1}' for i in range(15)]
-    exp_nets = [kad.get_pad_net('U1', pad) for pad in exp_pads]
-    for i in range(15):
-        ny = abs(i - 7)
-        sy = vec2.sign(i - 7)
-        dpos = (ny * sy * 1.2, (ny**2 - 7**2) * 0.16)
-        pos = kad.calc_pos_from_pad('U1', '29', dpos)
-        net = exp_nets[i]
-        via_exp[i] = kad.add_via(pos, net, VIA_Size[2])
-        if ny in [0, 7]:
-            prm = (Strt)
-        elif ny <= 3:
-            prm = (ZgZg, 90, 45 - 12 * (3 - ny), 1)
-        else:
-            # prm = (Dird, 0, 45 + 22.5 * (ny - 2), 1)
-            prm = (Dird, 0, 90, 1)
-        kad.wire_mod_pads([('U1', exp_pads[i], 'U1', via_exp[i], w_exp, prm)])
-        kad.wire_mod_pads([('U2', exp_pads[14-i], 'U1', via_exp[i], w_exp, prm)])
 
 
 def wire_mods_debounce():
@@ -1787,8 +1822,8 @@ def main():
     place_key_switches()
     place_mods()
     if board in [BDC]:
-        wire_rj45()
         wire_mods_exp()
+        wire_rj45()
         wire_mods_debounce()
         wire_mods_col_diode()
         wire_mods_row_led()
