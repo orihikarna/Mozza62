@@ -1007,8 +1007,8 @@ def wire_mods_exp():
     for i in '12':
         mod_exp = f'U{i}'
         mod_cap = f'C{i}'
-        via_exp_cap_vcc[mod_cap] = kad.add_via_relative( mod_cap, '1', (0, 2.6), VIA_Size[1])
-        via_exp_cap_gnd[mod_cap] = kad.add_via_relative( mod_cap, '2', (0, 1.4), VIA_Size[1])
+        via_exp_cap_vcc[mod_cap] = kad.add_via_relative(mod_cap, '1', (0, 2.6), VIA_Size[1])
+        via_exp_cap_gnd[mod_cap] = kad.add_via_relative(mod_cap, '2', (0, 1.4), VIA_Size[1])
         kad.wire_mod_pads([
             (mod_cap, '1', mod_exp, '5', w_exp, (Dird, 90, [(180, 1.25), 50], 1)),
             (mod_cap, '2', mod_exp, '6', w_exp, (Dird, 90, [(180, 1.25), 90], 0.5)),
@@ -1117,17 +1117,17 @@ def wire_rj45():
         via_rj45_conn[pad] = kad.add_via_relative('J1', pad, ((1.8 - 2.54) * dt, 7), VIA_Size[1])
         kad.wire_mod_pads([('J1', pad, 'J1', via_rj45_conn[pad], w_conn, (ZgZg, 90, 30), 'B.Cu')])
 
-    wire_via_rj45_vcc = kad.add_via(kad.calc_pos_from_pad( 'J1', '9', (2.0, -2)), VCC, VIA_Size[1])
-    wire_via_rj45_gnd = kad.add_via(kad.calc_pos_from_pad( 'J1', '9', (3.5, -2)), GND, VIA_Size[1])
+    wire_via_rj45_vcc = kad.add_via(kad.calc_pos_from_pad('J1', '9', (2.0, -2)), VCC, VIA_Size[1])
+    wire_via_rj45_gnd = kad.add_via(kad.calc_pos_from_pad('J1', '9', (3.5, -2)), GND, VIA_Size[1])
 
-    wire_via_rj45_vcc_hole = kad.add_via(kad.calc_pos_from_pad( 'J1', '9', (4.5, 6.3)), VCC, VIA_Size[1])
-    wire_via_rj45_gnd_hole = kad.add_via(kad.calc_pos_from_pad( 'J1', '9', (6.0, 6.3)), GND, VIA_Size[1])
-    wire_via_rj45_vcc_13 = kad.add_via(kad.calc_pos_from_pad( 'SW13', '3', (3.0, 0)), VCC, VIA_Size[1])
-    wire_via_rj45_gnd_13 = kad.add_via(kad.calc_pos_from_pad( 'SW13', '3', (4.5, 0)), GND, VIA_Size[1])
-    wire_via_rj45_vcc_14 = kad.add_via(kad.calc_pos_from_pad( 'SW14', '3', (4.5, 0)), VCC, VIA_Size[1])
-    wire_via_rj45_gnd_14 = kad.add_via(kad.calc_pos_from_pad( 'SW14', '3', (6.0, 0)), GND, VIA_Size[1])
-    via_rj45_dbnc['vcc'] = kad.add_via(kad.calc_pos_from_pad( 'SW14', '1', ( 9.5, -1.8)), VCC, VIA_Size[1])
-    via_rj45_dbnc['gnd'] = kad.add_via(kad.calc_pos_from_pad( 'SW14', '1', (11.0, -3.2)), GND, VIA_Size[1])
+    wire_via_rj45_vcc_hole = kad.add_via(kad.calc_pos_from_pad('J1', '9', (4.5, 6.3)), VCC, VIA_Size[1])
+    wire_via_rj45_gnd_hole = kad.add_via(kad.calc_pos_from_pad('J1', '9', (6.0, 6.3)), GND, VIA_Size[1])
+    wire_via_rj45_vcc_13 = kad.add_via(kad.calc_pos_from_pad('SW13', '3', (3.0, 0)), VCC, VIA_Size[1])
+    wire_via_rj45_gnd_13 = kad.add_via(kad.calc_pos_from_pad('SW13', '3', (4.5, 0)), GND, VIA_Size[1])
+    wire_via_rj45_vcc_14 = kad.add_via(kad.calc_pos_from_pad('SW14', '3', (4.5, 0)), VCC, VIA_Size[1])
+    wire_via_rj45_gnd_14 = kad.add_via(kad.calc_pos_from_pad('SW14', '3', (6.0, 0)), GND, VIA_Size[1])
+    via_rj45_dbnc['vcc'] = kad.add_via(kad.calc_pos_from_pad('SW14', '1', (9.5, -1.8)), VCC, VIA_Size[1])
+    via_rj45_dbnc['gnd'] = kad.add_via(kad.calc_pos_from_pad('SW14', '1', (11.0, -3.2)), GND, VIA_Size[1])
 
     sep = 1.4
     kad.wire_mod_pads([
@@ -1245,7 +1245,7 @@ def wire_mods_debounce_rotenc():
         ('R112', via_dbnc_gnd[11], 'R122', via_dbnc_gnd[12], w_col, (Dird, [(-90, 8), 0], 90), 'F.Cu'),
         # vcc from top rows
         ('RE1', 'C', 'CD4', via_dbnc_rotenc['vcc'], w_col, (Dird, [(0, 3), (90, 8), 0], 0), 'B.Cu'),
-        # gnd from 
+        # gnd from
         ('R112', via_dbnc_gnd[11], 'R42', via_dbnc_rotenc['gnd'], w_col, (Dird, [(0, 3), -90], 0), 'B.Cu'),
     ])
 
@@ -1686,7 +1686,6 @@ def wire_mods_led_ends():
         # data
         (mod_rj, '1', mod_sw, wire_via_led_left['21'], w_dat, (Dird, [(135, 2), 90], 0, r_led), 'F.Cu'),
     ])
-
 
     # between rows at right ends
     for left, rght in [('71', '82'), ('82', '83'), ('83', '84')]:
