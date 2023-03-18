@@ -1,5 +1,5 @@
 # import math
-import vec2
+from . import vec2
 
 unit = ((1, 0), (0, 1))
 

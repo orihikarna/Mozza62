@@ -30,8 +30,8 @@ Spline = kad.Spline
 # in mm
 VIA_Size = [(1.1, 0.6), (1.0, 0.5), (0.8, 0.4)]  # , (0.7, 0.3)]
 
-PCB_Width = 170
-PCB_Height = 155
+PCB_Width = 185
+PCB_Height = 129
 
 U1_x, U1_y = 82, 95
 J1_x, J1_y, J1_angle = 18, 98, 0
@@ -692,14 +692,15 @@ def draw_top_bottom(board, sw_pos_angles):
 
 
 def add_zone(net_name, layer_name, rect, zones):
-    return
     layer = pcb.GetLayerID(layer_name)
     zone, poly = kad.add_zone(rect, layer, len(zones), net_name)
-    zone.SetZoneClearance(pcbnew.FromMils(20))
+    settings = pcb.GetZoneSettings()
+    settings.m_ZoneClearance = pcbnew.FromMils(20)
+    pcb.SetZoneSettings(settings)
     zone.SetMinThickness(pcbnew.FromMils(16))
-    #zone.SetThermalReliefGap( pcbnew.FromMils( 12 ) )
-    #zone.SetThermalReliefCopperBridge( pcbnew.FromMils( 24 ) )
-    zone.Hatch()
+    # zone.SetThermalReliefGap( pcbnew.FromMils( 12 ) )
+    # zone.SetThermalReliefCopperBridge( pcbnew.FromMils( 24 ) )
+    # zone.Hatch()
     #
     zones.append(zone)
     #polys.append( poly )
@@ -1848,6 +1849,14 @@ def main():
 
     setRefs(board)
     drawEdgeCuts(board)
+
+    # zones
+    zones = []
+    if board in [BDC]:
+        offset = (42, 21)
+        add_zone('GND', 'F.Cu', make_rect((PCB_Width, PCB_Height), offset), zones)
+        add_zone('GND', 'B.Cu', make_rect((PCB_Width, PCB_Height), offset), zones)
+
     return
 
     for name in keys.keys():
@@ -1866,11 +1875,6 @@ def main():
 
     # return
 
-    # zones
-    zones = []
-    if board in [BDC, BDM, BDS]:
-        add_zone('GND', 'F.Cu', make_rect((PCB_Width, PCB_Height)), zones)
-        add_zone('GND', 'B.Cu', make_rect((PCB_Width, PCB_Height)), zones)
 
     # draw top & bottom patterns
     if board in [BDT, BDB, BDS]:

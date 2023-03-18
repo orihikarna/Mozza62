@@ -442,6 +442,8 @@ def wire_mod_pads(tracks):
 ##
 def removeDrawings():
     # pcb.DeleteZONEOutlines()
+    for zone in pcb.Zones():
+        pcb.Remove(zone)
     for draw in pcb.GetDrawings():
         pcb.Delete(draw)
 
@@ -665,10 +667,9 @@ def draw_closed_corners(corners, layer, width):
 
 
 def add_zone(rect, layer, idx=0, net_name='GND'):
-    return None, None
     pnts = list(map(lambda pt: pnt.to_unit(vec2.round(pt, PointDigits), UnitMM), rect))
     net = pcb.FindNet(net_name).GetNetCode()
-    zone = pcb.AddArea(net, idx, layer, pnts[0][0], pnts[0][1], pcbnew.ZONE_CONTAINER.DIAGONAL_EDGE)
+    zone = pcb.AddArea(None, net, layer, pnts[0], pcbnew.ZONE_BORDER_DISPLAY_STYLE_DIAGONAL_EDGE)
     poly = zone.Outline()
     for idx, pt in enumerate(pnts):
         if idx == 0:
