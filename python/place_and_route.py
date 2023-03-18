@@ -287,13 +287,27 @@ def make_corners(key_cnrs):
 def drawEdgeCuts(board):
     width = 0.12
 
-    pnts = []
-    for pnt in EdgeCuts:
-        if len(pnts) == 0 or not vec2.equal(pnt, pnts[-1]):
-            pnts.append(pnt)
-    if not vec2.equal(pnts[0], pnts[-1]):
-        pnts.append(pnts[0])
-    kad.add_lines(pnts, 'Edge.Cuts', width)
+    if True:
+        pnts = []
+        for pnt in EdgeCuts:
+            if len(pnts) == 0 or not vec2.equal(pnt, pnts[-1]):
+                pnts.append(pnt)
+        if not vec2.equal(pnts[0], pnts[-1]):
+            pnts.append(pnts[0])
+        kad.add_lines(pnts, 'Edge.Cuts', width)
+    if True:
+        unit = 17
+        org = vec2.add(kad.get_mod_pos('SW54'), vec2.scale(unit, (-6.9, 0.3)))
+        Lx = unit * 2.9
+        Ly = unit * 2.9 * (math.sqrt(3)/2)
+        Radius = Ly
+        cnrs = [
+            ((vec2.add(org, (Lx*3/8, -Ly*3/4)), 120), Round, [Radius]),
+            ((vec2.add(org, (Lx * 2, Ly)), 0), Round, [Radius]),
+            ((vec2.add(org, (Lx * (4 - 3/8), -Ly*3/4)), -120), Round, [Radius]),
+            ((vec2.add(org, (Lx * 2, -Ly*2)), 180), Round, [Radius]),
+        ]
+        kad.draw_closed_corners(cnrs, 'Edge.Cuts', width)
     return
 
     U1_mod = (U1_x, U1_y, 0)
