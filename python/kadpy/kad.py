@@ -411,6 +411,8 @@ def wire_mod_pads(tracks):
     layer_FCu = pcb.GetLayerID('F.Cu')
     layer_BCu = pcb.GetLayerID('B.Cu')
     for track in tracks:
+        if track == None:
+            continue
         mod_a, pad_a, mod_b, pad_b, width, prms = track[:6]
         # check a & b
         pos_a, angle_a, layer_a, net_a = _get_pad_props(pad_a, mod_a)

@@ -81,19 +81,19 @@ SW_RotEnc = '65'
 angle_M_Comm = -18
 angle_Inner_Index = -15.2
 
-dx_Dot = -2.997559
-dx_Comma = -2.997559
-dx_Index = 1.786772
-dx_Inner = -2.742943
-dx_Pinky = 2.371815
+# dx_Dot = -2.997559
+# dx_Comma = -2.997559
+# dx_Index = 1.786772
+# dx_Inner = -2.742943
+# dx_Pinky = 2.371815
 
-dx_cols = [
-    dx_Inner,
-    dx_Index, dx_Index,
-    dx_Comma,
-    dx_Dot,
-    dx_Pinky, dx_Pinky, dx_Pinky,
-]
+# dx_cols = [
+#     dx_Inner,
+#     dx_Index, dx_Index,
+#     dx_Comma,
+#     dx_Dot,
+#     dx_Pinky, dx_Pinky, dx_Pinky,
+# ]
 
 
 def is_SW(idx: str):
@@ -694,16 +694,18 @@ def draw_top_bottom(board, sw_pos_angles):
 def add_zone(net_name, layer_name, rect, zones):
     layer = pcb.GetLayerID(layer_name)
     zone, poly = kad.add_zone(rect, layer, len(zones), net_name)
+    #
     settings = pcb.GetZoneSettings()
     settings.m_ZoneClearance = pcbnew.FromMils(20)
     pcb.SetZoneSettings(settings)
+    #
     zone.SetMinThickness(pcbnew.FromMils(16))
     # zone.SetThermalReliefGap( pcbnew.FromMils( 12 ) )
     # zone.SetThermalReliefCopperBridge( pcbnew.FromMils( 24 ) )
     # zone.Hatch()
     #
     zones.append(zone)
-    #polys.append( poly )
+    # polys.append( poly )
 
 
 Cu_layers = ['F.Cu', 'B.Cu']
@@ -1001,6 +1003,7 @@ def wire_mods_exp():
 
     for via in [wire_via_exp_vcc, wire_via_exp_gnd, wire_via_exp_nrst]:
         pcb.Delete(via)
+
 
 def wire_rj45():
     w_conn = 0.8
@@ -1359,25 +1362,20 @@ def wire_mods_row_led():
             # pwr rail vias <-> cap vias
             (mod_sw, wire_via_led_pwr_1st[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx],   w_led, (Dird, 0, 90, r_led), 'B.Cu'),
             (mod_sw, wire_via_led_pwr_2nd[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx ^ 1], w_led, (Dird, [(0, +1.2), 0], 90), 'F.Cu'),
-            # (mod_sw, wire_via_led_pwr_2nd[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx ^ 1], w_led, (Dird, [(0, -1.2), 0], 90), 'F.Cu'),
+            (mod_sw, wire_via_led_pwr_2nd[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx ^ 1], w_led, (Dird, [(0, -1.2), 0], 90), 'F.Cu') if idx != '82' else None,
             # cap pwr via pad <-> led pad
-            (mod_cap, via_cap_vcc[idx], mod_led, '48'[lrx],   w_led, (ZgZg, 90, 45), Cu_layers[lrx]),
+            (mod_cap, via_cap_vcc[idx], mod_led, '48'[lrx],     w_led, (ZgZg, 90, 45), Cu_layers[lrx]),
             (mod_cap, via_cap_gnd[idx], mod_led, '26'[lrx ^ 1], w_led, (ZgZg, 90, 45), Cu_layers[lrx ^ 1]),
             # cap pwr via <-> sw pins
-            (mod_cap, via_cap_vcc[idx], mod_sw, '54'[lrx],   w_led, (Dird, 0, +38 * lrs), Cu_layers[lrx ^ 1]),
+            (mod_cap, via_cap_vcc[idx], mod_sw, '54'[lrx],     w_led, (Dird, 0, +38 * lrs), Cu_layers[lrx ^ 1]),
             (mod_cap, via_cap_gnd[idx], mod_sw, '54'[lrx ^ 1], w_led, (Dird, 0, -38 * lrs), Cu_layers[lrx]),
             # led pad <-> sw pins
-            (mod_led, '26'[lrx],   mod_sw, '54'[lrx ^ 1], w_led, (Dird, 0, 90), Cu_layers[lrx]),
-            (mod_led, '48'[lrx ^ 1], mod_sw, '54'[lrx],   w_led, (Dird, 0, 90), Cu_layers[lrx ^ 1]),
+            (mod_led, '26'[lrx],     mod_sw, '54'[lrx ^ 1], w_led, (Dird, 0, 90), Cu_layers[lrx]),
+            (mod_led, '48'[lrx ^ 1], mod_sw, '54'[lrx],     w_led, (Dird, 0, 90), Cu_layers[lrx ^ 1]),
             # led dat via <-> dat connect vias
-            (mod_led, [via_led_in[idx], via_led_out[idx]][lrx],   mod_led, wire_via_led_left[idx], w_dat, (Dird, 105, 0), 'F.Cu'),
+            (mod_led, [via_led_in[idx], via_led_out[idx]][lrx],     mod_led, wire_via_led_left[idx], w_dat, (Dird, 105, 0), 'F.Cu') if idx != '35' else None,
             (mod_led, [via_led_in[idx], via_led_out[idx]][lrx ^ 1], mod_led, wire_via_led_rght[idx], w_dat, (Dird,  75, 0), 'B.Cu'),
         ])
-        if idx not in ['82']:
-            kad.wire_mod_pads([
-                # pwr rail vias <-> cap vias
-                (mod_sw, wire_via_led_pwr_2nd[idx], mod_sw, [via_cap_vcc[idx], via_cap_gnd[idx]][lrx ^ 1], w_led, (Dird, [(0, -1.2), 0], 90), 'F.Cu'),
-            ])
 
     # Row horizontal lines (ROW1-4, LED Pwr)
     row_angle = 90 + 4
@@ -1742,7 +1740,8 @@ def remove_temporary_vias():
         for vias in via_dict.values():
             for via in vias.values():
                 pcb.Delete(via)
-
+    for idx in ['71', '83', '84']:
+        pcb.Delete(via_led_rght[idx])
 
 # Ref
 
@@ -1874,7 +1873,6 @@ def main():
         #         R2L.append( name )
 
     # return
-
 
     # draw top & bottom patterns
     if board in [BDT, BDB, BDS]:
