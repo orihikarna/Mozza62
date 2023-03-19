@@ -1315,6 +1315,7 @@ def wire_row_led_horz_lines():
         lrs = [+1, -1][lrx]  # L/R sign
 
         col = idx[0]
+
         # 1st power rail vias
         dx = 0.8625 if col in '145' else -1.5
         dy = 0.05 + sep_led * 2
@@ -1370,11 +1371,11 @@ def wire_row_led_horz_lines():
             (mod_led, '26'[lrx], mod_sw, '45'[lrx], w_led, (Dird, 0, 90), Cu_layers[lrx]),
             (mod_led, '84'[lrx], mod_sw, '54'[lrx], w_led, (Dird, 0, 90), Cu_layers[lrx ^ 1]),
             # led dat via <-> dat connect vias
-            (mod_led, [via_led_in, via_led_out][lrx], mod_led, wire_via_led_left[idx], w_dat, (Dird, 105, 0), 'F.Cu') if idx != '35' else None,
+            (mod_led, [via_led_in, via_led_out][lrx], mod_led, wire_via_led_left[idx], w_dat, (Dird, 105, 0), 'F.Cu') if idx not in ['35'] else None,
             (mod_led, [via_led_out, via_led_in][lrx], mod_led, wire_via_led_rght[idx], w_dat, (Dird,  75, 0), 'B.Cu'),
         ])
 
-    # Row horizontal lines (ROW1-4, LED Pwr)
+    # row horizontal lines
     row_angle = 90 + 4
     for ridx in range(1, 5):
         for cidx in range(1, 8):
