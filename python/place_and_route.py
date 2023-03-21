@@ -713,6 +713,9 @@ Cu_layers = ['F.Cu', 'B.Cu']
 GND = pcb.FindNet('GND')
 VCC = pcb.FindNet('3V3')
 
+# switch positions
+sw_pos_angles = []
+
 # exp vias
 via_exp = {}
 via_exp_cap_vcc = {}
@@ -744,64 +747,57 @@ wire_via_row_vert_set = {}
 wire_via_col_horz_set = {}
 
 
-# Set mod positios
+# Set key positios
 def place_key_switches():
-    ###
-    # Set key positios
-    ###
-    sw_pos_angles = []
     for idx in sorted(keys.keys()):
         px, py, w, h, angle = keys[idx]
         sw_pos = (px, -py)
         sw_pos_angles.append((sw_pos, 180 - angle))
+
+        if idx == SW_RJ45:
+            kad.set_mod_pos_angle('J1', vec2.scale(6.2, vec2.rotate(-angle - 90), sw_pos), angle + 180)
+            continue
+        if idx == SW_RotEnc:
+            kad.set_mod_pos_angle('RE1', sw_pos, angle + 180)
+            continue
+        # print( name )
+
         isL2R = is_L2R_key(idx)
-        isThumb = is_Thumb_key(idx)
-        # SW & LED & Diode
-        if True:
-            # RJ45
-            if idx == SW_RJ45:
-                kad.set_mod_pos_angle('J1', vec2.scale(6.2, vec2.rotate(-angle - 90), sw_pos), angle + 180)
-                continue
-            # RotaryEncoder
-            if idx == SW_RotEnc:
-                kad.set_mod_pos_angle('RE1', sw_pos, angle + 180)
-                continue
-            # print( name )
 
-            mod_sw = f'SW{idx}'
-            mod_led = f'L{idx}'
-            mod_cap = f'C{idx}'
-            mod_dio = f'D{idx}'
+        mod_sw = f'SW{idx}'
+        mod_led = f'L{idx}'
+        mod_cap = f'C{idx}'
+        mod_dio = f'D{idx}'
 
-            # SW
-            kad.set_mod_pos_angle(mod_sw, sw_pos, angle + 180)
-            # SW rectangle
+        # SW
+        kad.set_mod_pos_angle(mod_sw, sw_pos, angle + 180)
+        # SW rectangle
+        if False:
             corners = []
             for pnt in make_rect((w, h), (-w/2, -h/2)):
                 pt = vec2.mult(mat2.rotate(angle), pnt, sw_pos)
                 corners.append([(pt, 0), Line, [0]])
             kad.draw_closed_corners(corners, 'F.Fab', 0.1)
-            # wire 2-3
-            kad.wire_mod_pads([(mod_sw, '2', mod_sw, '3', 0.8, (Strt))])
+        # wire 2-3
+        kad.wire_mod_pads([(mod_sw, '2', mod_sw, '3', 0.8, (Strt))])
 
-            # LED
-            # original scale was 4.93
-            pos = vec2.scale(4.7, vec2.rotate(- angle - 90), sw_pos)
-            kad.set_mod_pos_angle(mod_led, pos, angle + (180 if isL2R else 0))
+        # LED
+        pos = vec2.scale(4.7, vec2.rotate(- angle - 90), sw_pos)
+        kad.set_mod_pos_angle(mod_led, pos, angle + (180 if isL2R else 0))
 
-            # LED Caps
-            pos = vec2.mult(mat2.rotate(angle), (0, -7.2), sw_pos)
-            kad.set_mod_pos_angle(mod_cap, pos, angle + (0 if isL2R else 180))
+        # LED caps
+        pos = vec2.mult(mat2.rotate(angle), (0, -7.2), sw_pos)
+        kad.set_mod_pos_angle(mod_cap, pos, angle + (0 if isL2R else 180))
 
-            # Diode
-            diode_sign = get_diode_side(idx)
-            pos = vec2.mult(mat2.rotate(angle), (-5.4 * diode_sign, 0), sw_pos)
-            kad.set_mod_pos_angle(mod_dio, pos, angle - 90)
-            # GND Vias
-            # if name[0] not in ['1', '8', '9'] and name[1] not in ['1']:
-            #     if board != BDC or name[0] != '7':
-            #         pos = vec2.mult( mat2.rotate( angle ), (-5, 0), sw_pos )
-            #         kad.add_via( pos, GND, VIA_Size[1] )
+        # Diode
+        diode_sign = get_diode_side(idx)
+        pos = vec2.mult(mat2.rotate(angle), (-5.4 * diode_sign, 0), sw_pos)
+        kad.set_mod_pos_angle(mod_dio, pos, angle - 90)
+        # GND Vias
+        # if name[0] not in ['1', '8', '9'] and name[1] not in ['1']:
+        #     if board != BDC or name[0] != '7':
+        #         pos = vec2.mult( mat2.rotate( angle ), (-5, 0), sw_pos )
+        #         kad.add_via( pos, GND, VIA_Size[1] )
 
 
 def place_mods():
@@ -814,6 +810,21 @@ def place_mods():
             (f'C2', (+5.4, 2), -90),
         ]),
     ])
+
+    # RJ45 connector
+    pos, angle = kad.get_mod_pos_angle('J1')
+    for side in range(2):
+        sign_side = [+1, -1][side]
+        for idx in range(4):
+            pad = 2 * idx + 2  # 2, 4, 6, 8
+            dx = 1.27 * (2 * idx - 3)  # -3, -1, +1, +3
+            kad.move_mods(pos, angle - 90, [(f'JP{"FB"[side]}{pad}', (3.8, -dx * sign_side), 0)])
+
+    # DL1
+    mod_sw = 'SW21'
+    _, angle = kad.get_mod_pos_angle(mod_sw)
+    pos = kad.calc_pos_from_pad(mod_sw, '5', (1, 4.05))
+    kad.set_mod_pos_angle('DL1', pos, angle)
 
     # Debounce RRCs
     for cidx in range(1, 9):
@@ -841,32 +852,14 @@ def place_mods():
         cidx = [11, 12][i]
         pos = kad.calc_pos_from_pad('RE1', 'AB'[i], (-5, -1 * sgn))
         kad.move_mods(pos, angle + 90 * sgn, [
-            (f'CD{cidx}', (0, -1.5 * sgn), 0),
+            (f'CD{cidx}', (0, -1.6 * sgn), 0),
             (f'R{cidx}1', (0,  0), 0),
-            (f'R{cidx}2', (0, +1.5 * sgn), 0),
+            (f'R{cidx}2', (0, +1.6 * sgn), 0),
         ])
 
     # RotEnc diode
-    _, angle = kad.get_mod_pos_angle('RE1')
     pos = kad.calc_pos_from_pad('RE1', 'S2', (6, 0))
     kad.move_mods(pos, angle, [(f'D{SW_RotEnc}', (0, 0), 180)])
-
-    # RJ45 connector
-    pos, angle = kad.get_mod_pos_angle('J1')
-    for side in range(2):
-        sign_side = [+1, -1][side]
-        for idx in range(4):
-            pad = 2 * idx + 2  # 2, 4, 6, 8
-            dx = 1.27 * (2 * idx - 3)  # -3, -1, +1, +3
-            kad.move_mods(pos, angle - 90, [
-                (f'JP{"FB"[side]}{pad}', (3.8, -dx * sign_side), 0),
-            ])
-
-    # DL1
-    mod_sw = 'SW21'
-    _, angle = kad.get_mod_pos_angle(mod_sw)
-    pos = kad.calc_pos_from_pad(mod_sw, '5', (1, 4.05))
-    kad.set_mod_pos_angle('DL1', pos, angle)
     return
 
     # dummy pads
@@ -1110,7 +1103,7 @@ def wire_rj45():
         del via_rj45[name]
 
 
-def wire_debounce_rotenc():
+def wire_debounce_rrc_rotenc():
     for cidx in range(1, 9):
         mod_cd = f'CD{cidx}'
         mod_r1 = f'R{cidx}1'
@@ -1125,8 +1118,8 @@ def wire_debounce_rotenc():
         wire_via_dbnc_vcc[cidx] = kad.add_via_relative(mod_cd, '1', (-2.8, dx), VIA_Size[1])
         wire_via_dbnc_gnd[cidx] = kad.add_via_relative(mod_r2, '2', (+1.4, dx - (1.2 if cidx == 8 else 0)), VIA_Size[1])
         if cidx == 5:
-            via_dbnc_rotenc_vcc = kad.add_via_relative(mod_cd, '1', (-2.8 - 0.1, dx + 11), VIA_Size[1])
-            via_dbnc_rotenc_gnd = kad.add_via_relative(mod_r2, '2', (+1.4 - 0.1, dx - 5), VIA_Size[1])
+            via_dbnc_rotenc_vcc = kad.add_via_relative(mod_cd, '1', (-2.8 - 0.1, dx + 9.2), VIA_Size[1])
+            via_dbnc_rotenc_gnd = kad.add_via_relative(mod_r2, '2', (+1.4 - 0.1, dx - 3.0), VIA_Size[1])
         kad.add_via_relative(mod_cd, '1', (-2.8 - 0.1, dx), VIA_Size[1])  # vcc
         via_dbnc_row[cidx] = kad.add_via_relative(mod_cd, '2', (0.1, dx), VIA_Size[1])
         via_dbnc_col[cidx] = kad.add_via_relative(mod_r2, '1', (0, dx), VIA_Size[1])
@@ -1143,25 +1136,29 @@ def wire_debounce_rotenc():
                 (mod_cd, '2', mod_cd, via_dbnc_row[cidx], w_col, (Dird, 90, 0, 0), layer),
                 (mod_r2, '1', mod_cd, via_dbnc_col[cidx], w_col, (Dird, 90, 0, 0), layer),
             ])
-        # debounce to vcc / gnd
+        # debounce to vcc / gnd rails
         kad.wire_mod_pads([
             (mod_cd, via_dbnc_vcc_conn, mod_cd, wire_via_dbnc_vcc[cidx], w_row, (Strt), 'B.Cu'),
             (mod_r2, via_dbnc_gnd_conn, mod_r2, wire_via_dbnc_gnd[cidx], w_row, (Dird, 0, [(+90, 1.4), 90]), 'F.Cu'),
             (mod_r2, via_dbnc_gnd_conn, mod_r2, wire_via_dbnc_gnd[cidx], w_row, (Dird, 0, [(-90, 1.4), 90]), 'F.Cu') if cidx not in [8] else None,
         ])
 
-    via_dbnc_gnd = {}
-
     # rotenc debounce
     mod_re = 'RE1'
+
+    via_dbnc_gnd = {}
+    via_rotenc_gnd = kad.add_via(kad.calc_pos_from_pad(mod_re, 'C', (2.4, -1.4)), GND, VIA_Size[0])
+
     for i, cidx in enumerate([11, 12]):
         mod_cd = f'CD{cidx}'
         mod_r1 = f'R{cidx}1'
         mod_r2 = f'R{cidx}2'
 
+        sign = [+1, -1][i]
+
         # row gnd and vcc vias
         via_dbnc_row[cidx] = kad.add_via_relative(mod_cd, '2', (+1.6, 0), VIA_Size[1])
-        via_dbnc_gnd[cidx] = kad.add_via_relative(mod_r2, '2', (+1.6, 0), VIA_Size[1])
+        via_dbnc_gnd[cidx] = kad.add_via_relative(mod_r2, '2', (0, 1.6 * sign), VIA_Size[1])
 
         # resister and cap vias
         for layer in Cu_layers:
@@ -1170,22 +1167,24 @@ def wire_debounce_rotenc():
                 (mod_r1, '1', mod_r2, '1', w_col, (Strt), layer),
                 (mod_r1, '2', mod_cd, '2', w_col, (Dird, 90, 0, 0), layer),
                 # res & cap pads and via
-                (mod_cd, '2', mod_cd, via_dbnc_row[cidx], w_col, (Dird, 90, 0), layer),
-                (mod_r2, '2', mod_r2, via_dbnc_gnd[cidx], w_col, (Dird, 90, 0), layer),
+                (mod_cd, '2', mod_cd, via_dbnc_row[cidx], w_col, (Dird, 90, 0, 0), layer),
+                (mod_r2, '2', mod_r2, via_dbnc_gnd[cidx], w_col, (Dird, 90, 0, 0), layer),
                 # rotenc
                 (mod_re, 'C', mod_cd, '1', w_col, (Dird, 0, 0, r_col), layer),
-                (mod_re, 'AB'[i], mod_r2, '1', w_col, (Dird, 90, 90), layer),
+                (mod_re, 'AB'[i], mod_r2, '1', w_col, (Dird, 90, 90, 0), layer),
             ])
-    # cap to rotenc vcc
+        # gnd via
+        kad.wire_mod_pads([(mod_re, via_rotenc_gnd, mod_r2, via_dbnc_gnd[cidx], w_col, (Dird, 90, 90, r_col), 'F.Cu')])
+    # cap vccs
     for layer in Cu_layers:
         kad.wire_mod_pads([('CD11', '1', 'CD12', '1', w_col, (Strt), layer)])
 
+    # vcc & gnd from row4
+    tctr = kad.calc_pos_from_pad(mod_re, 'S1', (2, -10))
+    bctr = kad.calc_pos_from_pad(mod_re, 'C', (9, -3.0))
     kad.wire_mod_pads([
-        ('R112', via_dbnc_gnd[11], 'R122', via_dbnc_gnd[12], w_col, (Dird, [(-90, 8), 0], 90), 'F.Cu'),
-        # vcc from top rows
-        ('RE1', 'C', 'CD4', via_dbnc_rotenc_vcc, w_col, (Dird, [(0, 3), (90, 8), 0], 0), 'B.Cu'),
-        # gnd from
-        ('R112', via_dbnc_gnd[11], 'R42', via_dbnc_rotenc_gnd, w_col, (Dird, [(0, 3), -90], 0), 'B.Cu'),
+        ('CD5', via_dbnc_rotenc_vcc, mod_re, 'C', w_row, (Dird, 0, [(0, bctr), 90], kad.inf, tctr), 'B.Cu'),
+        ('R52', via_dbnc_rotenc_gnd, mod_re, via_rotenc_gnd, w_row, (Dird, 0, [(0, bctr), -90], kad.inf, tctr), 'B.Cu'),
     ])
 
 
@@ -1724,9 +1723,8 @@ def remove_temporary_vias():
     for idx in ['71', '83', '84']:
         pcb.Delete(via_led_rght[idx])
 
-# Ref
 
-
+# References
 def setRefs(board):
     # GraphicalItems
     for mod in pcb.GetFootprints():
@@ -1818,7 +1816,7 @@ def main():
     if board in [BDC]:
         wire_mods_exp()
         wire_rj45()
-        wire_debounce_rotenc()
+        wire_debounce_rrc_rotenc()
         wire_row_led_horz_lines()
         # wire_mods_col_diode()
         # wire_row_vert_lines()
