@@ -731,6 +731,8 @@ wire_via_led_pwr_1st = {}
 wire_via_led_pwr_2nd = {}
 
 # led dat connection
+via_led_in = {}
+via_led_out = {}
 via_led_rght = {}
 wire_via_led_left = {}
 wire_via_led_rght = {}
@@ -1224,14 +1226,15 @@ def wire_row_led_horz_lines():
         via_cap_vcc = kad.add_via_relative(mod_cap, '1', (-dx, dy_via_cap * lrs), VIA_Size[1])
         via_cap_gnd = kad.add_via_relative(mod_cap, '2', (+dx, dy_via_cap * lrs), VIA_Size[1])
         # led data vias (internal)
-        via_led_in = kad.add_via_relative(mod_led, '73'[lrx], (+1.5, 0), VIA_Size[2])
-        via_led_out = kad.add_via_relative(mod_led, '15'[lrx], (-1.5, 0), VIA_Size[2])
+        via_led_in[idx] = kad.add_via_relative(mod_led, '73'[lrx], (+1.5, 0), VIA_Size[2])
+        if idx not in ['35']:
+            via_led_out[idx] = kad.add_via_relative(mod_led, '15'[lrx], (-1.5, 0), VIA_Size[2])
         # led data connection vias
         via_led_rght[idx] = kad.add_via_relative(mod_led, '13'[lrx], vec2.scale(lrs, (-3.4, sep_led_via - dy_via_dat)), VIA_Size[2])
-        pos_via = (-2.2, 3.2) if idx in ['82'] else (-3.3, 3.6) if idx in ['84'] else (-3.4, sep_led_via)
-        wire_via_led_rght[idx] = kad.add_via_relative(mod_led, '13'[lrx], vec2.scale(lrs, pos_via), VIA_Size[2])
-        pos_via = (+2.2, 3.2) if idx in ['13'] else (+3.4, sep_led_via)
-        wire_via_led_left[idx] = kad.add_via_relative(mod_led, '75'[lrx], vec2.scale(lrs, pos_via), VIA_Size[2])
+        if idx not in ['82', '84']:
+            wire_via_led_rght[idx] = kad.add_via_relative(mod_led, '13'[lrx], vec2.scale(lrs, (-3.4, sep_led_via)), VIA_Size[2])
+        if idx not in ['13', '35']:
+            wire_via_led_left[idx] = kad.add_via_relative(mod_led, '75'[lrx], vec2.scale(lrs, (+3.4, sep_led_via)), VIA_Size[2])
 
         # wiring centers
         ctr_row_sw[idx] = kad.calc_pos_from_pad(mod_sw, '5', (3, -5))
@@ -1247,8 +1250,8 @@ def wire_row_led_horz_lines():
                 (mod_cap, '1', mod_cap, via_cap_vcc, w_led, (Dird, 0, 90, 0), layer),
                 (mod_cap, '2', mod_cap, via_cap_gnd, w_led, (Dird, 0, 90, 0), layer),
                 # led pad <-> dat via (3/7 = in, 1/5 = out)
-                (mod_led, '37'[lidx], mod_led, via_led_in,  w_dat, (Dird, 0, 90), layer),
-                (mod_led, '15'[lidx], mod_led, via_led_out, w_dat, (Dird, 0, 90), layer),
+                (mod_led, '37'[lidx], mod_led, via_led_in[idx],  w_dat, (Dird, 0, 90), layer),
+                (mod_led, '15'[lidx], mod_led, via_led_out[idx], w_dat, (Dird, 0, 90), layer) if idx in via_led_out else None,
             ])
         # wire vias
         kad.wire_mod_pads([
@@ -1266,10 +1269,8 @@ def wire_row_led_horz_lines():
             (mod_led, '26'[lrx], mod_sw, '45'[lrx], w_led, (Dird, 0, 90), Cu_layers[lrx]),
             (mod_led, '84'[lrx], mod_sw, '54'[lrx], w_led, (Dird, 0, 90), Cu_layers[lrx ^ 1]),
             # led dat via <-> dat connect vias
-            (mod_led, [via_led_in, via_led_out][lrx], mod_led, wire_via_led_left[idx], w_dat, (Dird, 105, 0), 'F.Cu') if idx not in ['13', '35'] else None,
-            (mod_led, [via_led_in, via_led_out][lrx], mod_led, wire_via_led_left[idx], w_dat, (Dird, 105, 90), 'F.Cu') if idx in ['13'] else None,
-            (mod_led, [via_led_out, via_led_in][lrx], mod_led, wire_via_led_rght[idx], w_dat, (Dird,  75, 0), 'B.Cu') if idx not in ['82'] else None,
-            (mod_led, [via_led_out, via_led_in][lrx], mod_led, wire_via_led_rght[idx], w_dat, (Dird,  75, 90), 'F.Cu') if idx in ['82'] else None,
+            (mod_led, [via_led_in, via_led_out][lrx][idx], mod_led, wire_via_led_left[idx], w_dat, (Dird, 105, 0), 'F.Cu') if idx in wire_via_led_left else None,
+            (mod_led, [via_led_out, via_led_in][lrx][idx], mod_led, wire_via_led_rght[idx], w_dat, (Dird,  75, 0), 'B.Cu') if idx in wire_via_led_rght else None,
         ])
 
     # row horizontal lines
@@ -1309,7 +1310,7 @@ def wire_row_led_horz_lines():
             sw_L, sw_R = f'SW{left}', f'SW{rght}'
             # power rails, row lines, led data lines
             kad.wire_mod_pads([
-                (sw_L, wire_via_led_pwr_1st[left], sw_R, wire_via_led_pwr_1st[rght], w_led, prm_led, 'F.Cu') if not (ridx == 1 and cidx == 2) else None,
+                (sw_L, wire_via_led_pwr_1st[left], sw_R, wire_via_led_pwr_1st[rght], w_led, prm_led, 'F.Cu') if left not in ['21'] else None,
                 (sw_L, wire_via_led_pwr_2nd[left], sw_R, wire_via_led_pwr_2nd[rght], w_led, prm_led, 'F.Cu'),
                 (sw_L, wire_via_led_rght[left], sw_R, wire_via_led_left[rght], w_dat, prm_led, 'F.Cu'),
                 (sw_L, '1', sw_R, '1', w_row, prm_row, 'F.Cu'),
@@ -1336,7 +1337,6 @@ def wire_led_left_ends():
     mod_rj = 'J1'
     mod_sw = 'SW21'
     mod_dio = 'DL1'
-
     # 4V3 diode
     via_led_5v = kad.add_via_relative(mod_dio, '2', (2, 0), VIA_Size[0])
     for layer in Cu_layers:
@@ -1359,8 +1359,10 @@ def wire_led_left_ends():
     # between rows at left ends
     for left, rght in [('22', '13')]:
         sw_L, sw_R = f'SW{left}', f'SW{rght}'
-        prm_led_dat = (Dird, [(0, 2.0), 90 + angle_Inner_Index], [(-90, 2.2), 180], 2)
-        kad.wire_mod_pads([(sw_L, wire_via_led_left[left], sw_R, wire_via_led_left[rght], w_dat, prm_led_dat, 'F.Cu')])
+        prm_led_dat = (Dird, [(0, 2.0), 90 + angle_Inner_Index], [(-75, 2.4), (-90, 2.8), 0], 2)
+        kad.wire_mod_pads([
+            (sw_L, wire_via_led_left[left], sw_R, via_led_in[rght], w_dat, prm_led_dat, 'F.Cu'),
+        ])
 
 
 def wire_led_right_ends():
@@ -1371,29 +1373,28 @@ def wire_led_right_ends():
             rcnr = kad.calc_pos_from_pad(sw_R, '4', (5.2, 5.4))
             prm_led_dat = (Dird, [(180, 2.2), 120], 90, r_dat)
             prm_led_pwr = (Dird, [(180, lcnr), 120], [(180, rcnr), -90], kad.inf, rcnr)
+            layer_pwr = 'F.Cu'
             _via_led_rght = kad.add_via_relative('L82', '3', vec2.scale(-1, (-2.2, 5.4)), VIA_Size[2])
             kad.wire_mod_pads([
                 (sw_L, wire_via_led_rght[left], sw_R, _via_led_rght, w_dat, prm_led_dat, 'B.Cu'),
-                (sw_R, _via_led_rght, sw_R, wire_via_led_rght[rght], w_dat, (Strt), 'F.Cu'),
+                (sw_R, _via_led_rght, sw_R, via_led_in[rght], w_dat, (Dird, 90, 75, 2), 'F.Cu'),
             ])
-            pcb.Delete(via_led_rght[rght])
-            prm_led_dat = None
-            layer_pwr = 'F.Cu'
         elif left == '82':
             lcnr = kad.calc_pos_from_pad(sw_L, '4', (-0.4, +0.6))
-            prm_led_dat = None
             prm_led_pwr = (Dird, [(180, lcnr), 90], 180, r_dat)
             layer_pwr = 'B.Cu'
         elif left == '83':
             lcnr = kad.calc_pos_from_pad(sw_L, '4', (-0.4, +0.6))
             rcnr = kad.calc_pos_from_pad(sw_L, '2', (-0.4, -2.8))
-            prm_led_dat = (Dird, [(180, 3.2), (90, rcnr), 0], 0, r_dat)
+            prm_led_dat = (Dird, [(180, 3.2), (90, rcnr), 0], 75, r_dat)
             prm_led_pwr = (Dird, [(180, lcnr), (90, rcnr), 0], 180, r_dat)
             layer_pwr = 'F.Cu'
+            kad.wire_mod_pads([
+                (sw_L, wire_via_led_rght[left], sw_R, via_led_in[rght], w_dat, prm_led_dat, 'B.Cu'),
+            ])
         else:
             assert False
         kad.wire_mod_pads([
-            (sw_L, wire_via_led_rght[left], sw_R, wire_via_led_rght[rght], w_dat, prm_led_dat, 'B.Cu') if prm_led_dat is not None else None,
             (sw_L, wire_via_led_pwr_1st[left], sw_R, wire_via_led_pwr_2nd[rght], w_led, prm_led_pwr, layer_pwr),
             (sw_L, wire_via_led_pwr_2nd[left], sw_R, wire_via_led_pwr_1st[rght], w_led, prm_led_pwr, layer_pwr),
         ])
@@ -1712,7 +1713,7 @@ def remove_temporary_vias():
         for vias in via_dict.values():
             for via in vias.values():
                 pcb.Delete(via)
-    for idx in ['71', '83', '84']:
+    for idx in ['71', '82', '83', '84']:
         pcb.Delete(via_led_rght[idx])
 
 
