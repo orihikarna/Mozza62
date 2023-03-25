@@ -1418,10 +1418,12 @@ def wire_led_thumb():
     # thumbs
     for left, rght in [('15', '25'), ('25', '35')]:
         sw_L, sw_R = f'SW{left}', f'SW{rght}'
+        lctr = kad.calc_pos_from_pad(sw_L, '5', (+1, 0))
+        rctr = kad.calc_pos_from_pad(sw_L, '3', (+1, -3))
         prm_row = (Dird, 0, [(180, 7.4), (-90, 12), -80], r_led)
-        prm_led_dat = (Dird, [(0, 2.6), 90], [(-105, 2), (-90, 2.6), 0], 2)
-        prm_led_pwr_1st = (Dird, 0, [(0, 3.6), 102], r_led)
-        prm_led_pwr_2nd = (Dird, 0, [(0, 8.0), 102], r_led)
+        prm_led_dat = (Dird, [(0, lctr), 90], [(-105, 2), (-90, 2.6), 0], kad.inf, rctr)
+        prm_led_pwr_1st = (Dird, [(0, lctr), 90], 0, kad.inf, rctr)
+        prm_led_pwr_2nd = (Dird, [(0, lctr), 90], 0, kad.inf, rctr)
         kad.wire_mod_pads([
             (sw_L, '1', sw_R, '1', w_row, prm_row, 'F.Cu'),
             (sw_L, wire_via_led_left[left], sw_R, via_led_in[rght], w_dat, prm_led_dat, 'F.Cu'),
