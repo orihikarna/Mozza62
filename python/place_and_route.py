@@ -817,8 +817,8 @@ def place_mods():
         ])
 
     # RotEnc diode
-    pos = kad.calc_pos_from_pad('RE1', 'S2', (6, 0))
-    kad.move_mods(pos, angle, [(f'D{SW_RotEnc}', (0, 0), 180)])
+    pos = kad.get_mod_pos('RE1')
+    kad.move_mods(pos, angle, [(f'D{SW_RotEnc}', (10.5, 0), 90)])
 
     # # dummy pads
     # if board in [BDM, BDS]:
@@ -1443,7 +1443,7 @@ def wire_led_thumb():
             (sw_L, wire_via_led_pwr_2nd[left], sw_R, wire_via_led_pwr_2nd[rght], w_pwr, prm_led_pwr_2nd, 'F.Cu'),
         ])
     # ROW5: thumb to RotEnc
-    kad.wire_mod_pads([('SW35', '1', 'RE1', 'S1', w_dat, (Dird, 0, [(180, 3), (-90, 12), 0], r_dat), 'F.Cu')])
+    kad.wire_mod_pads([('SW35', '1', 'RE1', 'S2', w_dat, (Dird, 0, [(-90, 6), 0], r_dat), 'F.Cu')])
 
 
 def wire_col_diode():
@@ -1485,7 +1485,7 @@ def wire_col_diode():
     via_dio[idx] = kad.add_via_relative(mod_dio, '1', (-1.8, 0), via_size_dat)
     for layer in Cu_layers:
         kad.wire_mod_pads([
-            (mod_dio, '2', mod_re, 'S2', w_dat, (Dird, 0, 90), layer),
+            (mod_dio, '2', mod_re, 'S1', w_dat, (Dird, 0, 0, r_dat), layer),
             (mod_dio, '1', mod_dio, via_dio[idx], w_dat, (Strt), layer),
         ])
 
@@ -1528,8 +1528,8 @@ def wire_col_diode():
         if cidx in [1, 2, 3]:
             prm = (Dird, [(90, 2), (0, 12), -12], 0, 3)
         elif idx == SW_RotEnc:
-            prm = (Dird, 0, 0, 3)
-        if prm != None:
+            prm = (Dird, 90, 0, 3)
+        if prm is not None:
             kad.wire_mod_pads([(mod_dio, via_dio[idx], mod_r, via_dbnc_col[cidx], w_dat, prm, 'B.Cu')])
 
 
