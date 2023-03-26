@@ -1108,8 +1108,9 @@ def wire_debounce_rrc_rotenc():
         dx = -1.6 * lrs
         via_dbnc_vcc_conn = kad.add_via_relative(mod_cd, '1', (0, dx), via_size_pwr)
         via_dbnc_gnd_conn = kad.add_via_relative(mod_r2, '2', (0, dx), via_size_pwr)
-        kad.add_via_relative(mod_cd, '1', (-dy_pwr_vcc - dy_via_pwr, dx), via_size_pwr)  # vcc
-        wire_via_dbnc_vcc[cidx] = kad.add_via_relative(mod_cd, '1', (-dy_pwr_vcc, dx), via_size_pwr)
+        if cidx not in [8]:
+            kad.add_via_relative(mod_cd, '1', (-dy_pwr_vcc - dy_via_pwr, dx), via_size_pwr)  # vcc
+        wire_via_dbnc_vcc[cidx] = kad.add_via_relative(mod_cd, '1', (-dy_pwr_vcc, dx + (1.2 if cidx == 8 else 0)), via_size_pwr)
         wire_via_dbnc_gnd[cidx] = kad.add_via_relative(mod_r2, '2', (+dy_pwr_gnd, dx - (1.2 if cidx == 8 else 0)), via_size_pwr)
         if cidx == 5:
             via_dbnc_rotenc_vcc = kad.add_via_relative(mod_cd, '1', (-dy_pwr_vcc - dy_via_pwr, dx + 10.6), via_size_pwr)
@@ -1131,7 +1132,8 @@ def wire_debounce_rrc_rotenc():
             ])
         # debounce to vcc / gnd rails
         kad.wire_mod_pads([
-            (mod_cd, via_dbnc_vcc_conn, mod_cd, wire_via_dbnc_vcc[cidx], w_pwr, (Strt), 'B.Cu'),
+            (mod_cd, via_dbnc_vcc_conn, mod_cd, wire_via_dbnc_vcc[cidx], w_pwr, (Strt), 'B.Cu') if cidx not in [8] else None,
+            (mod_cd, via_dbnc_vcc_conn, mod_cd, wire_via_dbnc_vcc[cidx], w_pwr, (Dird, 0, 90), 'F.Cu') if cidx in[8] else None,
             (mod_r2, via_dbnc_gnd_conn, mod_r2, wire_via_dbnc_gnd[cidx], w_pwr, (Dird, 0, [(+90, 1.4), 90], w_pwr), 'F.Cu'),
             (mod_r2, via_dbnc_gnd_conn, mod_r2, wire_via_dbnc_gnd[cidx], w_pwr, (Dird, 0, [(-90, 1.4), 90], w_pwr), 'F.Cu') if cidx not in [8] else None,
         ])
