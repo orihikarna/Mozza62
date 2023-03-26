@@ -992,22 +992,22 @@ def wire_exp():
         pcb.Delete(via)
 
 
-def wire_rj45():
-    w_conn = 0.8
+def wire_rj45_jumpers():
+    w_conn = w_pwr
+    via_size = VIA_Size[1]
 
     # RJ45 to jumpers
     for idx, pad in enumerate('2468'):
         mod_jpf = f'JPF{pad}'
-        mod_jpb_comp = f'JPB{10-int(pad)}'
+        mod_jpb = f'JPB{10-int(pad)}'
         kad.wire_mod_pads([
             ('J1', pad, mod_jpf, '1', w_conn, (Dird, 0, 0, 0), 'F.Cu'),
-            ('J1', pad, mod_jpb_comp, '1', w_conn, (Dird, 0, 0, 0), 'B.Cu'),
+            ('J1', pad, mod_jpb, '1', w_conn, (Dird, 0, 0, 0), 'B.Cu'),
         ])
 
-    sep_via_y = 1.50
+    # y positions for jumpers and vias
+    sep_via_y = 1.40
     sep_jmp_y = 1.27
-    offset_x = 1.6
-    #
     pos_via_y = {}
     pos_jmp_y = {}
     for idx, pad in enumerate('2468'):
@@ -1015,63 +1015,73 @@ def wire_rj45():
         pos_jmp_y[pad] = sep_jmp_y * [3, 1, -1, -3][idx]
 
     # jumper to wire vias
+    offset_x = 1.6
     via_rj45 = {}
     for idx, pad in enumerate('268'):
         dy = pos_via_y[pad]
         dy -= pos_jmp_y[pad]
-        for layer in 'FB':
-            name = f'{layer}{pad}'
+        for layer in Cu_layers:
+            name = f'{layer[0]}{pad}'
             mod_jmp = f'JP{name}'
-            via_rj45[name] = kad.add_via_relative(f'JP{name}', '2', (offset_x, dy), VIA_Size[1])
-            kad.wire_mod_pads([(mod_jmp, '2', mod_jmp, via_rj45[name], w_conn, (Dird, 45, 0), f'{layer}.Cu')])
-
-    # connection vias (rj45 '2' & '6')
+            via_rj45[name] = kad.add_via_relative(mod_jmp, '2', (offset_x, dy), via_size)
+            kad.wire_mod_pads([(mod_jmp, '2', mod_jmp, via_rj45[name], w_conn, (Dird, 45, 0), layer)])
+    # '2' -- '8' arc
+    kad.wire_mod_pads([('JPF8', via_rj45['F8'], 'JPB8', via_rj45['B8'], w_conn, (Dird, [(0, sep_via_y * 3), 90], 0), 'B.Cu')])
+    # connect 1 == 9
+    kad.wire_mod_pads([('J1', '1', 'J1', '9', w_dat, (Dird, [(-90, 2), 0], 90), 'F.Cu')])
+    # connection vias (2 & 6)
     for pidx, pad in enumerate('26'):
         angle = [60, -60][pidx]
         rad = sep_via_y * [2, 1][pidx]
         x = rad * math.cos(math.radians(angle)) + offset_x
         y = rad * math.sin(math.radians(angle)) - pos_jmp_y[pad]
-        via_rj45_conn[pad] = kad.add_via_relative(f'JPF{pad}', '2', (x, y), VIA_Size[1])
+        via_rj45_conn[pad] = kad.add_via_relative(f'JPF{pad}', '2', (x, y), via_size)
         for lidx, layer in enumerate('FB'):
             lsgn = [+1, -1][lidx]
             name = f'{layer}{pad}'
             mod_jmp = f'JP{name}'
             wire_angle = 90 - angle * lsgn
             kad.wire_mod_pads([(mod_jmp, via_rj45[name], mod_jmp, via_rj45_conn[pad], w_conn, (Dird, 0, wire_angle), f'{layer}.Cu')])
-
-    # connection via (rj45 '4')
-    via_rj45_conn['4'] = kad.add_via_relative('JPF4', '2', (offset_x - 0.1, -sep_jmp_y*1), VIA_Size[1])
-
-    # 3, 5, 7
+    # connection via (4)
+    via_rj45_conn['4'] = kad.add_via_relative('JPF4', '2', (offset_x - 0.1, -sep_jmp_y), via_size)
+    kad.wire_mod_pads([
+        ('JPF4', '2', 'JPF4', via_rj45_conn['4'], w_conn, (Dird, [(90, 0.35), 0], 45), 'F.Cu'),
+        ('JPB4', '2', 'JPB4', via_rj45_conn['4'], w_conn, (Dird, [(90, 0.35), 0], 45), 'B.Cu'),
+    ])
+    # connection vias (3, 5, 7)
     for idx, pad in enumerate('357'):
         dt = idx - 1
-        via_rj45_conn[pad] = kad.add_via_relative('J1', pad, ((1.8 - 2.54) * dt, 7), VIA_Size[1])
-        kad.wire_mod_pads([('J1', pad, 'J1', via_rj45_conn[pad], w_conn, (ZgZg, 90, 30), 'B.Cu')])
+        via_rj45_conn[pad] = kad.add_via_relative('J1', pad, ((1.8 - 2.54) * dt, 7), via_size)
+        kad.wire_mod_pads([('J1', pad, 'J1', via_rj45_conn[pad], w_dat, (ZgZg, 90, 30), 'B.Cu')])
 
-    wire_via_rj45_vcc = kad.add_via(kad.calc_pos_from_pad('J1', '9', (2.0, -2)), VCC, VIA_Size[1])
-    wire_via_rj45_gnd = kad.add_via(kad.calc_pos_from_pad('J1', '9', (3.5, -2)), GND, VIA_Size[1])
+    # remove wire vias
+    for name, via in via_rj45.items():
+        if name == 'F8':
+            via_rj45_conn['8'] = via
+        else:
+            pcb.Delete(via)
 
-    wire_via_rj45_vcc_hole = kad.add_via(kad.calc_pos_from_pad('J1', '9', (4.5, 6.3)), VCC, VIA_Size[1])
-    wire_via_rj45_gnd_hole = kad.add_via(kad.calc_pos_from_pad('J1', '9', (6.0, 6.3)), GND, VIA_Size[1])
-    wire_via_rj45_vcc_13 = kad.add_via(kad.calc_pos_from_pad('SW13', '3', (3.0, 0)), VCC, VIA_Size[1])
-    wire_via_rj45_gnd_13 = kad.add_via(kad.calc_pos_from_pad('SW13', '3', (4.5, 0)), GND, VIA_Size[1])
-    wire_via_rj45_vcc_14 = kad.add_via(kad.calc_pos_from_pad('SW14', '3', (4.5, 0)), VCC, VIA_Size[1])
-    wire_via_rj45_gnd_14 = kad.add_via(kad.calc_pos_from_pad('SW14', '3', (6.0, 0)), GND, VIA_Size[1])
-    via_rj45_dbnc['vcc'] = kad.add_via(kad.calc_pos_from_pad('SW14', '1', (9.5, -1.8)), VCC, VIA_Size[1])
-    via_rj45_dbnc['gnd'] = kad.add_via(kad.calc_pos_from_pad('SW14', '1', (11.0, -3.2)), GND, VIA_Size[1])
+
+def wire_rj45_vert_lines():
+    w_conn = w_pwr
+    # power lines (6, 8)
+    wire_via_rj45_vcc = kad.add_via(kad.calc_pos_from_pad('J1', '9', (2.0, -2)), VCC, via_size_pwr)
+    wire_via_rj45_gnd = kad.add_via(kad.calc_pos_from_pad('J1', '9', (3.5, -2)), GND, via_size_pwr)
+
+    wire_via_rj45_vcc_hole = kad.add_via(kad.calc_pos_from_pad('J1', '9', (4.5, 6.3)), VCC, via_size_pwr)
+    wire_via_rj45_gnd_hole = kad.add_via(kad.calc_pos_from_pad('J1', '9', (6.0, 6.3)), GND, via_size_pwr)
+    wire_via_rj45_vcc_13 = kad.add_via(kad.calc_pos_from_pad('SW13', '3', (3.0, 0)), VCC, via_size_pwr)
+    wire_via_rj45_gnd_13 = kad.add_via(kad.calc_pos_from_pad('SW13', '3', (4.5, 0)), GND, via_size_pwr)
+    wire_via_rj45_vcc_14 = kad.add_via(kad.calc_pos_from_pad('SW14', '3', (4.5, 0)), VCC, via_size_pwr)
+    wire_via_rj45_gnd_14 = kad.add_via(kad.calc_pos_from_pad('SW14', '3', (6.0, 0)), GND, via_size_pwr)
+    via_rj45_dbnc['vcc'] = kad.add_via(kad.calc_pos_from_pad('SW14', '1', (9.5, -1.8)), VCC, via_size_pwr)
+    via_rj45_dbnc['gnd'] = kad.add_via(kad.calc_pos_from_pad('SW14', '1', (11.0, -3.2)), GND, via_size_pwr)
 
     sep = 1.4
     kad.wire_mod_pads([
-        # '4'
-        ('JPF4', '2', 'JPF4', via_rj45_conn['4'], w_conn, (Dird, [(90, 0.35), 0], 45), 'F.Cu'),
-        ('JPB4', '2', 'JPB4', via_rj45_conn['4'], w_conn, (Dird, [(90, 0.35), 0], 45), 'B.Cu'),
-        # '2' -- '8'
-        ('JPB8', via_rj45['F8'], 'JPB8', via_rj45['B8'], w_conn, (Dird, [(0, sep_via_y * 3), 90], 0), 'B.Cu'),
-        # '1' == '9'
-        ('J1', '1', 'J1', '9', w_conn, (Dird, [(-90, 2), 0], 90), 'F.Cu'),
         # 6 - GND & 8 - VCC
         ('J1', via_rj45_conn['6'], 'J1', wire_via_rj45_gnd, w_conn, (Dird, [(30, 1.2), (0, 3.0), -45], 90, 1), 'F.Cu'),
-        ('J1', via_rj45['F8'], 'J1', wire_via_rj45_vcc, w_conn, (Dird, -45, 90, 1), 'F.Cu'),
+        ('J1', via_rj45_conn['8'], 'J1', wire_via_rj45_vcc, w_conn, (Dird, -45, 90, 1), 'F.Cu'),
         ('J1', wire_via_rj45_gnd, 'J1', wire_via_rj45_gnd_hole, w_conn, (ZgZg, 90, 30, 1), 'F.Cu'),
         ('J1', wire_via_rj45_vcc, 'J1', wire_via_rj45_vcc_hole, w_conn, (ZgZg, 90, 30, 1), 'F.Cu'),
         ('J1', wire_via_rj45_gnd_hole, 'J1', wire_via_rj45_gnd_13, w_conn, (ZgZg, 90, 30, 1), 'F.Cu'),
@@ -1086,11 +1096,6 @@ def wire_rj45():
         ('U1', via_exp['SCK_SDA'], 'J1', via_rj45_conn['3'], w_conn, (Dird, 0, -45), 'B.Cu'),
         ('U1', via_exp['SDA_SCK'], 'J1', via_rj45_conn['7'], w_conn, (Dird, [(-90, sep), 0], -45), 'B.Cu'),
     ])
-
-    # remove wire vias
-    for name in ['F2', 'B2', 'B6', 'F6', 'B8']:
-        pcb.Delete(via_rj45[name])
-        del via_rj45[name]
 
 
 def wire_debounce_rrc_rotenc():
@@ -1133,7 +1138,7 @@ def wire_debounce_rrc_rotenc():
         # debounce to vcc / gnd rails
         kad.wire_mod_pads([
             (mod_cd, via_dbnc_vcc_conn, mod_cd, wire_via_dbnc_vcc[cidx], w_pwr, (Strt), 'B.Cu') if cidx not in [8] else None,
-            (mod_cd, via_dbnc_vcc_conn, mod_cd, wire_via_dbnc_vcc[cidx], w_pwr, (Dird, 0, 90), 'F.Cu') if cidx in[8] else None,
+            (mod_cd, via_dbnc_vcc_conn, mod_cd, wire_via_dbnc_vcc[cidx], w_pwr, (Dird, 0, 90), 'F.Cu') if cidx in [8] else None,
             (mod_r2, via_dbnc_gnd_conn, mod_r2, wire_via_dbnc_gnd[cidx], w_pwr, (Dird, 0, [(+90, 1.4), 90], w_pwr), 'F.Cu'),
             (mod_r2, via_dbnc_gnd_conn, mod_r2, wire_via_dbnc_gnd[cidx], w_pwr, (Dird, 0, [(-90, 1.4), 90], w_pwr), 'F.Cu') if cidx not in [8] else None,
         ])
@@ -1356,7 +1361,7 @@ def wire_led_left_ends():
     mod_sw = 'SW21'
     mod_dio = 'DL1'
     # 4V3 diode
-    via_led_5v = kad.add_via_relative(mod_dio, '2', (2, 0), VIA_Size[0])
+    via_led_5v = kad.add_via_relative(mod_dio, '2', (2, 0), via_size_pwr)
     for layer in Cu_layers:
         kad.wire_mod_pads([
             (mod_dio, '1', mod_sw, via_led_pwr_1st['21'], w_pwr, (Dird, 0, 90, 0), layer),
@@ -1817,7 +1822,8 @@ def main():
     # place_screw_holes()
     if board in [BDC]:
         wire_exp()
-        wire_rj45()
+        wire_rj45_jumpers()
+        wire_rj45_vert_lines()
         wire_debounce_rrc_rotenc()
         wire_row_led_horz_lines()
         wire_led_left_ends()
