@@ -228,16 +228,18 @@ def get_pad_net(mod_name, pad_name):  pad = get_pad(mod_name, pad_name); return 
 def get_pad_pos_net_angle_layer(mod_name, pad_name):  mod, pad = get_mod_pad(mod_name, pad_name); return _get_pad_pos_net_angle_layer(mod, pad)
 
 
-def calc_pos_from_pad(mod_name, pad_name, offset_vec):
-    pos, _, angle, layer = get_pad_pos_net_angle_layer(mod_name, pad_name)
-    # mod = get_mod( mod_name )
-    # layer = _get_mod_layer( mod )
+def calc_relative_vec(mod_name, vec, pos=(0, 0)):
+    mod = get_mod(mod_name)
+    angle = _get_mod_angle(mod)
+    layer = _get_mod_layer(mod)
     if layer == pcb.GetLayerID('B.Cu'):
-        offset_vec = (offset_vec[0], -offset_vec[1])
-    # pad = _get_pad( mod, pad_name )
-    # pos = _get_pad_pos( pad )
-    # angle = _get_mod_angle( mod )
-    pos_relative = vec2.mult(mat2.rotate(angle), offset_vec, pos)
+        vec = (vec[0], -vec[1])
+    vec_relative = vec2.mult(mat2.rotate(angle), vec, pos)
+    return vec_relative
+
+def calc_pos_from_pad(mod_name, pad_name, offset_vec):
+    pos_pad = get_pad_pos(mod_name, pad_name)
+    pos_relative = calc_relative_vec(mod_name, offset_vec, pos_pad)
     return pos_relative
 
 ##
