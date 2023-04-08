@@ -864,7 +864,6 @@ w_dat, r_dat = 0.4, 2.0  # row / col
 
 
 # expander
-via_exp = {}
 wire_via_exp = {}
 # RJ45
 via_rj45 = {}
@@ -964,23 +963,22 @@ def wire_exp():
             (mod_cap, via_exp_cap_gnd[mod_cap], 'U1', wire_via_exp_gnd, w_pwr, (Dird, 0, 0, kad.inf, ctr), 'F.Cu'),
         ])
 
-
     # I2C & NRST
     offset = 0.6
     via_exp_nrst_pad = kad.add_via_relative('U2', '14', (1.6, 0), via_size_dat)
-    via_exp['NRST'] = kad.add_via_relative('U2', '14', (1.6, 3.81), via_size_dat)
-    via_exp['SCK_SDA'] = kad.add_via_relative('U1', '8', (-offset, 2.54), via_size_dat)
-    via_exp['SDA_SCK'] = kad.add_via_relative('U1', '9', (-offset - 0.6, 5.08), via_size_dat)
+    via_exp_nrst_conn = kad.add_via_relative('U2', '14', (1.6, 3.81), via_size_dat)
+    via_exp_sck_sda = kad.add_via_relative('U1', '8', (-offset, 2.54), via_size_dat)
+    via_exp_sda_sck = kad.add_via_relative('U1', '9', (-offset - 0.6, 5.08), via_size_dat)
     kad.wire_mod_pads([
         ('U2', via_exp_nrst_pad, 'U2', '14', w_exp, (Strt)),
-        ('U1', via_exp_nrst_pad, 'U1', via_exp['NRST'], w_exp, (Strt)),
+        ('U1', via_exp_nrst_pad, 'U1', via_exp_nrst_conn, w_exp, (Strt)),
         ('U1', wire_via_exp_nrst, 'U1', '14', w_exp, (Dird, 0, 90, r_exp)),
-        ('U1', wire_via_exp_nrst, 'U1', via_exp['NRST'], w_exp, (Dird, 0, 90, r_exp)),
+        ('U1', wire_via_exp_nrst, 'U1', via_exp_nrst_conn, w_exp, (Dird, 0, 90, r_exp)),
 
-        ('U1', via_exp['SCK_SDA'], 'U1', '8', w_exp, (Dird, 0, 90, r_exp)),
-        ('U1', via_exp['SDA_SCK'], 'U1', '9', w_exp, (Dird, 0, 90, r_exp)),
-        ('U2', via_exp['SCK_SDA'], 'U2', '9', w_exp, (Dird, 135, [(-90, 1.6), 0], r_exp)),
-        ('U2', via_exp['SDA_SCK'], 'U2', '8', w_exp, (Dird, 135, [(-90, 2.6), 0], r_exp)),
+        ('U1', via_exp_sck_sda, 'U1', '8', w_exp, (Dird, 0, 90, r_exp)),
+        ('U1', via_exp_sda_sck, 'U1', '9', w_exp, (Dird, 0, 90, r_exp)),
+        ('U2', via_exp_sck_sda, 'U2', '9', w_exp, (Dird, 135, [(-90, 1.6), 0], r_exp)),
+        ('U2', via_exp_sda_sck, 'U2', '8', w_exp, (Dird, 135, [(-90, 2.6), 0], r_exp)),
     ])
 
     # for rj45
@@ -988,7 +986,7 @@ def wire_exp():
     sep = 0.9
     dx = sep * 2
     dy = 1.85 + 1.4
-    pos_nrst = kad.get_via_pos_net(via_exp['NRST'])[0]
+    pos_nrst = kad.get_via_pos_net(via_exp_nrst_conn)[0]
     for idx, (width, space, net_name, pad) in enumerate(rj45_vert_width_spc_net_pads):
         if idx >= 5:
             break
@@ -998,15 +996,16 @@ def wire_exp():
         wire_via_exp[idx] = kad.add_via(pos, net, via_size_gnd)
 
     kad.wire_mod_pads([
-        ('U2', via_exp['NRST'], 'U2', wire_via_exp[2], w_exp, (Strt)),
-        ('U2', via_exp['SDA_SCK'], 'U2', wire_via_exp[0], w_exp, (ZgZg, 0, 30, r_exp)),
-        ('U2', via_exp['SCK_SDA'], 'U2', wire_via_exp[4], w_exp, (ZgZg, 0, 30, r_exp)),
+        ('U2', via_exp_nrst_conn, 'U2', wire_via_exp[2], w_exp, (Strt)),
+        ('U2', via_exp_sda_sck, 'U2', wire_via_exp[0], w_exp, (ZgZg, 0, 30, r_exp)),
+        ('U2', via_exp_sck_sda, 'U2', wire_via_exp[4], w_exp, (ZgZg, 0, 30, r_exp)),
     ])
     wire_via_exp[5] = via_exp_cap_gnd['C1']
     wire_via_exp[6] = via_exp_cap_vcc['C1']
 
     # ROW & COL
     # 4, 3, 2, 1, 28, ..., 18
+    via_exp = {}
     exp_pads = [f'{((4 - i - 1 + 28) % 28) + 1}' for i in range(15)]
     exp_nets = [kad.get_pad_net('U1', pad) for pad in exp_pads]
     for i in range(15):
