@@ -1986,6 +1986,12 @@
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/32702db2-55bb-4fdc-abdb-b8636689ac2e"
       (reference "#PWR0137") (unit 1) (value "GND") (footprint "")
     )
+    (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/a835b622-3e08-4422-b601-555420ad3990"
+      (reference "#PWR0138") (unit 1) (value "GNDD") (footprint "")
+    )
+    (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/90ff4154-7052-4ba7-bd2e-983ef0347e51"
+      (reference "#PWR0139") (unit 1) (value "GNDD") (footprint "")
+    )
     (path "/0cdca463-f442-4a42-be31-f71e125b5c6a"
       (reference "C1") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder")
     )
