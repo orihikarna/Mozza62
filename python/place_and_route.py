@@ -874,6 +874,10 @@ via_cap_vcc = {}
 via_cap_gnd = {}
 via_led_left = {}
 via_led_rght = {}
+# wiring corner center positions
+ctr_row_sw = {}
+ctr_vcc_left = {}
+ctr_vcc_rght = {}
 ctr_led_left = {}
 ctr_led_rght = {}
 # debounce row
@@ -1348,16 +1352,9 @@ def wire_debounce_rrc_rotenc():
     ])
 
 
-def wire_row_led_horz_lines():
+def wire_led():
     dx_led_pwr = 1.75
     dy_led_pwr = 1.04
-    dy_led_dat_via = 2.2
-    dy_led_cnr = 1.4
-
-    # wiring corner center positions
-    ctr_row_sw = {}
-    ctr_vcc_left = {}
-    ctr_vcc_rght = {}
 
     idx_left_1st_end = ['13', '35']
     idx_left_2nd_end = ['35']
@@ -1443,7 +1440,8 @@ def wire_row_led_horz_lines():
             (mod_led, [via_led_out, via_led_in][lrx], mod_led, via_led_rght[idx], w_led, (Dird,  78, 0), 'B.Cu') if idx in via_led_rght else None,
         ])
 
-    # row horizontal lines
+
+def wire_row_led_horz_lines():
     for ridx in range(1, 5):
         for cidx in range(1, 8):
             ncidx = cidx + 1
@@ -1602,7 +1600,7 @@ def wire_col_diode():
         mod_dio = 'D' + idx
         # vias
         via_dio[idx] = kad.add_via_relative(mod_dio, '1', (-1.6, 0.8 * lrs), via_size_dat)
-        wire_via_dio_col[idx] = kad.add_via_relative(mod_dio, '1', (0, 2.0 * lrs), via_size_dat)
+        wire_via_dio_col[idx] = kad.add_via_relative(mod_dio, '1', (0, 1.8 * lrs), via_size_dat)
         # wire to SW pad & diode via
         for layer in Cu_layers:
             kad.wire_mod_pads([
@@ -1923,8 +1921,6 @@ def remove_temporary_vias():
     for idx, via in via_led_left.items():
         if idx in ['21']:
             pcb.Delete(via)
-    # for idx, via in via_led_rght.items():
-    #     pcb.Delete(via)
     for vias in [wire_via_dbnc_vcc, wire_via_dbnc_gnd, wire_via_dio_col]:
         for via in vias.values():
             pcb.Delete(via)
@@ -2029,6 +2025,7 @@ def main():
         wire_rj45_jumpers()
         wire_rj45_vert_lines()
         wire_debounce_rrc_rotenc()
+        wire_led()
         wire_row_led_horz_lines()
         wire_led_left_right_ends_thumb()
         wire_col_diode()
