@@ -1403,11 +1403,11 @@ def wire_row_led_horz_lines():
             via_led_left[idx] = kad.add_via(kad.calc_pos_from_pad(mod_cap, '12'[lrx], (-3.6 * lrs, 0)), kad.get_pad_net(mod_led, '75'[lrx]), via_size_led_dat)
 
         # wiring centers
-        ctr_row_sw[idx] = kad.calc_pos_from_pad(mod_sw, '5', (3, -5))
-        ctr_led_left[idx] = kad.calc_pos_from_pad(mod_cap, '12'[lrx], vec2.scale(-lrs, (+3.6, dy_led_pwr + dy_led_cnr)))
-        ctr_led_rght[idx] = kad.calc_pos_from_pad(mod_led, '13'[lrx], vec2.scale(+lrs, (-3.9, dy_led_dat_via - dy_led_cnr)))
-        ctr_vcc_left[idx] = kad.calc_pos_from_pad(mod_sw, '1', (5.6, 1.7))
-        ctr_vcc_rght[idx] = kad.calc_pos_from_pad(mod_sw, '1', (-3, -5.2))
+        ctr_row_sw[idx] = kad.calc_pos_from_pad(mod_sw, '3', (0, -10))
+        ctr_led_rght[idx] = kad.calc_pos_from_pad(mod_sw, '4', (-0.6, 0.4))
+        ctr_led_left[idx] = kad.calc_pos_from_pad(mod_sw, '5', (-1, 6))
+        ctr_vcc_rght[idx] = kad.calc_pos_from_pad(mod_sw, '2', (0, -7))
+        ctr_vcc_left[idx] = kad.calc_pos_from_pad(mod_sw, '3', (0.2, 0))
 
         # wire internal vias
         for lidx, layer in enumerate(Cu_layers):
@@ -1480,7 +1480,7 @@ def wire_row_led_horz_lines():
             sw_L, sw_R = f'SW{left}', f'SW{rght}'
             # power rails, row lines, led data lines
             kad.wire_mod_pads([
-                (sw_L, wire_via_led_pwr_1st[left], sw_R, wire_via_led_pwr_1st[rght], w_pwr, prm_led, 'F.Cu') if left not in ['21'] else None,
+                (sw_L, wire_via_led_pwr_1st[left], sw_R, wire_via_led_pwr_1st[rght], w_pwr, prm_led, 'F.Cu') if left in wire_via_led_pwr_1st else None,
                 (sw_L, wire_via_led_pwr_2nd[left], sw_R, wire_via_led_pwr_2nd[rght], w_pwr, prm_led, 'F.Cu'),
                 (sw_L, via_led_rght[left], sw_R, via_led_left[rght], w_led, prm_led, 'F.Cu'),
                 (sw_L, '1', sw_R, '1', w_dat, prm_row, 'F.Cu'),
@@ -1905,7 +1905,7 @@ def wire_col_horz_lines():
         else:
             _via_exp = via_exp[pad_idx]
             pad_idx += 1
-        kad.wire_mod_pads([(mod_exp, _via_exp, 'SW24', wire_via_col_horz_set[2][idx], w_dat, prm, 'F.Cu')])
+        kad.wire_mod_pads([(mod_exp, _via_exp, 'SW24', wire_via_col_horz_set[2][idx], width, prm, 'F.Cu')])
 
     del wire_via_col_horz_set[2][3]  # ROW1
     del wire_via_col_horz_set[2][5]  # ROW2
