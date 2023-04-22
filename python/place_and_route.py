@@ -28,7 +28,7 @@ Spline = kad.Spline
 ##
 
 # in mm
-VIA_Size = [(1.1, 0.6), (1.0, 0.5), (0.8, 0.4), (0.7, 0.3)]
+VIA_Size = [(1.1, 0.6), (1.0, 0.5), (0.8, 0.4), (0.7, 0.3), (0.6, 0.3)]
 
 PCB_Width = 185
 PCB_Height = 129
@@ -892,6 +892,7 @@ wire_via_row_vert_set = {}
 wire_via_col_horz_set = {}
 # row / col
 via_size_dat = VIA_Size[2]
+via_size_gnd = VIA_Size[3]
 
 w_dat = 0.4
 w_pwr = 0.6
@@ -982,7 +983,6 @@ def wire_exp():
     ])
 
     # for rj45
-    via_size_gnd = VIA_Size[3]
     sep = 0.9
     dx = sep * 2
     dy = 1.85 + 1.4
@@ -1321,7 +1321,8 @@ def wire_debounce_rrc_rotenc():
         via_dbnc_gnd[cidx] = kad.add_via_relative(mod_r2, '2', (0, +1.6 * sign), via_size_pwr)
         via_dbnc_row[cidx] = kad.add_via_relative(mod_cd, '2', (1.6 * sign, [0, 2.0][i]), via_size_dat)
         if i == 1:
-            via_dbnc_row[None] = kad.add_via(kad.calc_pos_from_pad(mod_cd, '2', (-2.6, 1.0)), GND, via_size_dat)
+            via_dbnc_row['Gnd1'] = kad.add_via(kad.calc_pos_from_pad(mod_cd, '2', (-2.6, 1.0)), GND, via_size_dat)
+            via_dbnc_row['Gnd2'] = kad.add_via(kad.calc_pos_from_pad(mod_cd, '2', (-0.6, 3.0)), GND, via_size_dat)
 
         # resister and cap vias
         for layer in Cu_layers:
@@ -1340,8 +1341,10 @@ def wire_debounce_rrc_rotenc():
         kad.wire_mod_pads([(mod_re, via_rotenc_gnd, mod_r2, via_dbnc_gnd[cidx], w_pwr, (Dird, 90, 90, r_dat), 'F.Cu')])
 
     # gnd between cols for col horz lines
-    prm = (Dird, [(180, 2.0), -90], [(-90, 1.0), 0], 1)
-    kad.wire_mod_pads([(mod_re, via_dbnc_row[None], mod_re, via_dbnc_gnd[12], w_dat, prm, 'B.Cu')])
+    kad.wire_mod_pads([
+        (mod_re, via_dbnc_row['Gnd1'], mod_re, via_dbnc_row['Gnd2'], w_dat, (Dird, 0, 90, 1), 'B.Cu'),
+        (mod_re, via_dbnc_row['Gnd2'], mod_re, via_dbnc_gnd[12], w_dat, (Dird, -90, [(-90, 1.0), 0], 1), 'B.Cu'),
+    ])
 
     # vcc & gnd from row4
     tctr = kad.calc_pos_from_pad(mod_re, 'S1', (2, -10))
@@ -1668,7 +1671,7 @@ def wire_col_diode():
         mod_dio = f'D{idx}'
         prm = None
         if cidx in [1, 2, 3]:
-            prm = (Dird, [(90, 2), (0, 9.6), -12], 0, 3)
+            prm = (Dird, [(90, 1.2), (0, 9.6), -12], 0, 3)
         elif idx == SW_RotEnc:
             prm = (Dird, 90, 0, 3)
         if prm is not None:
@@ -1710,7 +1713,6 @@ def wire_row_vert_lines():
 
 
 def wire_col_horz_lines():
-
     w_dat = 0.4
     w_gnd = 0.36
     s_col = 0.27
@@ -1741,7 +1743,7 @@ def wire_col_horz_lines():
         (3, -1, w_gnd, 'GND'),
         (3, 19, w_dat, 'COLB'),
         (3, -1, w_gnd, 'GND'),
-        # (9, 18, 'ROW5'),
+        # (9, 18, w_dat, 'ROW5'),
     ]
 
     # via offset y
@@ -1775,7 +1777,7 @@ def wire_col_horz_lines():
         assert idx0 >= 0
 
         # y pos
-        dy = 0.4
+        dy = 0.5
         dy += 0.9 * lrx
         dy -= exp_cidx_pad_width_nets[idx0][2] / 2
         # x pos
@@ -1806,6 +1808,7 @@ def wire_col_horz_lines():
         kad.wire_mod_pads([
             (mod_cd, via_dbnc_row[cidx], mod_cd, wire_via_col_horz_set[cidx][idx0+didx], w_dat, (Dird, 0, 90), 'F.Cu'),
         ])
+
     # ROW1 & ROW2
     lctr = kad.calc_relative_vec('CD3', (2, -2), kad.get_via_pos_net(wire_via_col_horz_set[3][23])[0])
     for lidx in range(len(exp_cidx_pad_width_nets)):
@@ -1821,12 +1824,16 @@ def wire_col_horz_lines():
         else:
             row_idx = None
             continue
+        # replace the via
+        pos, net = kad.get_via_pos_net(wire_via_col_horz_set[cidx][lidx])
+        _via = kad.add_via(pos, net, via_size_dat)
         prm = (Dird, 90, 90, kad.inf)  # , lctr)
-        kad.wire_mod_pads([(mod_cd, wire_via_col_horz_set[cidx][lidx], f'SW24', wire_via_row_vert_set[row_idx][4], w_dat, prm, 'B.Cu')])
-    # rotenc cols
+        kad.wire_mod_pads([(mod_cd, _via, f'SW24', wire_via_row_vert_set[row_idx][4], w_dat, prm, 'B.Cu')])
+
+    # RotEnc cols
     mod_re = 'RE1'
     lctr = kad.calc_relative_vec('CD3', (2, -2), kad.get_via_pos_net(wire_via_col_horz_set[3][23])[0])
-    for lidx in range(21, 24):
+    for lidx in range(21, 25):
         cidx, pad, width, net_name = exp_cidx_pad_width_nets[lidx]
         if cidx != 3:
             continue
@@ -1836,10 +1843,27 @@ def wire_col_horz_lines():
             idx = 11
         elif net_name == 'COLB':
             idx = 12
+        elif lidx == 22:
+            idx = 'Gnd1'
         else:
-            idx = None
+            idx = 'Gnd2'
         prm = (Dird, 90, 90, kad.inf, lctr)
         kad.wire_mod_pads([(mod_cd, wire_via_col_horz_set[cidx][lidx], mod_re, via_dbnc_row[idx], w_dat, prm)])
+
+    # Gnd vias
+    for lidx in range(19):
+        cidx, pad, width, net_name = exp_cidx_pad_width_nets[lidx]
+        if net_name != 'GND':
+            continue
+        pos, net = kad.get_via_pos_net(wire_via_col_horz_set[cidx][lidx])
+        if cidx in [3, 4, 5, 6, 7, 8]:
+            delta = ((width - 0.7)/2, 0)
+        else:
+            continue
+        mod_cd = f'CD{cidx}'
+        pos = kad.calc_relative_vec(mod_cd, delta, pos)
+        kad.add_via(pos, net, via_size_gnd)
+
     # horzontal wire
     for cidx in range(2, 8):
         cidxL = cidx
@@ -1904,9 +1928,6 @@ def wire_col_horz_lines():
             _via_exp = via_exp[pad_idx]
             pad_idx += 1
         kad.wire_mod_pads([(mod_exp, _via_exp, 'SW24', wire_via_col_horz_set[2][idx], width, prm, 'F.Cu')])
-
-    del wire_via_col_horz_set[2][3]  # ROW1
-    del wire_via_col_horz_set[2][5]  # ROW2
 
 
 def remove_temporary_vias():
