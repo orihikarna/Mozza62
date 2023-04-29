@@ -28,7 +28,7 @@ Spline = kad.Spline
 ##
 
 # in mm
-VIA_Size = [(1.1, 0.6), (1.0, 0.5), (0.8, 0.4), (0.7, 0.3), (0.6, 0.3)]
+VIA_Size = [(1.2, 0.6), (1.0, 0.5), (0.8, 0.4), (0.7, 0.3), (0.6, 0.3)]
 
 PCB_Width = 185
 PCB_Height = 129
@@ -691,7 +691,7 @@ def add_zone(net_name, layer_name, rect, zones):
     #
     zone.SetMinThickness(pcbnew.FromMils(16))
     # zone.SetThermalReliefGap( pcbnew.FromMils( 12 ) )
-    # zone.SetThermalReliefCopperBridge( pcbnew.FromMils( 24 ) )
+    zone.SetThermalReliefSpokeWidth( pcbnew.FromMils( 16 ) )
     # zone.Hatch()
     #
     zones.append(zone)
@@ -1869,10 +1869,12 @@ def wire_exp_row_vert_col_horz():
     mod_exp = 'U1'
     via_exp = {}
 
-    def get_via_pos(ny, sy, max_y=-7):
-        y = ny - 7
-        y = max(y, max_y)
-        return vec2.scale(y_sep_exp_via, (ny * sy, y))
+    def get_via_pos(ny, sign, min_ny=0):
+        x = max(ny, min_ny)
+        ex = 1.7
+        mx = 7
+        y = (x**ex - mx**ex) / mx**ex * mx * 0.86
+        return vec2.scale(y_sep_exp_via, (sign * x, y))
 
     # ROW & COL flower
     # 4, 3, 2, 1, 28, ..., 18
@@ -1880,7 +1882,7 @@ def wire_exp_row_vert_col_horz():
     for i in range(15):
         ny = abs(i - 7)
         sy = vec2.sign(i - 7)
-        dpos = get_via_pos(ny, sy, -6)
+        dpos = get_via_pos(ny, sy, 1)
         pos = kad.calc_pos_from_pad(mod_exp, '29', dpos)
         net = kad.get_pad_net(mod_exp, exp_pads[i])
         via_exp[i] = kad.add_via(pos, net, via_size_dat)
@@ -1900,23 +1902,52 @@ def wire_exp_row_vert_col_horz():
         ])
 
     # GND vias in-between
-    offset_gnd_via = 0.6
+    offset_gnd_via = 0.8
     for i in range(3, 14):
         ny = abs(i - 6.5)
         sy = vec2.sign(i - 6.5)
-        if ny in [0.5, 6.5]:
-            dgnd = y_offset_exp_via / 2
+        if ny == 0.5:
+            dx = 0.8
+            dy = y_offset_exp_via / 2
+        elif ny == 6.5:
+            dx = dy = y_offset_exp_via / 2
         else:
-            dgnd = -offset_gnd_via
+            dx = dy = -offset_gnd_via
         dpos = get_via_pos(ny, sy)
-        dpos = vec2.add(dpos, (dgnd * sy, -dgnd))
+        dpos = vec2.add(dpos, (dy * sy, -dx))
         pos = kad.calc_pos_from_pad(mod_exp, '29', dpos)
         via_exp_gnd[i] = kad.add_via(pos, GND, via_size_gnd)
+
+    wire_via_exp_gnd = {}
+    offset_gnd_via = 0.8
+    for i in range(3, 14):
+        ny = abs(i - 6.5)
+        sy = vec2.sign(i - 6.5)
+        dx = 1.0
+        if ny == 0.5:
+            angle = 0
+            dy = y_offset_exp_via / 2
+        elif ny == 6.5:
+            angle = 0
+            dy = y_offset_exp_via / 2
+        else:
+            angle = 65
+            dy = y_offset_exp_via
+        dpos = get_via_pos(ny, sy)
+        dpos = vec2.add(dpos, (dy * sy, -dx))
+        pos = kad.calc_pos_from_pad(mod_exp, '29', dpos)
+        wire_via_exp_gnd[i] = kad.add_via(pos, GND, via_size_gnd)
+        if angle == 0:
+            prm = (Strt)
+        else:
+            prm = (Dird, 90 - angle * sy, 90)
+        for layer in Cu_layers:
+            kad.wire_mod_pads([(mod_exp, via_exp_gnd[i], mod_exp, wire_via_exp_gnd[i], w_gnd, prm, layer)])
 
     # wire to exp
     gnd_idx = 3
     pad_idx = 3
-    gnd_angle = 60
+    gnd_angle = 65
     ctr_exp_col = kad.calc_relative_vec('SW24', (1, 2), kad.get_via_pos_net(wire_via_col_horz_set[2][3])[0])
     for idx, (cidx, pad, width, space, net) in enumerate(exp_cidx_pad_width_space_nets):
         if cidx <= 1:
@@ -1932,16 +1963,19 @@ def wire_exp_row_vert_col_horz():
         # length to the corner
         l = y_offset_exp_via
         if net == 'GND':
-            _via_exp = via_exp_gnd[gnd_idx]
+            _via_exp = wire_via_exp_gnd[gnd_idx]
             gnd_idx += 1
             if idx in [10, 12, 24]:
                 l = 0
             else:
-                l = (y_offset_exp_via + offset_gnd_via) / math.sin(math.radians(gnd_angle))
+                # l = (y_offset_exp_via + offset_gnd_via) / math.sin(math.radians(gnd_angle))
+                l = (y_offset_exp_via) / math.sin(math.radians(gnd_angle))
+                l = 0
         else:
             _via_exp = via_exp[pad_idx]
             pad_idx += 1
         prm = (Dird, [(angle, l), 90], 0, kad.inf, ctr_exp_col)
+        # prm = (Dird, 90, 0, kad.inf, ctr_exp_col)
         kad.wire_mod_pads([(mod_exp, _via_exp, 'SW24', wire_via_col_horz_set[2][idx], width, prm, 'F.Cu')])
 
     # expander to ROW3, ROW4, ROW5, COL1
@@ -1954,6 +1988,8 @@ def wire_exp_row_vert_col_horz():
         (mod_exp, via_exp[14], 'SW15', '1', w_dat, prm),
     ])
 
+    for via in wire_via_exp_gnd.values():
+        pcb.Delete(via)
 
 def remove_temporary_vias():
     for idx, via in wire_via_exp.items():
