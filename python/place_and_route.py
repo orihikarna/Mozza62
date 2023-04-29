@@ -849,13 +849,7 @@ def place_screw_holes(board):
                 kad.draw_closed_corners(corners, 'F.Fab', 0.1)
 
 
-w_pwr, r_pwr = 0.6, 1.2  # power
-w_led, r_led = 0.4, 2.0  # LED dat
-w_dat, r_dat = 0.4, 2.0  # row / col
-
-
 # expander
-via_exp = {}
 via_exp_gnd = {}
 wire_via_exp = {}
 # RJ45
@@ -894,8 +888,11 @@ wire_via_col_horz_set = {}
 via_size_dat = VIA_Size[2]
 via_size_gnd = VIA_Size[3]
 
-w_dat = 0.4
-w_pwr = 0.6
+w_pwr, r_pwr = 0.6, 1.2  # power
+w_led, r_led = 0.4, 2.0  # LED dat
+w_dat, r_dat = 0.4, 2.0  # row / col
+w_exp, r_exp = 0.4, 1.0  # expander
+
 w_gnd = 0.3
 s_dat = 0.4
 s_pwr = 0.8
@@ -910,12 +907,41 @@ rj45_vert_width_spc_net_pads = [
     (w_pwr, 0.000, '3V3', '8'),
 ]
 
-y_sep_exp_via = 1.6
+w_gnd = 0.36
+s_col = 0.27
+s_col2 = 0.5
+
+exp_cidx_pad_width_space_nets = [
+    (0, 4, w_dat, s_col, 'ROW3'),
+    (0, 3, w_dat, s_col, 'ROW4'),
+    (0, 2, w_dat, s_col, 'COL1'),
+    (2, 1, w_dat, s_col2, 'ROW1'),
+    (2, -1, w_gnd, s_col2, 'GND'),
+    (2, 28, w_dat, s_col2, 'ROW2'),
+    (2, -1, w_gnd, s_col2, 'GND'),
+    (2, 27, w_dat, s_col, 'COL2'),
+    (3, -1, w_gnd, s_col, 'GND'),
+    (3, 26, w_dat, s_col, 'COL3'),
+    (4, -1, w_gnd, s_col, 'GND'),
+    (4, 25, w_dat, s_col, 'COL4'),
+    (5, -1, w_gnd, s_col, 'GND'),
+    (5, 24, w_dat, s_col, 'COL5'),
+    (6, -1, w_gnd, s_col, 'GND'),
+    (6, 23, w_dat, s_col, 'COL6'),
+    (7, -1, w_gnd, s_col, 'GND'),
+    (7, 22, w_dat, s_col, 'COL7'),
+    (8, -1, w_gnd, s_col, 'GND'),
+    (8, 21, w_dat, s_col, 'COL8'),
+    (8, -1, w_gnd, s_col, 'GND'),
+    (3, 20, w_dat, s_col, 'COLA'),
+    (3, -1, w_gnd, s_col, 'GND'),
+    (3, 19, w_dat, s_col, 'COLB'),
+    (3, -1, w_gnd, s_col, 'GND'),
+    # (9, 18, w_dat, s_col, 'ROW5'),
+]
 
 
 def wire_exp():
-    w_exp, r_exp = 0.4, 1.0
-
     # GND
     wire_via_gnd = kad.add_via_relative('U1', '29', (0, 0), via_size_pwr)
     for mod_exp in ['U1', 'U2']:
@@ -1002,37 +1028,6 @@ def wire_exp():
     ])
     wire_via_exp[5] = via_exp_cap_gnd['C1']
     wire_via_exp[6] = via_exp_cap_vcc['C1']
-
-    # ROW & COL
-    # 4, 3, 2, 1, 28, ..., 18
-    exp_pads = [f'{((4 - i - 1 + 28) % 28) + 1}' for i in range(15)]
-    exp_nets = [kad.get_pad_net('U1', pad) for pad in exp_pads]
-    for i in range(15):
-        ny = abs(i - 7)
-        sy = vec2.sign(i - 7)
-        dpos = (ny * sy * y_sep_exp_via, (ny - 7) * 1.6)
-        pos = kad.calc_pos_from_pad('U1', '29', dpos)
-        net = exp_nets[i]
-        via_exp[i] = kad.add_via(pos, net, via_size_dat)
-        if ny in [0, 7]:
-            prm = (Strt)
-        elif i < 3:
-            prm = (ZgZg, 0, 45)
-        elif ny <= 3:
-            # prm = (ZgZg, 90, 45 - 12 * (3 - ny), 1)
-            prm = (Dird, 90, 45 * sy, 1)
-        else:
-            # prm = (Dird, 0, 45 + 22.5 * (ny - 2), 1)
-            prm = (Dird, 0, 45 * sy, 1)
-        kad.wire_mod_pads([('U1', exp_pads[i], 'U1', via_exp[i], w_exp, prm)])
-        kad.wire_mod_pads([('U2', exp_pads[14-i], 'U1', via_exp[i], w_exp, prm)])
-
-    for i in range(3, 14):
-        ny = abs(i - 6.5)
-        sy = vec2.sign(i - 6.5)
-        dpos = (ny * sy * 1.6, (ny - 7) * 1.6)
-        pos = kad.calc_pos_from_pad('U1', '29', dpos)
-        via_exp_gnd[i] = kad.add_via(pos, GND, via_size_gnd)
 
     for via in [wire_via_exp_vcc, wire_via_exp_gnd, wire_via_exp_nrst]:
         pcb.Delete(via)
@@ -1700,52 +1695,8 @@ def wire_row_vert_lines():
                     (mod_swT, wire_via_row_vert[rvert], mod_swB, wire_via_row_vert[rvert+1], w_dat, (ZgZg, 90, 25), 'B.Cu'),
                 ])
 
-    # expander to ROW3, ROW4, ROW5, COL1
-    mod_exp = 'U1'
-    r_row = 2
-    kad.wire_mod_pads([
-        (mod_exp, via_exp[0], 'SW13', '1', w_dat, (Dird, 0, 0, r_row), 'B.Cu'),
-        (mod_exp, via_exp[1], 'SW14', '1', w_dat, (Dird, 0, 0, r_row), 'B.Cu'),
-        (mod_exp, via_exp[2], 'CD1', via_dbnc_row[1], w_dat, (Dird, 0, 90, r_row), 'B.Cu'),
-        (mod_exp, via_exp[14], 'SW15', '1', w_dat, (Dird, 0, 0, r_row)),
-    ])
-
 
 def wire_col_horz_lines():
-    w_dat = 0.4
-    w_gnd = 0.36
-    s_col = 0.27
-    s_col2 = 0.5
-
-    exp_cidx_pad_width_space_nets = [
-        (0, 4, w_dat, s_col, 'ROW3'),
-        (0, 3, w_dat, s_col, 'ROW4'),
-        (0, 2, w_dat, s_col, 'COL1'),
-        (2, 1, w_dat, s_col2, 'ROW1'),
-        (2, -1, w_gnd, s_col2, 'GND'),
-        (2, 28, w_dat, s_col2, 'ROW2'),
-        (2, -1, w_gnd, s_col2, 'GND'),
-        (2, 27, w_dat, s_col, 'COL2'),
-        (3, -1, w_gnd, s_col, 'GND'),
-        (3, 26, w_dat, s_col, 'COL3'),
-        (4, -1, w_gnd, s_col, 'GND'),
-        (4, 25, w_dat, s_col, 'COL4'),
-        (5, -1, w_gnd, s_col, 'GND'),
-        (5, 24, w_dat, s_col, 'COL5'),
-        (6, -1, w_gnd, s_col, 'GND'),
-        (6, 23, w_dat, s_col, 'COL6'),
-        (7, -1, w_gnd, s_col, 'GND'),
-        (7, 22, w_dat, s_col, 'COL7'),
-        (8, -1, w_gnd, s_col, 'GND'),
-        (8, 21, w_dat, s_col, 'COL8'),
-        (8, -1, w_gnd, s_col, 'GND'),
-        (3, 20, w_dat, s_col, 'COLA'),
-        (3, -1, w_gnd, s_col, 'GND'),
-        (3, 19, w_dat, s_col, 'COLB'),
-        (3, -1, w_gnd, s_col, 'GND'),
-        # (9, 18, w_dat, s_col, 'ROW5'),
-    ]
-
     # line offset y
     y_offsets = []
     dy = 0
@@ -1826,7 +1777,7 @@ def wire_col_horz_lines():
         else:
             continue
         pos_ref, _ = kad.get_via_pos_net(wire_via_col_horz_set[cidx][lidx])
-        _via = kad.add_via(kad.calc_relative_vec(mod_cd, delta, pos_ref), pcb.FindNet(net_name), via_size_dat)
+        _via = kad.add_via(kad.calc_relative_vec(mod_cd, delta, pos_ref), pcb.FindNet(net_name), via_size_gnd if row_idx is None else via_size_dat)
         prm = (Dird, 90, 0, kad.inf, _ctr)
         kad.wire_mod_pads([
             (mod_cd, _via, mod_cd, wire_via_col_horz_set[cidx][lidx], width, (Strt), 'F.Cu'),
@@ -1910,30 +1861,98 @@ def wire_col_horz_lines():
             width = exp_cidx_pad_width_space_nets[idx][2]
             kad.wire_mod_pads([(mod_rL, wire_via_L, mod_rR, wire_via_R, width, prm_row, 'F.Cu')])
 
-    # wire to exp
+
+def wire_exp_row_vert_col_horz():
+    y_sep_exp_via = 1.6
+    y_offset_exp_via = (via_size_dat[0] - w_dat) / 2
+
     mod_exp = 'U1'
-    y_offset_exp_via = 0.2
+    via_exp = {}
+
+    def get_via_pos(ny, sy, max_y=-7):
+        y = ny - 7
+        y = max(y, max_y)
+        return vec2.scale(y_sep_exp_via, (ny * sy, y))
+
+    # ROW & COL flower
+    # 4, 3, 2, 1, 28, ..., 18
+    exp_pads = [f'{((4 - i - 1 + 28) % 28) + 1}' for i in range(15)]
+    for i in range(15):
+        ny = abs(i - 7)
+        sy = vec2.sign(i - 7)
+        dpos = get_via_pos(ny, sy, -6)
+        pos = kad.calc_pos_from_pad(mod_exp, '29', dpos)
+        net = kad.get_pad_net(mod_exp, exp_pads[i])
+        via_exp[i] = kad.add_via(pos, net, via_size_dat)
+        if ny in [0, 7]:
+            prm = (Strt)
+        elif i < 3:
+            prm = (ZgZg, 0, 45)
+        elif ny <= 3:
+            # prm = (ZgZg, 90, 45 - 12 * (3 - ny), 1)
+            prm = (Dird, 90, 45 * sy, 1)
+        else:
+            # prm = (Dird, 0, 45 + 22.5 * (ny - 2), 1)
+            prm = (Dird, 0, 45 * sy, 1)
+        kad.wire_mod_pads([
+            (mod_exp, exp_pads[i], mod_exp, via_exp[i], w_exp, prm),
+            ('U2', exp_pads[14-i], mod_exp, via_exp[i], w_exp, prm),
+        ])
+
+    # GND vias in-between
+    offset_gnd_via = 0.6
+    for i in range(3, 14):
+        ny = abs(i - 6.5)
+        sy = vec2.sign(i - 6.5)
+        if ny in [0.5, 6.5]:
+            dgnd = y_offset_exp_via / 2
+        else:
+            dgnd = -offset_gnd_via
+        dpos = get_via_pos(ny, sy)
+        dpos = vec2.add(dpos, (dgnd * sy, -dgnd))
+        pos = kad.calc_pos_from_pad(mod_exp, '29', dpos)
+        via_exp_gnd[i] = kad.add_via(pos, GND, via_size_gnd)
+
+    # wire to exp
     gnd_idx = 3
     pad_idx = 3
+    gnd_angle = 60
     ctr_exp_col = kad.calc_relative_vec('SW24', (1, 2), kad.get_via_pos_net(wire_via_col_horz_set[2][3])[0])
     for idx, (cidx, pad, width, space, net) in enumerate(exp_cidx_pad_width_space_nets):
         if cidx <= 1:
             continue
-        # print(idx, net)
+        # wire angle
+        dangle = gnd_angle if net == 'GND' else 90
+        angle = 90
         if idx < 11:
-            angle = 135
-        elif idx == 11:
-            angle = 90
-        else:
-            angle = 45
-        prm = (Dird, [(angle, y_offset_exp_via * math.sqrt(2)), 90], 0, kad.inf, ctr_exp_col)
+            angle += dangle
+        elif idx > 11:  # mid
+            angle -= dangle
+
+        # length to the corner
+        l = y_offset_exp_via
         if net == 'GND':
             _via_exp = via_exp_gnd[gnd_idx]
             gnd_idx += 1
+            if idx in [10, 12, 24]:
+                l = 0
+            else:
+                l = (y_offset_exp_via + offset_gnd_via) / math.sin(math.radians(gnd_angle))
         else:
             _via_exp = via_exp[pad_idx]
             pad_idx += 1
+        prm = (Dird, [(angle, l), 90], 0, kad.inf, ctr_exp_col)
         kad.wire_mod_pads([(mod_exp, _via_exp, 'SW24', wire_via_col_horz_set[2][idx], width, prm, 'F.Cu')])
+
+    # expander to ROW3, ROW4, ROW5, COL1
+    r_row = 2
+    prm = (Dird, 0, 0, r_row)
+    kad.wire_mod_pads([
+        (mod_exp, via_exp[0], 'SW13', '1', w_dat, prm, 'B.Cu'),
+        (mod_exp, via_exp[1], 'SW14', '1', w_dat, prm, 'B.Cu'),
+        (mod_exp, via_exp[2], 'SW14', via_dbnc_row[1], w_dat, prm, 'B.Cu'),
+        (mod_exp, via_exp[14], 'SW15', '1', w_dat, prm),
+    ])
 
 
 def remove_temporary_vias():
@@ -2058,6 +2077,7 @@ def main():
         wire_col_diode()
         wire_row_vert_lines()
         wire_col_horz_lines()
+        wire_exp_row_vert_col_horz()
         remove_temporary_vias()
 
     setRefs(board)
