@@ -691,7 +691,7 @@ def add_zone(net_name, layer_name, rect, zones):
     #
     zone.SetMinThickness(pcbnew.FromMils(16))
     # zone.SetThermalReliefGap( pcbnew.FromMils( 12 ) )
-    zone.SetThermalReliefSpokeWidth( pcbnew.FromMils( 16 ) )
+    zone.SetThermalReliefSpokeWidth(pcbnew.FromMils(16))
     # zone.Hatch()
     #
     zones.append(zone)
@@ -1961,21 +1961,15 @@ def wire_exp_row_vert_col_horz():
             angle -= dangle
 
         # length to the corner
-        l = y_offset_exp_via
         if net == 'GND':
+            l = 0
             _via_exp = wire_via_exp_gnd[gnd_idx]
             gnd_idx += 1
-            if idx in [10, 12, 24]:
-                l = 0
-            else:
-                # l = (y_offset_exp_via + offset_gnd_via) / math.sin(math.radians(gnd_angle))
-                l = (y_offset_exp_via) / math.sin(math.radians(gnd_angle))
-                l = 0
         else:
+            l = y_offset_exp_via
             _via_exp = via_exp[pad_idx]
             pad_idx += 1
         prm = (Dird, [(angle, l), 90], 0, kad.inf, ctr_exp_col)
-        # prm = (Dird, 90, 0, kad.inf, ctr_exp_col)
         kad.wire_mod_pads([(mod_exp, _via_exp, 'SW24', wire_via_col_horz_set[2][idx], width, prm, 'F.Cu')])
 
     # expander to ROW3, ROW4, ROW5, COL1
@@ -1990,6 +1984,7 @@ def wire_exp_row_vert_col_horz():
 
     for via in wire_via_exp_gnd.values():
         pcb.Delete(via)
+
 
 def remove_temporary_vias():
     for idx, via in wire_via_exp.items():
