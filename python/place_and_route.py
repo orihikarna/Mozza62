@@ -1871,12 +1871,12 @@ def wire_exp_row_vert_col_horz():
 
     def get_via_pos(ny, sign, min_ny=0):
         x = max(ny, min_ny)
-        ex = 1.7
-        mx = 7
+        ex = 1.7 # exponent
+        mx = 7.0 # min x
         y = (x**ex - mx**ex) / mx**ex * mx * 0.86
         return vec2.scale(y_sep_exp_via, (sign * x, y))
 
-    # ROW & COL flower
+    # ROW & COL flower wiring
     # 4, 3, 2, 1, 28, ..., 18
     exp_pads = [f'{((4 - i - 1 + 28) % 28) + 1}' for i in range(15)]
     for i in range(15):
@@ -1888,55 +1888,40 @@ def wire_exp_row_vert_col_horz():
         via_exp[i] = kad.add_via(pos, net, via_size_dat)
         if ny in [0, 7]:
             prm = (Strt)
-        elif i < 3:
-            prm = (ZgZg, 0, 45)
         elif ny <= 3:
-            # prm = (ZgZg, 90, 45 - 12 * (3 - ny), 1)
-            prm = (Dird, 90, 45 * sy, 1)
-        else:
-            # prm = (Dird, 0, 45 + 22.5 * (ny - 2), 1)
-            prm = (Dird, 0, 45 * sy, 1)
+            prm = (Dird, 90, [40, 45, 50][ny-1] * sy, 1)
+        elif ny <= 6:
+            prm = (Dird, 0, [60, 45, 30][ny-4] * sy, 1)
         kad.wire_mod_pads([
             (mod_exp, exp_pads[i], mod_exp, via_exp[i], w_exp, prm),
             ('U2', exp_pads[14-i], mod_exp, via_exp[i], w_exp, prm),
         ])
 
     # GND vias in-between
-    offset_gnd_via = 0.8
-    for i in range(3, 14):
-        ny = abs(i - 6.5)
-        sy = vec2.sign(i - 6.5)
-        if ny == 0.5:
-            dx = 0.8
-            dy = y_offset_exp_via / 2
-        elif ny == 6.5:
-            dx = dy = y_offset_exp_via / 2
-        else:
-            dx = dy = -offset_gnd_via
-        dpos = get_via_pos(ny, sy)
-        dpos = vec2.add(dpos, (dy * sy, -dx))
-        pos = kad.calc_pos_from_pad(mod_exp, '29', dpos)
-        via_exp_gnd[i] = kad.add_via(pos, GND, via_size_gnd)
-
     wire_via_exp_gnd = {}
     offset_gnd_via = 0.8
     for i in range(3, 14):
         ny = abs(i - 6.5)
         sy = vec2.sign(i - 6.5)
-        dx = 1.0
+        xw = 1.0
         if ny == 0.5:
             angle = 0
-            dy = y_offset_exp_via / 2
+            xv = 0.8
+            yv = yw = y_offset_exp_via / 2
         elif ny == 6.5:
             angle = 0
-            dy = y_offset_exp_via / 2
+            xv = yv = yw = y_offset_exp_via / 2
         else:
             angle = 65
-            dy = y_offset_exp_via
+            xv = yv = -offset_gnd_via
+            yw = y_offset_exp_via
         dpos = get_via_pos(ny, sy)
-        dpos = vec2.add(dpos, (dy * sy, -dx))
-        pos = kad.calc_pos_from_pad(mod_exp, '29', dpos)
-        wire_via_exp_gnd[i] = kad.add_via(pos, GND, via_size_gnd)
+        pos_via = vec2.add(dpos, (yv * sy, -xv))
+        pos_wire = vec2.add(dpos, (yw * sy, -xw))
+        pos_via = kad.calc_pos_from_pad(mod_exp, '29', pos_via)
+        pos_wire = kad.calc_pos_from_pad(mod_exp, '29', pos_wire)
+        via_exp_gnd[i] = kad.add_via(pos_via, GND, via_size_gnd)
+        wire_via_exp_gnd[i] = kad.add_via(pos_wire, GND, via_size_gnd)
         if angle == 0:
             prm = (Strt)
         else:
