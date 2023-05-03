@@ -1876,7 +1876,7 @@ def wire_exp_row_vert_col_horz():
 
     def get_via_pos(ny, sign, min_ny=0):
         x = max(ny, min_ny)
-        mx = 7.0 # min x
+        mx = 7.0  # min x
         y = x - mx
         return vec2.scale(y_sep_exp_via, (sign * x, y))
 
@@ -1963,6 +1963,9 @@ def wire_exp_row_vert_col_horz():
         prm = (Dird, [(angle, l), 90], 0, kad.inf, ctr_exp_col)
         kad.wire_mod_pads([(mod_exp, _via_exp, 'SW24', wire_via_col_horz_set[2][idx], width, prm, 'F.Cu')])
 
+    for via in wire_via_exp_gnd.values():
+        pcb.Delete(via)
+
     # expander to ROW3, ROW4, ROW5, COL1
     r_row = 2
     prm = (Dird, 0, 0, r_row)
@@ -1972,9 +1975,6 @@ def wire_exp_row_vert_col_horz():
         (mod_exp, via_exp[2], 'SW14', via_dbnc_row[1], w_dat, prm, 'B.Cu'),
         (mod_exp, via_exp[14], 'SW15', '1', w_dat, prm),
     ])
-
-    for via in wire_via_exp_gnd.values():
-        pcb.Delete(via)
 
 
 def remove_temporary_vias():
