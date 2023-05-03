@@ -28,7 +28,7 @@ Spline = kad.Spline
 ##
 
 # in mm
-VIA_Size = [(1.2, 0.6), (1.0, 0.5), (0.8, 0.4), (0.7, 0.3), (0.6, 0.3)]
+VIA_Size = [(1.2, 0.6), (1.15, 0.5), (0.92, 0.4), (0.8, 0.3)]
 
 PCB_Width = 185
 PCB_Height = 129
@@ -1058,7 +1058,7 @@ def wire_rj45_jumpers():
         pos_jmp_y[pad] = sep_jmp_y * [3, 1, -1, -3][idx]
 
     # jumper to wire vias
-    offset_x = 1.6
+    offset_x = 2.0
     via_rj45 = {}
     for idx, pad in enumerate('268'):
         dy = pos_via_y[pad]
@@ -1086,7 +1086,7 @@ def wire_rj45_jumpers():
             wire_angle = 90 - angle * lsgn
             kad.wire_mod_pads([(mod_jmp, via_rj45[name], mod_jmp, via_rj45_conn[pad], w_conn, (Dird, 0, wire_angle), f'{layer}.Cu')])
     # connection via (4)
-    via_rj45_conn['4'] = kad.add_via_relative('JPF4', '2', (offset_x - 0.1, -sep_jmp_y), via_size_pwr)
+    via_rj45_conn['4'] = kad.add_via_relative('JPF4', '2', (offset_x - 0.4, -sep_jmp_y), via_size_pwr)
     kad.wire_mod_pads([
         ('JPF4', '2', 'JPF4', via_rj45_conn['4'], w_conn, (Dird, [(90, 0.35), 0], 45), 'F.Cu'),
         ('JPB4', '2', 'JPB4', via_rj45_conn['4'], w_conn, (Dird, [(90, 0.35), 0], 45), 'B.Cu'),
@@ -1253,7 +1253,7 @@ def wire_rj45_vert_lines():
 def wire_debounce_rrc_rotenc():
     dy_pwr_vcc = 2.4
     dy_pwr_gnd = 1.4
-    dy_via_pwr = 0.15
+    dy_via_pwr = 0.25
     for cidx in range(1, 9):
         mod_cd = f'CD{cidx}'
         mod_r1 = f'R{cidx}1'
@@ -1642,7 +1642,7 @@ def wire_col_diode():
             if btm in ['64']:
                 prm_dio = (Dird, 0, 0, 20)
             elif btm in ['84']:
-                prm_dio = (Dird, 0, [(180, 6), -50], 6)
+                prm_dio = (Dird, 0, [(180, 7), -50], 6)
             else:
                 prm_dio = (ZgZg, 0, 30)
             dio_T = 'D' + top
@@ -1783,6 +1783,11 @@ def wire_col_horz_lines():
             (mod_cd, _via, mod_cd, wire_via_col_horz_set[cidx][lidx], width, (Strt), 'F.Cu'),
             (mod_cd, _via, mod_cd, wire_via_row_vert_set[row_idx][4], width, prm, 'B.Cu') if row_idx is not None else None,
         ])
+        if net_name == 'GND':
+            wire_via = kad.add_via(kad.calc_relative_vec(mod_cd, (0, 2), pos_ref), GND, via_size_gnd)
+            for layer in Cu_layers:
+                kad.wire_mod_pads([(mod_cd, _via, mod_cd, wire_via, width, (Strt), layer)])
+            pcb.Delete(wire_via)
 
     # RotEnc cols
     mod_re = 'RE1'
@@ -1871,9 +1876,8 @@ def wire_exp_row_vert_col_horz():
 
     def get_via_pos(ny, sign, min_ny=0):
         x = max(ny, min_ny)
-        ex = 1.7 # exponent
         mx = 7.0 # min x
-        y = (x**ex - mx**ex) / mx**ex * mx * 0.86
+        y = x - mx
         return vec2.scale(y_sep_exp_via, (sign * x, y))
 
     # ROW & COL flower wiring
@@ -1886,12 +1890,13 @@ def wire_exp_row_vert_col_horz():
         pos = kad.calc_pos_from_pad(mod_exp, '29', dpos)
         net = kad.get_pad_net(mod_exp, exp_pads[i])
         via_exp[i] = kad.add_via(pos, net, via_size_dat)
+        ctr = kad.calc_pos_from_pad(mod_exp, '29', vec2.scale(3.0, (sy, -1)))
         if ny in [0, 7]:
             prm = (Strt)
         elif ny <= 3:
-            prm = (Dird, 90, [40, 45, 50][ny-1] * sy, 1)
+            prm = (Dird, 90, [50, 45, 40][ny-1] * sy, kad.inf, ctr)
         elif ny <= 6:
-            prm = (Dird, 0, [60, 45, 30][ny-4] * sy, 1)
+            prm = (Dird, 0, [50, 45, 45][ny-4] * sy, kad.inf, ctr)
         kad.wire_mod_pads([
             (mod_exp, exp_pads[i], mod_exp, via_exp[i], w_exp, prm),
             ('U2', exp_pads[14-i], mod_exp, via_exp[i], w_exp, prm),
@@ -1899,18 +1904,19 @@ def wire_exp_row_vert_col_horz():
 
     # GND vias in-between
     wire_via_exp_gnd = {}
-    offset_gnd_via = 0.8
+    offset_gnd_via = 0.6
     for i in range(3, 14):
         ny = abs(i - 6.5)
         sy = vec2.sign(i - 6.5)
-        xw = 1.0
+        xw = 1.4
         if ny == 0.5:
             angle = 0
-            xv = 0.8
+            xv = 0.5
             yv = yw = y_offset_exp_via / 2
         elif ny == 6.5:
-            angle = 0
-            xv = yv = yw = y_offset_exp_via / 2
+            angle = -45
+            xv = yv = y_offset_exp_via * 2
+            yw = y_offset_exp_via / 2
         else:
             angle = 65
             xv = yv = -offset_gnd_via
