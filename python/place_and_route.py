@@ -1807,7 +1807,7 @@ def wire_col_horz_lines():
         else:
             idx = 'Gnd2'
         prm = (Dird, 90, 90, kad.inf, lctr)
-        kad.wire_mod_pads([(mod_cd, wire_via_col_horz_set[cidx][lidx], mod_re, via_dbnc_row[idx], w_dat, prm)])
+        kad.wire_mod_pads([(mod_cd, wire_via_col_horz_set[cidx][lidx], mod_re, via_dbnc_row[idx], width, prm)])
 
     # Gnd vias
     for lidx in range(19):
@@ -1832,7 +1832,7 @@ def wire_col_horz_lines():
         mod_cdR = f'CD{cidxR}'
         mod_rL = f'R{cidxL}1'
         mod_rR = f'R{cidxR}1'
-        ctr_dy = 2.0
+        ctr_dy = 4.0
         if cidx in [3]:
             lctr = kad.calc_pos_from_pad(mod_cdL, '2', (y_top_wire_via[cidxL] - ctr_dy, -2))
             rctr = kad.calc_pos_from_pad(mod_cdR, '2', (y_btm_wire_via[cidxR] + ctr_dy, 3))
@@ -1908,18 +1908,20 @@ def wire_exp_row_vert_col_horz():
     for i in range(3, 14):
         ny = abs(i - 6.5)
         sy = vec2.sign(i - 6.5)
-        xw = 1.4
         if ny == 0.5:
             angle = 0
-            xv = 0.5
+            xv = 0.4
+            xw = 0.4
             yv = yw = y_offset_exp_via / 2
         elif ny == 6.5:
             angle = -45
             xv = yv = y_offset_exp_via * 2
+            xw = 1.4
             yw = y_offset_exp_via / 2
         else:
             angle = 65
             xv = yv = -offset_gnd_via
+            xw = 1.0
             yw = y_offset_exp_via
         dpos = get_via_pos(ny, sy)
         pos_via = vec2.add(dpos, (yv * sy, -xv))
@@ -1929,11 +1931,17 @@ def wire_exp_row_vert_col_horz():
         via_exp_gnd[i] = kad.add_via(pos_via, GND, via_size_gnd)
         wire_via_exp_gnd[i] = kad.add_via(pos_wire, GND, via_size_gnd)
         if angle == 0:
-            prm = (Strt)
-        else:
-            prm = (Dird, 90 - angle * sy, 90)
+            continue
+        prm = (Dird, 90 - angle * sy, 90)
         for layer in Cu_layers:
             kad.wire_mod_pads([(mod_exp, via_exp_gnd[i], mod_exp, wire_via_exp_gnd[i], w_gnd, prm, layer)])
+    # connect GND vias on B.Cu
+    for idx in range(3, 14):
+        if idx in [6, 7]:
+            continue
+        ctr_idx = 6 if idx < 6 else 7
+        prm = (Dird, 90, 0, 0)
+        kad.wire_mod_pads([(mod_exp, wire_via_exp_gnd[idx], mod_exp, via_exp_gnd[ctr_idx], w_gnd, prm, 'B.Cu')])
 
     # wire to exp
     gnd_idx = 3
@@ -1971,8 +1979,8 @@ def wire_exp_row_vert_col_horz():
     prm = (Dird, 0, 0, r_row)
     kad.wire_mod_pads([
         (mod_exp, via_exp[0], 'SW13', '1', w_dat, prm, 'B.Cu'),
-        (mod_exp, via_exp[1], 'SW14', '1', w_dat, prm, 'B.Cu'),
-        (mod_exp, via_exp[2], 'SW14', via_dbnc_row[1], w_dat, prm, 'B.Cu'),
+        (mod_exp, via_exp[1], 'SW14', '1', w_dat, (Dird, [(135, 3), 0], 0, r_row), 'B.Cu'),
+        (mod_exp, via_exp[2], 'SW14', via_dbnc_row[1], w_dat, (Dird, 135, 90, r_row), 'B.Cu'),
         (mod_exp, via_exp[14], 'SW15', '1', w_dat, prm),
     ])
 
