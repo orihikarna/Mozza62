@@ -10,7 +10,7 @@ kbd_name = 'hermit62'
 
 anti_alias_scaling = 4
 
-fontpath = "/System/Library/Fonts/Courier.dfont"
+fontpath = "/System/Library/Fonts/Courier.ttc"
 font = ImageFont.truetype( fontpath, size = 28 * anti_alias_scaling )
 
 def vec2( x, y ):
@@ -446,7 +446,7 @@ def make_kbd_layout( unit, output_type ):
     print( f'dx_Inner = {dx_Entr_Yen * unit:.6f}' )
     #
     org_Yen  = org_Inner + vec2( dx_Entr_Yen, -1 ) @ mat2_rot( angle_Inner )
-    org_Conn = org_Yen   + vec2( dx_Entr_Yen - 0.05, -1 ) @ mat2_rot( angle_Inner )
+    org_Conn = org_Yen   + vec2( dx_Entr_Yen - 0.1, -1.05 ) @ mat2_rot( angle_Inner )
 
     # Pinky finger: top
     angle_PinkyTop = angle_Dot + angle_Dot_Scln
@@ -522,8 +522,8 @@ def make_kbd_layout( unit, output_type ):
     arc_pnts = []
     if isHexa: # hexagonal
         R = mat2_rot( -30*0 )
-        org = org_Dot + (-6.9, 0.3)
-        P = np.array( [[1, 0], [1/2, np.sqrt(3)/2]] ) * 2.9
+        org = org_Dot + (-7.1, 0.35)
+        P = np.array( [[1, 0], [1/2, np.sqrt(3)/2]] ) * 3.0
         d1 = 0.268
         d2 = 0.25
         deltas = [
