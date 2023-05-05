@@ -522,8 +522,8 @@ def make_kbd_layout( unit, output_type ):
     arc_pnts = []
     if isHexa: # hexagonal
         R = mat2_rot( -30*0 )
-        org = org_Dot + (-7.1, 0.35)
-        P = np.array( [[1, 0], [1/2, np.sqrt(3)/2]] ) * 3.0
+        org = org_Dot + (-7.0, 0.27)
+        P = np.array( [[1, 0], [1/2, np.sqrt(3)/2]] ) * 2.95
         d1 = 0.268
         d2 = 0.25
         deltas = [
