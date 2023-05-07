@@ -744,6 +744,8 @@ def place_key_switches():
         # GND vias
         kad.add_via(kad.calc_relative_vec(mod_sw, (+3.8 * diode_sign, 0), sw_pos), GND, VIA_Size[3])
         kad.add_via(kad.calc_relative_vec(mod_sw, (-5.0 * diode_sign, 0), sw_pos), GND, VIA_Size[3])
+        if idx in ['63', '73']:
+            kad.add_via(kad.calc_relative_vec(mod_sw, (0, -9), sw_pos), GND, VIA_Size[3])
 
 
 def place_mods():
