@@ -1127,12 +1127,14 @@ def wire_rj45_vert_lines():
     mod_rj = 'J1'
 
     x_lines = []
+    # region prep x offsets
     dx = 0
     for idx, (width, space, net_name, pad) in enumerate(rj45_vert_width_spc_net_pads):
         if idx > 0:
             dx -= width / 2
         x_lines.append(dx)
         dx -= width / 2 + space
+    # endregion
 
     wire_via_rj45_row_sets = []
 
@@ -1246,7 +1248,6 @@ def wire_rj45_vert_lines():
     for idx, (width, space, net_name, pad) in enumerate(rj45_vert_width_spc_net_pads):
         y = 8 + (0 if idx < 5 else (idx - 5.5))
         x = x_lines[idx] - x_lines[2]
-        # pos = kad.calc_pos_from_pad(mod_sw, '3', (x, y))
         pos = kad.calc_relative_vec(mod_sw, (x, y), kad.get_via_pos_net(wire_via_exp[2])[0])
         net = pcb.FindNet(net_name)
         wire_via_rj45_row[idx] = kad.add_via(pos, net, via_size_pwr)
@@ -1264,9 +1265,9 @@ def wire_rj45_vert_lines():
         if idx in [2]:
             prm = (Strt)
         elif idx in [1, 3]:
-            prm = (Dird, 90, 90 - 45 * (idx -2))
+            prm = (Dird, 90, 90 - 45 * (idx - 2))
         elif idx in [0, 4]:
-            prm = (Dird, 90, [(180, 0.5), 45 * (idx -2)/2])
+            prm = (Dird, 90, [(180, 0.5), 45 * (idx - 2)/2])
         else:
             prm = (ZgZg, 90, 45)
         kad.wire_mod_pads([(mod_rj, wire_via_rj45_row[idx], mod_exp, wire_via_exp[idx], width, prm, 'B.Cu')])
@@ -1764,7 +1765,7 @@ def wire_col_horz_lines():
         # y pos
         cidx0, pad, width, space, net_name = exp_cidx_pad_width_space_nets[idx0]
         if lrx == 1:
-            dy = 1.2
+            dy = 1.3
         else:
             dy = 0.9
         # x pos
@@ -1848,13 +1849,15 @@ def wire_col_horz_lines():
         kad.wire_mod_pads([(mod_cd, wire_via_col_horz_set[cidx][lidx], mod_re, via_dbnc_row[idx], width, prm)])
 
     # Gnd vias
-    for lidx in range(19):
+    for lidx in range(21):
         cidx, pad, width, space, net_name = exp_cidx_pad_width_space_nets[lidx]
         if net_name != 'GND':
             continue
         pos, net = kad.get_via_pos_net(wire_via_col_horz_set[cidx][lidx])
         if cidx in [3, 4, 5, 6, 7, 8]:
-            delta = ((width - 0.7)/2, 0)
+            delta = ((width - 0.8)/2, 0)
+            if lidx == 20:
+                delta = vec2.scale(-1, delta)
         else:
             continue
         mod_cd = f'CD{cidx}'
