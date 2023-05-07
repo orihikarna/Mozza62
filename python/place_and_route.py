@@ -741,11 +741,9 @@ def place_key_switches():
         diode_sign = get_diode_side(idx)
         pos = vec2.mult(mat2.rotate(angle), (-5.4 * diode_sign, 0), sw_pos)
         kad.set_mod_pos_angle(mod_dio, pos, angle - 90)
-        # GND Vias
-        # if name[0] not in ['1', '8', '9'] and name[1] not in ['1']:
-        #     if board != BDC or name[0] != '7':
-        #         pos = vec2.mult( mat2.rotate( angle ), (-5, 0), sw_pos )
-        #         kad.add_via( pos, GND, VIA_Size[1] )
+        # GND vias
+        kad.add_via(kad.calc_relative_vec(mod_sw, (+3.8 * diode_sign, 0), sw_pos), GND, VIA_Size[3])
+        kad.add_via(kad.calc_relative_vec(mod_sw, (-5.0 * diode_sign, 0), sw_pos), GND, VIA_Size[3])
 
 
 def place_mods():
@@ -938,7 +936,7 @@ exp_cidx_pad_width_space_nets = [
     (7, 22, w_dat, s_col, 'COL7'),
     (8, -1, w_gnd, s_col, 'GND'),
     (8, 21, w_dat, s_col, 'COL8'),
-    (8, -1, w_gnd, s_col, 'GND'),
+    (5, -1, w_gnd, s_col, 'GND'),
     (3, 20, w_dat, s_col, 'COLA'),
     (3, -1, w_gnd, s_col, 'GND'),
     (3, 19, w_dat, s_col, 'COLB'),
