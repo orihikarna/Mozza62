@@ -184,7 +184,7 @@ def make_corners(key_cnrs):
     return corners
 
 
-def drawEdgeCuts(board):
+def draw_edge_cuts(board):
     width = 0.12
 
     if True:
@@ -2050,73 +2050,71 @@ def set_text_prop(text, pos, angle, offset_length, offset_angle, text_angle):
     if text_angle == None:
         text.SetVisible(False)
     else:
-        text.SetTextSize(pcbnew.wxSizeMM(1.1, 1.1))
+        text.SetTextSize(pcbnew.wxSizeMM(1.0, 1.0))
         text.SetTextThickness(pcbnew.FromMM(0.18))
         pos_text = vec2.scale(offset_length, vec2.rotate(- (offset_angle + angle)), pos)
         text.SetPosition(pnt.to_unit(vec2.round(pos_text, 3), True))
         text.SetTextAngle(text_angle * 10)
         text.SetKeepUpright(False)
 
-def setRefs(board):
+
+def set_refs(board):
     # hide value texts
     for mod in pcb.GetFootprints():
         ref = mod.Reference()
         val = mod.Value()
         val.SetVisible(False)
-        # ref.SetVisible( False )
-
     refs = []
     if board == BDC:
         refs = [
             (6.4, +90, 180, ['J1']),
             (5.6, +135, 45, ['U1']),
             (5.6, -135, 135, ['U2']),
+            (0, 0, 0, ['RE1']),
+            (1.6, -90, 180, ['DL1', 'D65', 'C1']),
+            (1.6, +90, 0, ['C2', 'C3']),
+            (3.6, 0, 0, ['C4']),
+            (3.6, 180, 180, ['R1']),
         ]
-
+        # SW
+        for idx in keys:
+            if is_SW(idx):
+                refs.append((None, None, None, [f'L{idx}', f'D{idx}', f'C{idx}']))
+                refs.append((3.7, 90, 180, [f'SW{idx}']))
+        # Debounce
+        for col in range(1, 9):
+            refs.append((3.6, 0, 0, [f'CD{col}']))
+            refs.append((3.6, 0, 0, [f'R{col}1']))
+            refs.append((3.6, 180, 180, [f'R{col}2']))
+        for col in range(11, 13):
+            refs.append((4.2, 0, 0, [f'CD{col}']))
+            refs.append((4.2, 0, 0, [f'R{col}1']))
+            refs.append((4.2, 0, 0, [f'R{col}2']))
+        # RJ45
+        for idx in '2468':
+            refs.append((3.6, 0, 0, [f'JPF{idx}']))
+            refs.append((3.6, 0, 180, [f'JPB{idx}']))
     for offset_length, offset_angle, text_angle, mod_names in refs:
         for mod_name in mod_names:
             mod = kad.get_mod(mod_name)
-            if mod == None:
+            if mod is None:
                 continue
             pos, angle = kad.get_mod_pos_angle(mod_name)
             ref = mod.Reference()
             set_text_prop(ref, pos, angle, offset_length, offset_angle, text_angle)
             for item in mod.GraphicalItems():
                 if type(item) is pcbnew.FP_TEXT and item.GetShownText() == ref.GetShownText():
-                    #print(item.Text())
                     set_text_prop(item, pos, angle, offset_length, offset_angle, text_angle)
-
-    return
-    # else:  # key holes
-        # refs = [(0, 0, None, ['H{}'.format(idx) for idx in range(1, 13)])]
-    # sw
-    if board in [BDL, BDR]:
-        for name in keys:
-            refs.append((1.6, [-90, +90][board], [180, 0][board], ['D' + name]))
-            if name in R2L:
-                refs.append((4.0, [180, 0][board], 0, ['CL' + name]))
-                refs.append((4.3, [0, 180][board], [-90, +90][board], ['L' + name]))
-            else:
-                refs.append((4.0, [0, 180][board], 180, ['CL' + name]))
-                refs.append((4.3, [180, 0][board], [+90, -90][board], ['L' + name]))
-    # debounce
-    if board in [BDL, BDR]:
-        tangle = [180, 0][board]
-        for idx in range(1, 10):
-            name = str(idx)
-            refs.append((3.3, 180, tangle, ['C' + name + '1']))
-            refs.append((3.3, 180, tangle, ['R{}1'.format(idx)]))
-            refs.append((3.3, 180, tangle, ['R{}2'.format(idx)]))
-    # J3
-    if board == BDL:
-        pads = ['GND', 'nRST', 'CLK', 'DIO', 'TX', 'RX']
-    else:
-        pads = []
-    for idx, text in enumerate(pads):
-        pos = kad.get_pad_pos('J3', '{}'.format(idx + 1))
-        pos = vec2.scale(1.6, vec2.rotate(-90 - J3_angle), pos)
-        kad.add_text(pos, J3_angle, text, ['F.SilkS', 'B.SilkS'][board], (0.8, 0.8), 0.15,
-                     pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+    # J1
+    if board == BDC:
+        angle = kad.get_mod_angle('J1')
+        pads = ['LED', 'GNDD', 'SCK', '5VD', 'NRST', '3V3', 'SDA', 'GND', 'LED']
+        for idx in range(9):
+            pos = kad.calc_pos_from_pad('J1', f'{idx+1}', (0, 1.8 if (idx+1) % 2 == 1 else -1.8))
+            kad.add_text(pos, angle, pads[idx], 'F.SilkS', (0.8, 0.8), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+        for idx in range(9):
+            pos = kad.calc_pos_from_pad('J1', f'{9-idx}', (0, 1.8 if (9-idx) % 2 == 1 else -1.8))
+            kad.add_text(pos, angle, pads[idx], 'B.SilkS', (0.8, 0.8), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
 
 
 def main():
@@ -2159,8 +2157,8 @@ def main():
         wire_exp_row_vert_col_horz()
         remove_temporary_vias()
 
-    setRefs(board)
-    drawEdgeCuts(board)
+    set_refs(board)
+    draw_edge_cuts(board)
 
     # zones
     zones = []
