@@ -1103,6 +1103,7 @@ def wire_rj45():
     ])
     via_rj45['8'] = wire_via_rj45['F8']
     del wire_via_rj45['F8']
+
     # circle connection vias (2 & 6)
     for pidx, pad in enumerate('26'):
         angle = [60, -60][pidx]
@@ -1151,22 +1152,21 @@ def wire_rj45_vert_lines():
             if pad is not None:
                 kad.wire_mod_pads([(mod_rj, pad, mod_rj, wire_via_rj45_row[idx], w_dat, (Strt), 'B.Cu')])
         else:
-            x = 4.0 + (x_lines[idx] - x_lines[5])
-            pos = kad.calc_pos_from_pad(mod_rj, '9', (x, -4))
+            x = 2.4 + (x_lines[idx] - x_lines[5])
+            pos = kad.calc_pos_from_pad(mod_rj, '9', (x, -6))
             wire_via_rj45_row[idx] = kad.add_via(pos, net, via_size_pwr)
 
     # connection vias (3, 5, 7) and gnd
     pos = kad.calc_pos_from_pad(mod_rj, '7', (1.27, offset_y))
     via_gnd = kad.add_via(pos, GND, via_size_pwr)
     # wire GND/VCC vias
-    ctr_pwr = kad.calc_relative_vec(mod_rj, (-2, -2), kad.get_via_pos_net(wire_via_rj45_row[6])[0])
-    r_rj = 2.0
+    r_rj = 2.4
     kad.wire_mod_pads([
         # 6 - GND & 8 - VCC
-        ('J1', via_rj45['6'], 'J1', wire_via_rj45_row[5], w_con, (Dird, [(30, 1.6), 0], [(90, ctr_pwr), 135], r_rj), 'F.Cu'),
-        ('J1', via_rj45['8'], 'J1', wire_via_rj45_row[6], w_con, (Dird, 0, [(90, ctr_pwr), 135], r_rj), 'F.Cu'),
+        ('J1', via_rj45['6'], 'J1', wire_via_rj45_row[6], w_con, (Dird, [(45, 1.2), 0], 90, r_rj), 'F.Cu'),
+        ('J1', via_rj45['8'], 'J1', wire_via_rj45_row[5], w_con, (Dird, 0, 90, r_rj), 'B.Cu'),
         # Gnd - Gnd
-        (mod_rj, wire_via_rj45_row[5], mod_rj, via_gnd, w_con, (Dird, 90, 0, 2), 'B.Cu'),
+        (mod_rj, wire_via_rj45_row[5], mod_rj, via_gnd, w_con, (Dird, 90, 0, r_rj), 'B.Cu'),
         (mod_rj, wire_via_rj45_row[3], mod_rj, via_gnd, w_dat, (Strt), 'F.Cu'),  # thru [1]
     ])
     # endregion
@@ -1186,6 +1186,7 @@ def wire_rj45_vert_lines():
         net = pcb.FindNet(net_name)
         wire_via_rj45_row[idx] = kad.add_via(pos, net, via_size_dat)
 
+    # pwr cap
     mod_c = 'C3'
     via_cap_vcc = kad.add_via_relative(mod_c, '1', (-1.6, 0), via_size_dat)
     via_cap_gnd = kad.add_via_relative(mod_c, '2', (+1.6, 0), via_size_dat)
@@ -1201,6 +1202,7 @@ def wire_rj45_vert_lines():
             kad.wire_mod_pads([(mod_c, _via, mod_c, _wia, w_pwr, (Dird, 90, [(0, 1.0 * sign), 0]), 'F.Cu')])
         pcb.Delete(_wia)
 
+    # wire 1-2
     ctr_pwr_top = kad.calc_relative_vec(mod_rj, (+2, +1), kad.get_via_pos_net(wire_via_rj45_row_sets[0][5])[0])
     ctr_pwr_btm = kad.calc_relative_vec(mod_rj, (-2, -1), kad.get_via_pos_net(wire_via_rj45_row_sets[1][6])[0])
     for idx, (width, space, net_name, pad) in enumerate(rj45_vert_width_spc_net_pads):
@@ -1209,7 +1211,7 @@ def wire_rj45_vert_lines():
             prm = (ZgZg, 90, 30)
         else:
             layer = 'F.Cu'
-            prm = (Dird, [(-90, ctr_pwr_top), -45], 90, kad.inf, ctr_pwr_btm)
+            prm = (Dird, [(-90, ctr_pwr_top), -50], 90, kad.inf, ctr_pwr_btm)
         kad.wire_mod_pads([(mod_rj, wire_via_rj45_row_sets[0][idx], mod_rj, wire_via_rj45_row_sets[1][idx], width, prm, layer)])
     # endregion
 
@@ -2044,23 +2046,49 @@ def remove_temporary_vias():
 
 
 # References
+def set_text_prop(text, pos, angle, offset_length, offset_angle, text_angle):
+    if text_angle == None:
+        text.SetVisible(False)
+    else:
+        text.SetTextSize(pcbnew.wxSizeMM(1.1, 1.1))
+        text.SetTextThickness(pcbnew.FromMM(0.18))
+        pos_text = vec2.scale(offset_length, vec2.rotate(- (offset_angle + angle)), pos)
+        text.SetPosition(pnt.to_unit(vec2.round(pos_text, 3), True))
+        text.SetTextAngle(text_angle * 10)
+        text.SetKeepUpright(False)
+
 def setRefs(board):
-    # GraphicalItems
+    # hide value texts
     for mod in pcb.GetFootprints():
         ref = mod.Reference()
         val = mod.Value()
         val.SetVisible(False)
         # ref.SetVisible( False )
-    return
+
+    refs = []
     if board == BDC:
         refs = [
-            (6.4, -90, 180, ['J1']),
-            (4,  -110,  90, ['U1']),
-            (1.8, -90, 180, ['R6']),
-            (1.8, +90,   0, ['R7', 'R1', 'C1', 'D1']),
+            (6.4, +90, 180, ['J1']),
+            (5.6, +135, 45, ['U1']),
+            (5.6, -135, 135, ['U2']),
         ]
-    else:  # key holes
-        refs = [(0, 0, None, ['H{}'.format(idx) for idx in range(1, 13)])]
+
+    for offset_length, offset_angle, text_angle, mod_names in refs:
+        for mod_name in mod_names:
+            mod = kad.get_mod(mod_name)
+            if mod == None:
+                continue
+            pos, angle = kad.get_mod_pos_angle(mod_name)
+            ref = mod.Reference()
+            set_text_prop(ref, pos, angle, offset_length, offset_angle, text_angle)
+            for item in mod.GraphicalItems():
+                if type(item) is pcbnew.FP_TEXT and item.GetShownText() == ref.GetShownText():
+                    #print(item.Text())
+                    set_text_prop(item, pos, angle, offset_length, offset_angle, text_angle)
+
+    return
+    # else:  # key holes
+        # refs = [(0, 0, None, ['H{}'.format(idx) for idx in range(1, 13)])]
     # sw
     if board in [BDL, BDR]:
         for name in keys:
@@ -2079,22 +2107,6 @@ def setRefs(board):
             refs.append((3.3, 180, tangle, ['C' + name + '1']))
             refs.append((3.3, 180, tangle, ['R{}1'.format(idx)]))
             refs.append((3.3, 180, tangle, ['R{}2'.format(idx)]))
-    for offset_length, offset_angle, text_angle, mod_names in refs:
-        for mod_name in mod_names:
-            mod = kad.get_mod(mod_name)
-            if mod == None:
-                continue
-            pos, angle = kad.get_mod_pos_angle(mod_name)
-            ref = mod.Reference()
-            if text_angle == None:
-                ref.SetVisible(False)
-            else:
-                ref.SetTextSize(pcbnew.wxSizeMM(1.1, 1.1))
-                ref.SetThickness(pcbnew.FromMM(0.18))
-                pos_ref = vec2.scale(offset_length, vec2.rotate(- (offset_angle + angle)), pos)
-                ref.SetPosition(pnt.to_unit(vec2.round(pos_ref, 3), True))
-                ref.SetTextAngle(text_angle * 10)
-                ref.SetKeepUpright(False)
     # J3
     if board == BDL:
         pads = ['GND', 'nRST', 'CLK', 'DIO', 'TX', 'RX']
