@@ -1615,7 +1615,7 @@ def wire_led_left_right_ends_thumb():
         sw_L, sw_R = f'SW{left}', f'SW{rght}'
         lctr = kad.calc_pos_from_pad(sw_L, '5', (+2, 0))
         rctr = kad.calc_pos_from_pad(sw_L, '3', (+2, -16))
-        prm_led = (Dird, [(0, lctr), (60, rctr), 90], 180, kad.inf, rctr)
+        prm_led = (Dird, [(0, lctr), (58, rctr), 90], 180, kad.inf, rctr)
         kad.wire_mod_pads([
             (sw_L, via_led_left[left], sw_R, via_led_rght[rght], w_led, prm_led, 'F.Cu'),
             (sw_L, wire_via_led_pwr_1st[left], sw_R, wire_via_led_pwr_1st[rght], w_pwr, prm_led, 'F.Cu'),
@@ -1954,7 +1954,7 @@ def wire_exp_row_vert_col_horz():
         elif ny <= 3:
             prm = (Dird, 90, [50, 45, 40][ny-1] * sy, kad.inf, ctr)
         elif ny <= 6:
-            prm = (Dird, 0, [50, 45, 45][ny-4] * sy, kad.inf, ctr)
+            prm = (Dird, 0, [50, 45, 60][ny-4] * sy, kad.inf, ctr)
         kad.wire_mod_pads([
             (mod_exp, exp_pads[i], mod_exp, via_exp[i], w_exp, prm),
             ('U2', exp_pads[14-i], mod_exp, via_exp[i], w_exp, prm),
@@ -2001,6 +2001,8 @@ def wire_exp_row_vert_col_horz():
         ctr_idx = 6 if idx < 6 else 7
         prm = (Dird, 90, 0, 0)
         kad.wire_mod_pads([(mod_exp, wire_via_exp_gnd[idx], mod_exp, via_exp_gnd[ctr_idx], w_gnd, prm, 'B.Cu')])
+    # connect GND vias on F.Cu
+        kad.wire_mod_pads([(mod_exp, via_exp_gnd[0], mod_exp, wire_via_exp_gnd[1], w_gnd, (Dird, 90, 0, 0), 'F.Cu')])
 
     # wire to exp
     gnd_idx = 2
@@ -2038,7 +2040,7 @@ def wire_exp_row_vert_col_horz():
     prm = (Dird, 0, 0, r_row)
     kad.wire_mod_pads([
         (mod_exp, via_exp[0], 'SW13', '1', w_dat, prm, 'B.Cu'),
-        (mod_exp, via_exp[1], 'SW14', '1', w_dat, (Dird, [(135, 3), 0], 0, r_row), 'B.Cu'),
+        (mod_exp, via_exp[1], 'SW14', '1', w_dat, (Dird, [(180, y_offset_exp_via), 90], [(0, 3.4), 90], r_row), 'B.Cu'),
         (mod_exp, via_exp[2], 'SW14', via_dbnc_row[1], w_dat, (Dird, [(180, y_offset_exp_via), 90], 90, r_row), 'F.Cu'),
         (mod_exp, via_exp[14], 'SW15', '1', w_dat, prm),
     ])
