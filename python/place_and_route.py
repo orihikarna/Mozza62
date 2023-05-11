@@ -1164,6 +1164,9 @@ def wire_rj45_vert_lines():
     # connection vias (3, 5, 7) and gnd
     pos = kad.calc_pos_from_pad(mod_rj, '7', (1.27, offset_y))
     via_gnd = kad.add_via(pos, GND, via_size_pwr)
+    # more gnd via
+    pos = kad.calc_pos_from_pad(mod_rj, '3', (-1.27, offset_y))
+    via_gnd2 = kad.add_via(pos, GND, via_size_dat)
     # wire GND/VCC vias
     r_rj = 2.4
     kad.wire_mod_pads([
@@ -1172,7 +1175,7 @@ def wire_rj45_vert_lines():
         ('J1', via_rj45['8'], 'J1', wire_via_rj45_row[5], w_con, (Dird, 0, 90, r_rj), 'B.Cu'),
         # Gnd - Gnd
         (mod_rj, wire_via_rj45_row[5], mod_rj, via_gnd, w_con, (Dird, 90, 0, r_rj), 'B.Cu'),
-        (mod_rj, wire_via_rj45_row[3], mod_rj, via_gnd, w_dat, (Strt), 'F.Cu'),  # thru [1]
+        (mod_rj, via_gnd2, mod_rj, via_gnd, w_dat, (Strt), 'F.Cu'),  # thru [1]
     ])
     # endregion
 
@@ -1960,7 +1963,7 @@ def wire_exp_row_vert_col_horz():
     # GND vias in-between
     wire_via_exp_gnd = {}
     offset_gnd_via = 0.6
-    for i in range(1, 14):
+    for i in range(0, 14):
         ny = abs(i - 6.5)
         sy = vec2.sign(i - 6.5)
         if ny == 0.5:
@@ -1985,7 +1988,7 @@ def wire_exp_row_vert_col_horz():
         pos_wire = kad.calc_pos_from_pad(mod_exp, '29', pos_wire)
         via_exp_gnd[i] = kad.add_via(pos_via, GND, via_size_gnd)
         wire_via_exp_gnd[i] = kad.add_via(pos_wire, GND, via_size_gnd)
-        if angle == 0:
+        if angle == 0 or i == 0:
             continue
         prm = (Dird, 90 - angle * sy, 90)
         for layer in Cu_layers:
