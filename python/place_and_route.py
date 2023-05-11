@@ -1866,14 +1866,14 @@ def wire_col_horz_lines():
         kad.wire_mod_pads([(mod_cd, wire_via_col_horz_set[cidx][lidx], mod_re, via_dbnc_row[idx], width, prm)])
 
     # Gnd vias
-    for lidx in range(21):
+    for lidx in range(22):
         cidx, pad, width, space, net_name = exp_cidx_pad_width_space_nets[lidx]
         if net_name != 'GND':
             continue
         pos, net = kad.get_via_pos_net(wire_via_col_horz_set[cidx][lidx])
         if cidx in [3, 4, 5, 6, 7, 8]:
             delta = ((width - 0.8)/2, 0)
-            if lidx == 20:
+            if lidx == 21:
                 delta = vec2.scale(-1, delta)
         else:
             continue
