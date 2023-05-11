@@ -1960,7 +1960,7 @@ def wire_exp_row_vert_col_horz():
     # GND vias in-between
     wire_via_exp_gnd = {}
     offset_gnd_via = 0.6
-    for i in range(2, 14):
+    for i in range(1, 14):
         ny = abs(i - 6.5)
         sy = vec2.sign(i - 6.5)
         if ny == 0.5:
@@ -1992,7 +1992,7 @@ def wire_exp_row_vert_col_horz():
             kad.wire_mod_pads([(mod_exp, via_exp_gnd[i], mod_exp, wire_via_exp_gnd[i], w_gnd, prm, layer)])
 
     # connect GND vias on B.Cu
-    for idx in range(2, 14):
+    for idx in range(1, 14):
         if idx in [6, 7]:
             continue
         ctr_idx = 6 if idx < 6 else 7
@@ -2036,7 +2036,7 @@ def wire_exp_row_vert_col_horz():
     kad.wire_mod_pads([
         (mod_exp, via_exp[0], 'SW13', '1', w_dat, prm, 'B.Cu'),
         (mod_exp, via_exp[1], 'SW14', '1', w_dat, (Dird, [(135, 3), 0], 0, r_row), 'B.Cu'),
-        (mod_exp, via_exp[2], 'SW14', via_dbnc_row[1], w_dat, (Dird, 135, 90, r_row), 'B.Cu'),
+        (mod_exp, via_exp[2], 'SW14', via_dbnc_row[1], w_dat, (Dird, [(180, y_offset_exp_via), 90], 90, r_row), 'F.Cu'),
         (mod_exp, via_exp[14], 'SW15', '1', w_dat, prm),
     ])
 
@@ -2055,7 +2055,8 @@ def remove_temporary_vias():
     for via_dict in [wire_via_row_vert_set, wire_via_col_horz_set]:
         for vias in via_dict.values():
             for via in vias.values():
-                pcb.Delete(via)
+                # pcb.Delete(via)
+                pass
 
 
 # References
