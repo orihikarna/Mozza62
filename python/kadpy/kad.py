@@ -174,6 +174,10 @@ def add_via_relative(mod_name, pad_name, offset_vec, size_via):
     return add_via(pos_via, net, size_via)
 
 
+def get_via_pos(via):
+    return pnt.from_unit(via.GetPosition(), UnitMM)
+
+
 def get_via_pos_net(via):
     return pnt.from_unit(via.GetPosition(), UnitMM), via.GetNet()
 
@@ -236,6 +240,7 @@ def calc_relative_vec(mod_name, vec, pos=(0, 0)):
         vec = (vec[0], -vec[1])
     vec_relative = vec2.mult(mat2.rotate(angle), vec, pos)
     return vec_relative
+
 
 def calc_pos_from_pad(mod_name, pad_name, offset_vec):
     pos_pad = get_pad_pos(mod_name, pad_name)
