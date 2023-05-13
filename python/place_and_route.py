@@ -739,13 +739,18 @@ def place_key_switches():
             (mod_cap, (0, 8.5), 180 if is_L2R else 0),
             (mod_dio, (5.4 * diode_sign, 0), 90),
         ])
-        kad.wire_mod_pads([(mod_sw, '2', mod_sw, '3', 0.4, (Strt))])
+        kad.wire_mod_pads([(mod_sw, '2', mod_sw, '3', 0.4, (Strt), 'B.Cu')])
 
         # GND vias
-        kad.add_via(kad.calc_relative_vec(mod_sw, (+4 * diode_sign, 0), sw_pos), GND, via_size_gnd)
-        kad.add_via(kad.calc_relative_vec(mod_sw, (-4 * diode_sign, 0), sw_pos), GND, via_size_gnd)
+        kad.add_via(kad.calc_relative_vec(mod_sw, (-5 * diode_sign, 0), sw_pos), GND, via_size_gnd)
         if idx in ['63', '73']:
             kad.add_via(kad.calc_relative_vec(mod_sw, (0, -9), sw_pos), GND, via_size_gnd)
+        for idx, sign in enumerate([+1, -1]):
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, '1', (+2.5 * sign, +1.1)), GND, via_size_gnd)
+            pad = '54'[idx]
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (-2.5 * sign, -2.8)), GND, via_size_gnd)
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (+1.0 * sign, -1.5)), GND, via_size_gnd)
+        kad.add_via(kad.calc_pos_from_pad(mod_dio, '2', (+0.8, -1.4 * diode_sign)), GND, via_size_gnd)
 
 
 def place_mods():
