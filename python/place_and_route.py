@@ -737,19 +737,25 @@ def place_key_switches():
         kad.wire_mod_pads([(mod_sw, '2', mod_sw, '3', 0.4, (Dird, [(-90, 0.12), 0], 90, 0), 'F.Cu')])
 
         # GND vias
-        kad.add_via(kad.calc_relative_vec(mod_sw, (-5 * diode_sign, 0), sw_pos), GND, via_size_gnd)
         if idx in ['63', '73']:
             kad.add_via(kad.calc_relative_vec(mod_sw, (0, -9), sw_pos), GND, via_size_gnd)
         for i, sign in enumerate([+1, -1]):
-            kad.add_via(kad.calc_pos_from_pad(mod_sw, '1', (+3.0 * sign, 0.4)), GND, via_size_gnd)
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, '1', (+3.0 * sign, 0.3)), GND, via_size_gnd)
             pad = '54'[i]
-            kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (+0.0 * sign, -2.0)), GND, via_size_gnd)
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (+0.4 * sign, -1.8)), GND, via_size_gnd)
             kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (-2.0 * sign, -3.0)), GND, via_size_gnd)
-            # kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (-1.6 * sign, -7.6)), GND, via_size_gnd)
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (+0.4 * sign, -7.5)), GND, via_size_gnd)
             if idx[1] == '1' or idx == '82':  # top
                 kad.add_via(kad.calc_pos_from_pad(mod_sw, '1', (3.6 * sign, 18)), GND, via_size_gnd)
             if idx[0] == '8':  # right
                 kad.add_via(kad.calc_pos_from_pad(mod_sw, '1', (-11.4, 5 + 4.6 * sign)), GND, via_size_gnd)
+            if idx[0] == '4':  # middle
+                kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (6, 2.6 + 2.4 * sign)), GND, via_size_gnd)
+        if idx[1] == '5':  # bottom
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (8, 0)), GND, via_size_gnd)
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (9, 0)), GND, via_size_gnd)
+        if idx in ['13', '14']:  # left
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (15, 0)), GND, via_size_gnd)
 
 
 def place_mods():
@@ -779,7 +785,7 @@ def place_mods():
             mod_sw = 'SW64'
             dx, dy = 11.0, -9.0
         else:
-            dx, dy = 11.0, 2 * lrs
+            dx, dy = 11.0, 1.2 * lrs
         pos, angle = kad.get_mod_pos_angle(mod_sw)
         kad.move_mods(pos, angle + 90, [
             (None, (dx, dy), 0, [
@@ -1326,12 +1332,12 @@ def wire_debounce_rrc_rotenc():
         wire_via_dbnc_vcc[cidx] = kad.add_via_relative(mod_cd, '1', (-dy_pwr_vcc, dx + (1.2 if cidx == 8 else 0)), via_size_pwr)
         wire_via_dbnc_gnd[cidx] = kad.add_via_relative(mod_r2, '2', (+dy_pwr_gnd, dx - (1.2 if cidx == 8 else 0)), via_size_pwr)
         if cidx == 5:
-            via_dbnc_rotenc_vcc = kad.add_via_relative(mod_cd, '1', (-dy_pwr_vcc - dy_via_pwr, dx + 10.6), via_size_pwr)
-            via_dbnc_rotenc_gnd = kad.add_via_relative(mod_r2, '2', (+dy_pwr_gnd - dy_via_pwr, dx - 4.4), via_size_pwr)
+            via_dbnc_rotenc_vcc = kad.add_via_relative(mod_cd, '1', (-dy_pwr_vcc - dy_via_pwr, dx + 11.2), via_size_pwr)
+            via_dbnc_rotenc_gnd = kad.add_via_relative(mod_r2, '2', (+dy_pwr_gnd - dy_via_pwr, dx - 5.0), via_size_pwr)
         via_dbnc_row[cidx] = kad.add_via_relative(mod_cd, '2', (0.2, dx), via_size_dat)
         via_dbnc_col[cidx] = kad.add_via_relative(mod_r2, '1', (0, dx), via_size_dat)
         # gnd vias
-        kad.add_via_relative(mod_r2, '2', (-2.3, -3.2 * lrs), via_size_gnd)
+        kad.add_via_relative(mod_r2, '2', (-1.1, 7.2 * lrs), via_size_gnd)
 
         # resister and cap vias
         for layer in Cu_layers:
@@ -1361,6 +1367,7 @@ def wire_debounce_rrc_rotenc():
     mod_re = 'RE1'
 
     via_dbnc_gnd = {}
+    via_rotenc_gnd = kad.add_via(kad.calc_pos_from_pad(mod_re, 'C', (2.4, +1.4)), GND, via_size_pwr)
     via_rotenc_gnd = kad.add_via(kad.calc_pos_from_pad(mod_re, 'C', (2.4, -1.4)), GND, via_size_pwr)
 
     for i, cidx in enumerate([11, 12]):
