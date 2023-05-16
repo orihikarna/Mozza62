@@ -783,7 +783,7 @@ def place_mods():
         mod_sw = f'SW{idx}'
         if cidx == 7:
             mod_sw = 'SW64'
-            dx, dy = 11.0, -9.0
+            dx, dy = 11.0, -9.6
         else:
             dx, dy = 11.0, 1.2 * lrs
         pos, angle = kad.get_mod_pos_angle(mod_sw)
@@ -1291,7 +1291,7 @@ def wire_rj45_vert_lines():
         elif idx in [0, 4]:
             prm = (Dird, 90, [(180, 0.5), 45 * (idx - 2)/2])
         else:
-            prm = (ZgZg, 90, 45)
+            prm = (ZgZg, 90, 30)
         kad.wire_mod_pads([(mod_rj, wire_via_rj45_row[idx], mod_exp, wire_via_exp[idx], width, prm, 'B.Cu')])
     # endregion
 
@@ -1337,7 +1337,8 @@ def wire_debounce_rrc_rotenc():
         via_dbnc_row[cidx] = kad.add_via_relative(mod_cd, '2', (0.2, dx), via_size_dat)
         via_dbnc_col[cidx] = kad.add_via_relative(mod_r2, '1', (0, dx), via_size_dat)
         # gnd vias
-        kad.add_via_relative(mod_r2, '2', (-1.1, 7.2 * lrs), via_size_gnd)
+        if cidx not in [3]:
+            kad.add_via_relative(mod_r2, '2', (-1.1, 7.2 * lrs), via_size_gnd)
 
         # resister and cap vias
         for layer in Cu_layers:
@@ -1719,7 +1720,7 @@ def wire_col_diode():
         idx = f'{cidx}{get_btm_row_idx(cidx)}'
         mod_dio = f'D{idx}'
         if cidx == 7:
-            prm = (Dird, 0, [(90, 1.5), (0, 3), (-90, 5), 0])
+            prm = (Dird, 0, [(45, 0), (45, 2.6), (-45, 7), 0])
         else:
             prm = (Dird, 0, 90)
         kad.wire_mod_pads([(mod_dio, wire_via_dio_col[idx], mod_r, via_dbnc_col[cidx], w_dat, prm, 'B.Cu')])
@@ -1810,7 +1811,7 @@ def wire_col_horz_lines():
             dx += 10
             dy -= y_offsets[idx0+6] - y_offsets[idx0]  # ROW1, ROW2
         elif cidx == 3:
-            dx += 2
+            dx += 1.4
             dy -= y_offsets[idx0+2] - y_offsets[idx0]
 
         wire_via_col_horz = {}
