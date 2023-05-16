@@ -754,8 +754,8 @@ def place_key_switches():
         if idx[1] == '5':  # bottom
             kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (8, 0)), GND, via_size_gnd)
             kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (9, 0)), GND, via_size_gnd)
-        if idx in ['13', '14']:  # left
-            kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (15, 0)), GND, via_size_gnd)
+        # if idx in ['13', '14']:  # left
+            # kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (16, 0)), GND, via_size_gnd)
 
 
 def place_mods():
@@ -1640,9 +1640,10 @@ def wire_led_left_right_ends_thumb():
     # row4 --> thumb
     for left, rght in [('14', '15')]:
         sw_L, sw_R = f'SW{left}', f'SW{rght}'
-        lctr = kad.calc_pos_from_pad(sw_L, '5', (+2, 0))
-        rctr = kad.calc_pos_from_pad(sw_L, '3', (+2, -16))
-        prm_led = (Dird, [(0, lctr), (58, rctr), 90], 180, kad.inf, rctr)
+        lctr = kad.calc_pos_from_pad(sw_L, '5', (0, -4))
+        rctr = kad.calc_pos_from_pad(sw_L, '3', (-4, -16))
+        bctr = kad.calc_pos_from_pad(sw_R, '2', (0, -20))
+        prm_led = (Dird, [(0, lctr), (54, rctr), 90], 180, kad.inf, bctr)
         kad.wire_mod_pads([
             (sw_L, via_led_left[left], sw_R, via_led_rght[rght], w_led, prm_led, 'F.Cu'),
             (sw_L, wire_via_led_pwr_1st[left], sw_R, wire_via_led_pwr_1st[rght], w_pwr, prm_led, 'F.Cu'),
@@ -1781,8 +1782,8 @@ def wire_col_horz_lines():
         dy += width + space
 
     # horizontal col lines
-    y_top_wire_via = {}
-    y_btm_wire_via = {}
+    pos_y_wire_via_set = {}
+    idx_ranges = {}
     for cidx in range(2, 9):
         lrs = get_diode_side(f'{cidx}4')
         lrx = (lrs + 1) / 2
@@ -1796,8 +1797,9 @@ def wire_col_horz_lines():
                 continue
             if idx0 < 0:
                 idx0 = idx
-            idx1 = idx + 1
+            idx1 = idx
         assert idx0 >= 0
+        idx_ranges[cidx] = (idx0, idx1)
 
         # y pos
         cidx0, pad, width, space, net_name = exp_cidx_pad_width_space_nets[idx0]
@@ -1815,7 +1817,9 @@ def wire_col_horz_lines():
             dy -= y_offsets[idx0+2] - y_offsets[idx0]
 
         wire_via_col_horz = {}
-        for idx in range(idx0, idx1):
+        pos_y_wire_via = {}
+        pos_y_wire_via_set[cidx] = pos_y_wire_via
+        for idx in range(idx0, idx1+1):
             cidx0, pad, width, space, net_name = exp_cidx_pad_width_space_nets[idx]
             if cidx0 < cidx:
                 continue
@@ -1823,9 +1827,7 @@ def wire_col_horz_lines():
             pos = kad.calc_pos_from_pad(mod_cd, '2', (dy, dx))
             net = GND if pad == -1 else kad.get_pad_net(f'U1', f'{pad}')
             wire_via_col_horz[idx] = kad.add_via(pos, net, (0.58, 0.3))
-            if cidx not in y_top_wire_via:
-                y_top_wire_via[cidx] = dy
-            y_btm_wire_via[cidx] = dy
+            pos_y_wire_via[idx] = dy
             dy += width / 2 + space
         wire_via_col_horz_set[cidx] = wire_via_col_horz
         # wire to debounce
@@ -1908,24 +1910,20 @@ def wire_col_horz_lines():
         mod_cdR = f'CD{cidxR}'
         mod_rL = f'R{cidxL}1'
         mod_rR = f'R{cidxR}1'
-        ctr_dy = 4.0
+        ctr_dy = 4
         if cidx in [3]:
-            lctr = kad.calc_pos_from_pad(mod_cdL, '2', (y_top_wire_via[cidxL] - ctr_dy, -2))
-            rctr = kad.calc_pos_from_pad(mod_cdR, '2', (y_btm_wire_via[cidxR] + ctr_dy, 3))
-            if cidx in [1]:
-                prm_row = (Dird, 90, -90, kad.inf, lctr)
-            else:
-                prm_row = (Dird, 90, -90, kad.inf, rctr)
+            rctr = kad.calc_pos_from_pad(mod_cdR, '2', (pos_y_wire_via_set[cidxR][idx_ranges[cidxR][1]] + ctr_dy, 3))
+            prm_row = (Dird, 90, -90, kad.inf, rctr)
         elif cidx in [2, 4, 6]:
-            lctr = kad.calc_pos_from_pad(mod_cdL, '2', (y_top_wire_via[cidxL] - ctr_dy, 0))
-            rctr = kad.calc_pos_from_pad(mod_cdR, '2', (y_btm_wire_via[cidxR] + ctr_dy, 4))
+            lctr = kad.calc_pos_from_pad(mod_cdL, '2', (pos_y_wire_via_set[cidxL][idx_ranges[cidxR][0]] - ctr_dy, 0))
+            rctr = kad.calc_pos_from_pad(mod_cdR, '2', (pos_y_wire_via_set[cidxR][idx_ranges[cidxR][1]] + ctr_dy, 4))
             if cidx in [2]:
                 prm_row = (Dird, 90, [(-90, rctr), -70], kad.inf, lctr)
             else:
                 prm_row = (Dird, [(90, lctr), 180 - 55], -90, kad.inf, rctr)
         elif cidx in [5, 7]:
-            lctr = kad.calc_pos_from_pad(mod_cdL, '2', (y_btm_wire_via[cidxL] + ctr_dy, 0))
-            rctr = kad.calc_pos_from_pad(mod_cdR, '2', (y_top_wire_via[cidxR] - ctr_dy, 0))
+            lctr = kad.calc_pos_from_pad(mod_cdL, '2', (pos_y_wire_via_set[cidxL][idx_ranges[cidxR][1]] + ctr_dy, 0))
+            rctr = kad.calc_pos_from_pad(mod_cdR, '2', (pos_y_wire_via_set[cidxR][idx_ranges[cidxR][0]] - ctr_dy, 0))
             prm_row = (Dird, [(90, lctr), 55], -90, kad.inf, rctr)
         # wires
         if cidxL not in wire_via_col_horz_set:
