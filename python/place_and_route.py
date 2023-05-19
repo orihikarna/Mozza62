@@ -81,19 +81,20 @@ SW_RotEnc = '65'
 angle_M_Comm = -18
 angle_Inner_Index = -15.2
 
-# dx_Dot = -2.997559
-# dx_Comma = -2.997559
-# dx_Index = 1.786772
-# dx_Inner = -2.742943
-# dx_Pinky = 2.371815
+dx_Dot = -2.997559
+dx_Comma = -2.997559
+dx_Index = 1.786772
+dx_Inner = -2.742943
+dx_Pinky = 2.371815
 
-# dx_cols = [
-#     dx_Inner,
-#     dx_Index, dx_Index,
-#     dx_Comma,
-#     dx_Dot,
-#     dx_Pinky, dx_Pinky, dx_Pinky,
-# ]
+dx_cols = [
+    None,
+    dx_Inner,
+    dx_Index, dx_Index,
+    dx_Comma,
+    dx_Dot,
+    dx_Pinky, dx_Pinky, dx_Pinky,
+]
 
 
 def is_SW(idx: str):
@@ -717,7 +718,9 @@ def place_key_switches():
             kad.set_mod_pos_angle('J1', vec2.scale(6.2, vec2.rotate(-angle - 90), sw_pos), angle + 180)
             continue
         if idx == SW_RotEnc:
-            kad.set_mod_pos_angle('RE1', sw_pos, angle + 180)
+            mod_re = 'RE1'
+            kad.set_mod_pos_angle(mod_re, sw_pos, angle + 180)
+            kad.add_via(kad.calc_pos_from_pad(mod_re, 'S2', (0, -2.54)), GND, via_size_gnd)
             continue
 
         mod_sw = f'SW{idx}'
@@ -737,25 +740,43 @@ def place_key_switches():
         kad.wire_mod_pads([(mod_sw, '2', mod_sw, '3', 0.4, (Dird, [(-90, 0.12), 0], 90, 0), 'F.Cu')])
 
         # GND vias
-        if idx in ['63', '73']:
-            kad.add_via(kad.calc_relative_vec(mod_sw, (0, -9), sw_pos), GND, via_size_gnd)
+        # above LED lines
+        if idx not in ['13']:
+            dx_col = 0 if idx[1] == '5' else dx_cols[int(idx[0])]
+            if idx not in ['21']:
+                kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (-dx_col * 0.6, 5.2)), GND, via_size_gnd)
+            if idx not in ['82']:
+                kad.add_via(kad.calc_pos_from_pad(mod_sw, '4', (-dx_col * 0.6, 5.2)), GND, via_size_gnd)
+        # next to col
+        if idx[0] != '1' and idx[1] != '5':
+            if idx[0] in ['2', '3']:
+                kad.add_via(kad.calc_pos_from_pad(mod_sw, '4', (-3.5, +0.7)), GND, via_size_gnd)
+                kad.add_via(kad.calc_pos_from_pad(mod_sw, '2', (-3.3, -1.1)), GND, via_size_gnd)
+            elif idx[0] in ['4', '5']:
+                kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (+3.5, +0.7)), GND, via_size_gnd)
+                kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (+3.3, -1.1)), GND, via_size_gnd)
+            elif idx[0] in ['6', '7', '8']:
+                kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (+3.5, 0)), GND, via_size_gnd)
+        # SW '3
+        kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (0, 1.7)), GND, via_size_gnd)
+        # thumb row
+        if idx[1] == '5':
+            if idx[0] not in ['3']:
+                kad.add_via(kad.calc_pos_from_pad(mod_sw, '4', (-6.5, 0)), GND, via_size_gnd)
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (6.2, 0)), GND, via_size_gnd)
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (6.2, 2)), GND, via_size_gnd)
+
         for i, sign in enumerate([+1, -1]):
-            kad.add_via(kad.calc_pos_from_pad(mod_sw, '1', (+3.0 * sign, 0.3)), GND, via_size_gnd)
+            # debounce line
+            if idx[1] == '4' or idx in ['63', '73', '83']:
+                kad.add_via(kad.calc_pos_from_pad(mod_sw, '1', (2.6 * sign, 0)), GND, via_size_gnd)
+            # below LED
             pad = '54'[i]
             kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (+0.4 * sign, -1.8)), GND, via_size_gnd)
             kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (-2.0 * sign, -3.0)), GND, via_size_gnd)
-            kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (+0.4 * sign, -7.5)), GND, via_size_gnd)
-            if idx[1] == '1' or idx == '82':  # top
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '1', (3.6 * sign, 18)), GND, via_size_gnd)
-            if idx[0] == '8':  # right
+            # right end
+            if idx in ['83']:
                 kad.add_via(kad.calc_pos_from_pad(mod_sw, '1', (-11.4, 5 + 4.6 * sign)), GND, via_size_gnd)
-            if idx[0] == '4':  # middle
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (6, 2.6 + 2.4 * sign)), GND, via_size_gnd)
-        if idx[1] == '5':  # bottom
-            kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (8, 0)), GND, via_size_gnd)
-            kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (9, 0)), GND, via_size_gnd)
-        # if idx in ['13', '14']:  # left
-            # kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (16, 0)), GND, via_size_gnd)
 
 
 def place_mods():
@@ -1338,7 +1359,7 @@ def wire_debounce_rrc_rotenc():
         via_dbnc_col[cidx] = kad.add_via_relative(mod_r2, '1', (0, dx), via_size_dat)
         # gnd vias
         if cidx not in [3]:
-            kad.add_via_relative(mod_r2, '2', (-1.1, 7.2 * lrs), via_size_gnd)
+            kad.add_via_relative(mod_r2, '2', (-1.1, 7.0 * lrs), via_size_gnd)
 
         # resister and cap vias
         for layer in Cu_layers:
@@ -1688,6 +1709,7 @@ def wire_col_diode():
     mod_re = 'RE1'
     mod_dio = f'D{idx}'
     via_dio_col_re = kad.add_via_relative(mod_dio, '1', (-1.8, 1.8), via_size_dat)
+    kad.add_via(kad.calc_pos_from_pad(mod_dio, '1', (-0.4, 1.8)), GND, via_size_gnd)
     for layer in Cu_layers:
         kad.wire_mod_pads([
             (mod_dio, '2', mod_re, 'S1', w_dat, (Dird, 0, 0, 1), layer),
