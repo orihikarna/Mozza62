@@ -762,7 +762,7 @@ def place_key_switches():
         # thumb row
         if idx[1] == '5':
             if idx[0] not in ['3']:
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '4', (-6.5, 0)), GND, via_size_gnd)
+                kad.add_via(kad.calc_pos_from_pad(mod_sw, '4', ([-2.4, -6.6][int(idx[0])-1], 0)), GND, via_size_gnd)
             kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (6.2, 0)), GND, via_size_gnd)
             kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (6.2, 2)), GND, via_size_gnd)
 
@@ -1038,6 +1038,8 @@ def wire_exp():
                 (mod_cap, via_exp_cap_vcc[mod_cap], 'U1', wire_via_exp_vcc, w_pwr, (Dird, 0, 0, kad.inf, ctr), 'F.Cu'),
                 (mod_cap, via_exp_cap_gnd[mod_cap], 'U1', wire_via_exp_gnd, w_pwr, (Dird, 0, 0, kad.inf, ctr), 'F.Cu'),
             ])
+            # gnd via
+            kad.add_via(kad.calc_pos_from_pad(mod_cap, '1', (0, 2.8)), GND, via_size_gnd)
 
     # I2C & NRST
     offset_x_nrst = 3.6
@@ -1402,7 +1404,10 @@ def wire_debounce_rrc_rotenc():
         # row gnd and vcc vias
         via_dbnc_gnd[cidx] = kad.add_via_relative(mod_r2, '2', (0, +1.6 * sign), via_size_pwr)
         via_dbnc_row[cidx] = kad.add_via_relative(mod_cd, '2', (1.6 * sign, [0, 2.0][i]), via_size_dat)
-        if i == 1:
+        # gnd via
+        if i == 0:
+            kad.add_via(kad.calc_pos_from_pad(mod_cd, '2', (1.6, 1.4)), GND, via_size_gnd)
+        elif i == 1:
             via_dbnc_row['Gnd1'] = kad.add_via(kad.calc_pos_from_pad(mod_cd, '2', (-2.6, 1.0)), GND, via_size_dat)
             via_dbnc_row['Gnd2'] = kad.add_via(kad.calc_pos_from_pad(mod_cd, '2', (-0.6, 3.0)), GND, via_size_dat)
 
@@ -1424,8 +1429,8 @@ def wire_debounce_rrc_rotenc():
 
     # gnd between cols for col horz lines
     kad.wire_mod_pads([
-        (mod_re, via_dbnc_row['Gnd1'], mod_re, via_dbnc_row['Gnd2'], w_dat, (Dird, 0, 90, 1), 'B.Cu'),
-        (mod_re, via_dbnc_row['Gnd2'], mod_re, via_dbnc_gnd[12], w_dat, (Dird, -90, [(-90, 1.0), 0], 1), 'B.Cu'),
+        (mod_re, via_dbnc_row['Gnd1'], mod_re, via_dbnc_row['Gnd2'], w_dat, (Dird, 0, 90, 0.4), 'B.Cu'),
+        (mod_re, via_dbnc_row['Gnd2'], mod_re, via_dbnc_gnd[12], w_dat, (Dird, -90, [(-90, 1.0), 0], 0.4), 'B.Cu'),
     ])
 
     # vcc & gnd from row4
