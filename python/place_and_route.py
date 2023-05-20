@@ -740,43 +740,46 @@ def place_key_switches():
         kad.wire_mod_pads([(mod_sw, '2', mod_sw, '3', 0.4, (Dird, [(-90, 0.12), 0], 90, 0), 'F.Cu')])
 
         # GND vias
+        def _add_gnd_via(pad, pos):
+            kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, pos), GND, via_size_gnd)
+
         # above LED lines
         if idx not in ['13']:
             dx_col = 0 if idx[1] == '5' else dx_cols[int(idx[0])]
             if idx not in ['21']:
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (-dx_col * 0.6, 5.2)), GND, via_size_gnd)
+                _add_gnd_via('5', (-dx_col * 0.6, 5.2))
             if idx not in ['82']:
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '4', (-dx_col * 0.6, 5.2)), GND, via_size_gnd)
+                _add_gnd_via('4', (-dx_col * 0.6, 5.2))
         # next to col
         if idx[0] != '1' and idx[1] != '5':
             if idx[0] in ['2', '3']:
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '4', (-3.5, +0.7)), GND, via_size_gnd)
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '2', (-3.3, -1.1)), GND, via_size_gnd)
+                _add_gnd_via('4', (-3.5, +0.7))
+                _add_gnd_via('2', (-3.3, -1.1))
             elif idx[0] in ['4', '5']:
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (+3.5, +0.7)), GND, via_size_gnd)
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (+3.3, -1.1)), GND, via_size_gnd)
+                _add_gnd_via('5', (+3.5, +0.7))
+                _add_gnd_via('3', (+3.3, -1.1))
             elif idx[0] in ['6', '7', '8']:
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (+3.5, 0)), GND, via_size_gnd)
+                _add_gnd_via('5', (+3.5, 0))
         # SW '3
-        kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (0, 1.7)), GND, via_size_gnd)
+        _add_gnd_via('3', (0, 1.7))
         # thumb row
         if idx[1] == '5':
             if idx[0] not in ['3']:
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '4', ([-2.4, -6.6][int(idx[0])-1], 0)), GND, via_size_gnd)
-            kad.add_via(kad.calc_pos_from_pad(mod_sw, '5', (6.2, 0)), GND, via_size_gnd)
-            kad.add_via(kad.calc_pos_from_pad(mod_sw, '3', (6.2, 2)), GND, via_size_gnd)
+                _add_gnd_via('4', ([-2.4, -6.6][int(idx[0])-1], 0))
+            _add_gnd_via('5', (6.2, 0))
+            _add_gnd_via('3', (6.2, 2))
 
         for i, sign in enumerate([+1, -1]):
             # debounce line
             if idx[1] == '4' or idx in ['63', '73', '83']:
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '1', (2.6 * sign, 0)), GND, via_size_gnd)
+                _add_gnd_via('1', (2.6 * sign, 0))
             # below LED
             pad = '54'[i]
-            kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (+0.4 * sign, -1.8)), GND, via_size_gnd)
-            kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, (-2.0 * sign, -3.0)), GND, via_size_gnd)
+            _add_gnd_via(pad, (+0.4 * sign, -1.8))
+            _add_gnd_via(pad, (-2.0 * sign, -3.0))
             # right end
             if idx in ['83']:
-                kad.add_via(kad.calc_pos_from_pad(mod_sw, '1', (-11.4, 5 + 4.6 * sign)), GND, via_size_gnd)
+                _add_gnd_via('1', (-11.4, 5 + 4.6 * sign))
 
 
 def place_mods():
