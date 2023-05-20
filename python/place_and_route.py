@@ -743,6 +743,7 @@ def place_key_switches():
         def _add_gnd_via(pad, pos):
             kad.add_via(kad.calc_pos_from_pad(mod_sw, pad, pos), GND, via_size_gnd)
 
+        col, row = idx
         # above LED lines
         if idx not in ['13']:
             dx_col = 0 if idx[1] == '5' else dx_cols[int(idx[0])]
@@ -751,7 +752,7 @@ def place_key_switches():
             if idx not in ['82']:
                 _add_gnd_via('4', (-dx_col * 0.6, 5.2))
         # next to col
-        if idx[0] != '1' and idx[1] != '5':
+        if col != '1' and row != '5':
             if idx[0] in ['2', '3']:
                 _add_gnd_via('4', (-3.5, +0.7))
                 _add_gnd_via('2', (-3.3, -1.1))
@@ -761,17 +762,18 @@ def place_key_switches():
             elif idx[0] in ['6', '7', '8']:
                 _add_gnd_via('5', (+3.5, 0))
         # SW '3
-        _add_gnd_via('3', (0, 1.7))
+        _add_gnd_via('2', (-0.4, 1.8))
+        _add_gnd_via('3', (+0.4, 1.8))
         # thumb row
-        if idx[1] == '5':
-            if idx[0] not in ['3']:
-                _add_gnd_via('4', ([-2.4, -6.6][int(idx[0])-1], 0))
+        if row == '5':
+            if col not in ['3']:
+                _add_gnd_via('4', ([-2.4, -6.6][int(col)-1], 0))
             _add_gnd_via('5', (6.2, 0))
             _add_gnd_via('3', (6.2, 2))
 
         for i, sign in enumerate([+1, -1]):
             # debounce line
-            if idx[1] == '4' or idx in ['63', '73', '83']:
+            if row == '4' or idx in ['63', '73', '83']:
                 _add_gnd_via('1', (2.6 * sign, 0))
             # below LED
             pad = '54'[i]
