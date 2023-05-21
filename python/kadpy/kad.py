@@ -28,7 +28,8 @@ Linear = 1
 Bezier = 2
 BezierRound = 3
 Round = 4
-Spline = 5
+LinearRound = 5
+Spline = 6
 
 
 ##
@@ -112,6 +113,23 @@ def add_arc2(ctr, pos, end, angle, layer='Edge.Cuts', width=2):
         #print( 'arc_end != pnt_end !!' )
         add_line_rawunit(arc_end, pnt_end, layer, width)
     return arc
+
+
+def add_arc3(ctr, pos, end, angle, layer='Edge.Cuts', width=2):
+    vec = vec2.sub(pos, ctr)
+    radius = vec2.length(vec)
+    angle0 = vec2.angle((1, 0), vec)
+    num_angle = int(math.ceil(angle / 3.0))  # degrees
+    num_length = int(math.ceil(radius * math.radians(angle) / 1.0))  # mm
+    num = max(num_angle, num_length)
+    dangle = angle / num
+    curv = [pos]
+    for n in range(1, num):
+        pnt = vec2.scale(radius, vec2.rotate(angle0 + dangle * n), ctr)
+        curv.append(pnt)
+    curv.append(end)
+    add_lines(curv, layer, width)
+    return curv
 
 
 def add_text(pos, angle, string, layer='F.SilkS', size=(1, 1), thick=5, hjustify=None, vjustify=None):
@@ -558,7 +576,7 @@ def calc_bezier_round_points(apos, avec, bpos, bvec, radius):
     return curv
 
 
-def draw_corner(cnr_type, a, cnr_data, b, layer, width, dump=False):
+def draw_corner(cnr_type, a, cnr_data, b, layer, width):
     apos, aangle = a
     bpos, bangle = b
     avec = vec2.rotate(aangle)
@@ -601,7 +619,7 @@ def draw_corner(cnr_type, a, cnr_data, b, layer, width, dump=False):
         radius = cnr_data[0]
         curv = calc_bezier_round_points(apos, avec, bpos, bvec, radius)
         add_lines(curv, layer, width)
-    elif cnr_type == Round:
+    elif cnr_type in [Round, LinearRound]:
         radius = cnr_data[0]
         # print( 'Round: radius = {}'.format( radius ) )
         # print( apos, avec, bpos, bvec )
@@ -626,8 +644,8 @@ def draw_corner(cnr_type, a, cnr_data, b, layer, width, dump=False):
             add_arc(xpos, vec2.add(xpos, (10, 0)), 360, layer, width)
             return b, curv
         angle = vec2.angle(avec, bvec)
-        angle = math.ceil(angle * 10) / 10
-        tangent = math.tan(abs(angle) / 2 / 180 * math.pi)
+        angle = round(angle * 10) / 10
+        tangent = math.tan(math.radians(abs(angle) / 2))
         side_len = radius / tangent
         # print( 'angle = {}, radius = {}, side_len = {}, tangent = {}'.format( angle, radius, side_len, tangent ) )
 
@@ -639,10 +657,16 @@ def draw_corner(cnr_type, a, cnr_data, b, layer, width, dump=False):
         aperp = (-avec[1], avec[0])
         if angle >= 0:
             ctr = vec2.scale(-radius, aperp, amid)
-            add_arc2(ctr, bmid, amid, 180 - angle, layer, width)
+            if cnr_type == Round:
+                add_arc2(ctr, bmid, amid, 180 - angle, layer, width)
+            elif cnr_type == LinearRound:
+                add_arc3(ctr, bmid, amid, 180 - angle, layer, width)
         else:
             ctr = vec2.scale(+radius, aperp, amid)
-            add_arc2(ctr, amid, bmid, 180 + angle, layer, width)
+            if cnr_type == Round:
+                add_arc2(ctr, amid, bmid, 180 + angle, layer, width)
+            elif cnr_type == LinearRound:
+                add_arc3(ctr, amid, bmid, 180 + angle, layer, width)
     elif cnr_type == Spline:
         vec_scale = cnr_data[0]
         ndivs = int(round(vec2.distance(apos, bpos) / 2.0))
@@ -654,23 +678,12 @@ def draw_corner(cnr_type, a, cnr_data, b, layer, width, dump=False):
 
 
 def draw_closed_corners(corners, layer, width):
-    a = corners[-1][0]
     curvs = []
+    a = corners[-1][0]
     for (b, cnr_type, cnr_data) in corners:
-        a, curv = draw_corner(cnr_type, a, cnr_data, b, layer, width, True)
+        a, curv = draw_corner(cnr_type, a, cnr_data, b, layer, width)
         curvs.append(curv)
-        # break
-    if False:
-        with open('/Users/akihiro/repos/mywork/hermit-edgecuts.scad', 'w') as fout:
-            fout.write('edgecuts = [\n')
-            for curv in curvs:
-                if curv == None:
-                    continue
-                for idx, pnt in enumerate(curv):
-                    if idx == 0:
-                        continue
-                    fout.write('    [{}, {}],\n'.format(pnt[0], pnt[1]))
-            fout.write('];\n')
+    return curvs
 
 # zones
 
@@ -685,3 +698,9 @@ def add_zone(rect, layer, idx=0, net_name='GND'):
             continue
         poly.Append(pt[0], pt[1])
     return zone, poly
+
+
+##
+def make_rect(size, offset=(0, 0)):
+    FourCorners = [(0, 0), (1, 0), (1, 1), (0, 1)]
+    return map(lambda pt: vec2.add((size[0] * pt[0], size[1] * pt[1]), offset), FourCorners)

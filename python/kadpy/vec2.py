@@ -23,7 +23,7 @@ def add(a, b):       ax, ay = a;   bx, by = b; return (ax + bx, ay + by)
 def sub(a, b):       ax, ay = a;   bx, by = b; return (ax - bx, ay - by)
 def dot(a, b):       ax, ay = a;   bx, by = b; return ax * bx + ay * by
 def area(a, b):      ax, ay = a;   bx, by = b; return ax * by - ay * bx
-def angle(a, b): return math.atan2(area(a, b), dot(a, b)) / math.pi * 180
+def angle(a, b): return math.degrees(math.atan2(area(a, b), dot(a, b)))
 def scale(scale, a, b=(0, 0)):   ax, ay = a;   bx, by = b; return (scale * ax + bx, scale * ay + by)
 
 
@@ -47,7 +47,7 @@ def mult(m, a, b=(0, 0)):
 
 
 def rotate(angle):
-    th = math.pi * angle / 180
+    th = math.radians(angle)
     co = math.cos(th)
     si = math.sin(th)
     return (co, si)

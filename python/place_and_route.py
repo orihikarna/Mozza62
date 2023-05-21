@@ -24,14 +24,20 @@ Line = kad.Line
 Linear = kad.Linear
 Round = kad.Round
 BezierRound = kad.BezierRound
+LinearRound = kad.LinearRound
 Spline = kad.Spline
 ##
 
 # in mm
 VIA_Size = [(1.2, 0.6), (1.15, 0.5), (0.92, 0.4), (0.8, 0.3)]
 
-PCB_Width = 188
-PCB_Height = 131
+PCB_Width = 189
+PCB_Height = 132
+
+unit = 17
+Lx = unit * 2.97
+Ly = unit * 2.97 * (math.sqrt(3)/2)
+org = vec2.add(kad.get_mod_pos('SW54'), vec2.scale(unit, (-1.1, 0.27)))
 
 U1_x, U1_y = 82, 95
 J1_x, J1_y, J1_angle = 18, 98, 0
@@ -126,23 +132,6 @@ def get_btm_row_idx(cidx: int):
         return 4
 
 
-holes = [
-    (16.8, 150, 90 - 16),
-    (4.4, J1_y - 11, 90),
-    (4.4, J1_y + 11, 90),
-    (14, 35, -30),
-    (66, 5, 90),
-    (106, 5, 90),
-    (154, 31, 36),
-    (163, 84, -40),
-    (J2_x - 1.6, J2_y + 10, 90),
-    (68, 119.6, -64),
-    # (47, 136, -46),
-    #
-    (65, 84.6, 90),
-]
-
-
 # Board Type
 # class Board(Enum):
 BDT = 2  # Top plate
@@ -157,11 +146,6 @@ BDR = -1
 # Edge.Cuts size
 Edge_CX, Edge_CY = 0, 0
 Edge_W, Edge_H = 0, 0
-
-
-def make_rect(size, offset=(0, 0)):
-    FourCorners = [(0, 0), (1, 0), (1, 1), (0, 1)]
-    return map(lambda pt: vec2.add((size[0] * pt[0], size[1] * pt[1]), offset), FourCorners)
 
 
 def make_corners(key_cnrs):
@@ -184,16 +168,12 @@ def draw_edge_cuts(board):
     width = 0.12
 
     if True:  # outer edge
-        unit = 17
-        org = vec2.add(kad.get_mod_pos('SW54'), vec2.scale(unit, (-7.0, 0.27)))
-        Lx = unit * 2.95
-        Ly = unit * 2.95 * (math.sqrt(3)/2)
         Radius = Ly
         cnrs = [
-            ((vec2.add(org, (Lx / 2, -Ly)), 120), Round, [Radius]),
-            ((vec2.add(org, (Lx * 2, Ly)), 0), Round, [Radius]),
-            ((vec2.add(org, (Lx * (4 - 1/2), -Ly)), -120), Round, [Radius]),
-            ((vec2.add(org, (Lx * 2, -Ly*2)), 180), Round, [Radius]),
+            ((vec2.add(org, (Lx * (-2 + 1/2), -Ly)), +120), Round, [Radius]),
+            ((vec2.add(org, (0, Ly)), 0), Round, [Radius]),
+            ((vec2.add(org, (Lx * (+2 - 1/2), -Ly)), -120), Round, [Radius]),
+            ((vec2.add(org, (0, -Ly*2)), 180), Round, [Radius]),
         ]
         kad.draw_closed_corners(cnrs, 'Edge.Cuts', width)
     return
@@ -865,33 +845,72 @@ def place_mods():
 
 
 def place_screw_holes(board):
+    d = 4.0
+    dy = 6
+    holes = [
+        ((Lx - 4, Ly - d), 0),
+        ((Lx + Ly - d, 0), 90),
+        (vec2.add(vec2.add(vec2.scale(-d, vec2.rotate(-30)), vec2.scale(-dy, vec2.rotate(60))), (Lx * 1.5, -Ly)), 120),
+        ((Lx * 0.5 - 5, -2 * Ly + d), 0),
+    ]
     for idx, prm in enumerate(holes):
-        x, y, angle = prm
-        ctr = (x, y)
-        hole = 'H{}'.format(idx + 1)
-        if kad.get_mod(hole):
-            kad.set_mod_pos_angle(hole, (x, y), 0)
-        else:
-            corners = []
-            if True:
-                hsize = [4.2, 4.86] if board in [BDC] else [4.4, 5.0]
-                for i in range(4):
-                    deg = i * 90 - angle
-                    pos = vec2.scale(hsize[i % 2] / 2.0, vec2.rotate(deg), ctr)
-                    corners.append([(pos, deg + 90), BezierRound, [1.2]])
+        (x, y), angle = prm
+        for idx2, sign in enumerate([+1, -1]):
+            ctr = vec2.add(org, (x * sign, y))
+            hole = 'H{}'.format(2 * idx + idx2 + 1)
+            if kad.get_mod(hole):
+                kad.set_mod_pos_angle(hole, ctr, angle * sign)
             else:
-                for i in range(6):
-                    deg = i * 60 - 90
-                    pos = vec2.scale(2.1, vec2.rotate(deg), ctr)
-                    corners.append([(pos, deg + 90), BezierRound, [0.5]])
-            kad.draw_closed_corners(corners, 'Edge.Cuts', 0.2)
-            if False:
                 corners = []
-                for i in range(6):
-                    deg = i * 60 - 90
-                    pos = vec2.scale(2.0, vec2.rotate(deg), ctr)
-                    corners.append([(pos, deg + 90), Linear, [0]])
-                kad.draw_closed_corners(corners, 'F.Fab', 0.1)
+                if True:
+                    hsize = [3.2, 3.7] if board in [BDC] else [4.4, 5.0]
+                    for i in range(4):
+                        deg = i * 90 - angle
+                        pos = vec2.scale(hsize[i % 2] / 2.0, vec2.rotate(deg), ctr)
+                        corners.append([(pos, deg + 90), BezierRound, [1.2]])
+                else:
+                    for i in range(6):
+                        deg = i * 60 - 90
+                        pos = vec2.scale(2.1, vec2.rotate(deg), ctr)
+                        corners.append([(pos, deg + 90), BezierRound, [0.5]])
+                kad.draw_closed_corners(corners, 'Edge.Cuts', 0.2)
+                if False:
+                    corners = []
+                    for i in range(6):
+                        deg = i * 60 - 90
+                        pos = vec2.scale(2.0, vec2.rotate(deg), ctr)
+                        corners.append([(pos, deg + 90), Linear, [0]])
+                    kad.draw_closed_corners(corners, 'F.Fab', 0.1)
+
+
+def add_boundary_gnd_vias():
+    dist = 2.4
+    pnts = []
+    # top
+    for t in range(-2, 2 + 1):
+        pnts.append((7 * t, -2*Ly + dist))
+    # bottom
+    for t in range(-5, 5 + 1):
+        pnts.append((8 * t, Ly - dist))
+    # left / right
+    for t in range(-4, 4):
+        if t == -1:
+            continue
+        pnts.append(vec2.add(vec2.add(vec2.scale(-dist, vec2.rotate(90-120)), vec2.scale(7*t+1, vec2.rotate(90-30))), (+Lx*1.5, -Ly))),
+        pnts.append(vec2.add(vec2.add(vec2.scale(-dist, vec2.rotate(90+120)), vec2.scale(7*t+1, vec2.rotate(90+30))), (-Lx*1.5, -Ly))),
+    # top corners
+    for th in range(-130 + 1, -180, -10):
+        pnts.append(vec2.scale(Ly - dist, vec2.rotate(90+th), (+Lx/2, -Ly)))
+        pnts.append(vec2.scale(Ly - dist, vec2.rotate(90-th), (-Lx/2, -Ly)))
+    # bottom corners
+    for th in range(-120 + 0, 0, 10):
+        if abs(90+th) < 5:
+            continue
+        pnts.append(vec2.scale(Ly - dist, vec2.rotate(90+th), (+Lx, 0)))
+        pnts.append(vec2.scale(Ly - dist, vec2.rotate(90-th), (-Lx, 0)))
+    # add vias
+    for pnt in pnts:
+        kad.add_via(vec2.add(org, pnt), GND, via_size_gnd)
 
 
 # expander
@@ -2209,7 +2228,6 @@ def main():
     # place & route
     place_key_switches()
     place_mods()
-    # place_screw_holes()
     if board in [BDC]:
         wire_exp()
         wire_rj45()
@@ -2223,16 +2241,18 @@ def main():
         wire_col_horz_lines()
         wire_exp_row_vert_col_horz()
         remove_temporary_vias()
+        add_boundary_gnd_vias()
 
     set_refs(board)
     draw_edge_cuts(board)
+    place_screw_holes(board)
 
     # zones
     zones = []
     if board in [BDC]:
-        offset = (40.5, 19.5)
-        add_zone('GND', 'F.Cu', make_rect((PCB_Width, PCB_Height), offset), zones)
-        add_zone('GND', 'B.Cu', make_rect((PCB_Width, PCB_Height), offset), zones)
+        offset = (40, 18.8)
+        add_zone('GND', 'F.Cu', kad.make_rect((PCB_Width, PCB_Height), offset), zones)
+        add_zone('GND', 'B.Cu', kad.make_rect((PCB_Width, PCB_Height), offset), zones)
     return
 
     # draw top & bottom patterns
