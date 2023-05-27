@@ -45,8 +45,8 @@
   (pad "A" thru_hole rect (at -7.5 -2.5) (size 2 2) (drill 1) (layers *.Cu *.Mask) (tstamp a3ab48a6-3c4e-49e3-b5c7-02fcfad46412))
   (pad "B" thru_hole circle (at -7.5 2.5) (size 2 2) (drill 1) (layers *.Cu *.Mask) (tstamp e8d01973-e726-4c75-99f5-47efa9766374))
   (pad "C" thru_hole circle (at -7.5 0) (size 2 2) (drill 1) (layers *.Cu *.Mask) (tstamp f07b6376-44e5-47e4-bcf3-26e314ebe20f))
-  (pad "MP" thru_hole rect (at 0 5.6) (size 3 2.5) (drill oval 2.5 2) (layers *.Cu *.Mask) (tstamp 3efdcc9e-ddfd-4bd8-bd12-3257b353a1bf))
-  (pad "MP" thru_hole rect (at 0 -5.6) (size 3 2.5) (drill oval 2.5 2) (layers *.Cu *.Mask) (tstamp a152f2b2-f490-491e-b502-2e2dae2e6d47))
+  (pad "MP" thru_hole rect (at 0 5.6) (size 5 2.8) (drill oval 4.1 2) (layers *.Cu *.Mask) (tstamp 3efdcc9e-ddfd-4bd8-bd12-3257b353a1bf))
+  (pad "MP" thru_hole rect (at 0 -5.6) (size 5 2.8) (drill oval 4.1 2) (layers *.Cu *.Mask) (tstamp a152f2b2-f490-491e-b502-2e2dae2e6d47))
   (pad "S1" thru_hole circle (at 7 -2.5) (size 2 2) (drill 1) (layers *.Cu *.Mask) (tstamp 1c20bb92-0003-4716-90ff-75f1a91efcdf))
   (pad "S2" thru_hole circle (at 7 2.5) (size 2 2) (drill 1) (layers *.Cu *.Mask) (tstamp 8429ef68-af9f-4325-a987-c6ba37226955))
   (model "${KIPRJMOD}/../3Dmodels/EC12E-150.STEP"

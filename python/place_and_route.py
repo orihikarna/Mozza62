@@ -1459,7 +1459,7 @@ def wire_debounce_rrc_rotenc():
 
     # vcc & gnd from row4
     tctr = kad.calc_pos_from_pad(mod_re, 'S1', (2, -10))
-    bctr = kad.calc_pos_from_pad(mod_re, 'C', (9, -3.0))
+    bctr = kad.calc_pos_from_pad(mod_re, 'C', (9.4, -3.0))
     kad.wire_mod_pads([
         ('CD5', via_dbnc_rotenc_vcc, mod_re, 'C', w_pwr, (Dird, 0, [(0, bctr), 90], kad.inf, tctr), 'B.Cu'),
         ('R52', via_dbnc_rotenc_gnd, mod_re, via_rotenc_gnd, w_pwr, (Dird, 0, [(0, bctr), -90], kad.inf, tctr), 'B.Cu'),
