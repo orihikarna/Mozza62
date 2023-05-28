@@ -265,6 +265,11 @@ def calc_pos_from_pad(mod_name, pad_name, offset_vec):
     pos_relative = calc_relative_vec(mod_name, offset_vec, pos_pad)
     return pos_relative
 
+def calc_pos_from_mod(mod_name, offset_vec):
+    pos_mod = get_mod_pos(mod_name)
+    pos_relative = calc_relative_vec(mod_name, offset_vec, pos_mod)
+    return pos_relative
+
 ##
 # Wires
 ##

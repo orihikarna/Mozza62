@@ -140,153 +140,134 @@ BDC = 0  # Circuit plate
 BDM = 3  # Middle plate
 BDB = 4  # Bottom plate
 
-BDL = -1
-BDR = -1
-
 # Edge.Cuts size
 Edge_CX, Edge_CY = 0, 0
 Edge_W, Edge_H = 0, 0
 
 
-def make_corners(key_cnrs):
-    corners = []
-    for mod, offset, dangle, cnr_type, prms in key_cnrs:
-        if type(mod) == str:
-            x, y, _, _, angle = keys[mod]
-            # flip y
-            y = -y
-            offset = (offset[0], -offset[1])
-        else:
-            x, y, angle = mod
-        # print( x, y, angle, offset )
-        pos = vec2.mult(mat2.rotate(angle), offset, (x, y))
-        corners.append([(pos, -angle + dangle), cnr_type, prms])
-    return corners
-
-
 def draw_edge_cuts(board):
+    def make_corners(key_cnrs):
+        corners = []
+        for mod, offset, dangle, cnr_type, prms in key_cnrs:
+            pos = kad.calc_pos_from_mod(mod, offset)
+            angle = kad.get_mod_angle(mod)
+            corners.append([(pos, -angle + dangle), cnr_type, prms])
+        return corners
+
     width = 0.12
 
-    if True:  # outer edge
-        Radius = Ly
-        cnrs = [
-            ((vec2.add(org, (Lx * (-2 + 1/2), -Ly)), +120), Round, [Radius]),
-            ((vec2.add(org, (0, Ly)), 0), Round, [Radius]),
-            ((vec2.add(org, (Lx * (+2 - 1/2), -Ly)), -120), Round, [Radius]),
-            ((vec2.add(org, (0, -Ly*2)), 180), Round, [Radius]),
-        ]
-        kad.draw_closed_corners(cnrs, 'Edge.Cuts', width)
-    return
-
-    U1_mod = (U1_x, U1_y, 0)
-    J1_mod = (J1_x, J1_y, J1_angle)
-    J2_mod = (J2_x, J2_y, J2_angle)
-    J3_mod = (J3_x, J3_y, J3_angle)
+    # region outer edge
+    Radius = Ly
+    cnrs = [
+        ((vec2.add(org, (Lx * (-2 + 1/2), -Ly)), +120), Round, [Radius]),
+        ((vec2.add(org, (0, Ly)), 0), Round, [Radius]),
+        ((vec2.add(org, (Lx * (+2 - 1/2), -Ly)), -120), Round, [Radius]),
+        ((vec2.add(org, (0, -Ly*2)), 180), Round, [Radius]),
+    ]
+    kad.draw_closed_corners(cnrs, 'Edge.Cuts', width)
+    # endregion
 
     midcnrs_set = []
-    if True:  # outer
-        out_cnrs = []
-        mid_cnrs = []
-        # LED & J3:
-        if True:  # bottom right corner
-            cnrs = [
-                (J3_mod, (-7, 1.27), 180, BezierRound, [14]),
-            ]
-            for cnr in cnrs:
-                out_cnrs.append(cnr)
-        if True:  # BDM
-            cnrs = [
-                # J3
-                (J3_mod, (+14.8, +1.27), 180, BezierRound, [14]),
-                (J3_mod, (+14.2, +1.00), 270, BezierRound, [0.2]),
-                (J3_mod, (+13.6, 0),     180, BezierRound, [0.5]),
-                (J3_mod, (+13.0, +1.00),  90, BezierRound, [0.5]),
-                (J3_mod, (+12.4, +1.27), 180, BezierRound, [0.2]),
-                # LED
-                (J3_mod, (-1.5,   0), 270, BezierRound, [0.5]),
-                (J3_mod, (-4, -2.27), 180, BezierRound, [0.5]),
-                (J3_mod, (-5.8,   0),  90, BezierRound, [0.5]),
-                (J3_mod, (-7, +1.27), 180, BezierRound, [0.5]),
-            ]
-            for cnr in cnrs:
-                mid_cnrs.append(cnr)
-        # bottom left
+    # region U1, U2
+    if board in [BDC, BDM]:
+        mod_exp = 'U1'
+        r = 6.5
         cnrs = [
-            ('84', (-10.0, 15.0), -30.4, Spline, [70]),
-            (J1_mod, (-J1_x,  +10), 270, Round, [20]),
-            (J1_mod, (-J1_x/2, +7),   0, Round, [2]),
+            (mod_exp, (0, -5),   0, BezierRound, [r]),
+            (mod_exp, (+7, 3),  90, BezierRound, [r]),
+            (mod_exp, (0, 10), 180, BezierRound, [r]),
+            (mod_exp, (-9, 3), 270, BezierRound, [2]),
         ]
-        for cnr in cnrs:
-            out_cnrs.append(cnr)
-            mid_cnrs.append(cnr)
-        # J1: Split
-        if board in [BDL, BDR]:
-            cnrs = [
-                (J1_mod, (0, +USBC_Width+1), 270, Round, [0.5]),
-                (J1_mod, (3, +USBC_Width),   0, Round, [0.5]),
-                (J1_mod, (USBC_Height, 0),   270, Round, [0.5]),
-                (J1_mod, (3, -USBC_Width),   180, Round, [0.5]),
-                (J1_mod, (0, -USBC_Width-1), 270, Round, [0.5]),
-            ]
-        else:
-            cnrs = [
-                (J1_mod, (0, 0), 270, Round, [0.5]),
-            ]
-        for cnr in cnrs:
-            out_cnrs.append(cnr)
-        if True:  # BDM
-            cnrs = [
-                (J1_mod, (16.8, 0), 270, Round, [0.5]),
-            ]
-            for cnr in cnrs:
-                mid_cnrs.append(cnr)
-        # top side
+        midcnrs_set.append(make_corners(cnrs))
+    # endregion
+    # region RotEnd
+    if board in [BDC, BDM]:
+        mod_re = 'RE1'
+        r = 1.4
         cnrs = [
-            (J1_mod, (-J1_x/2, -7), 180, Round, [0.5]),
-            (J1_mod, (-J1_x,  -10), 270, Round, [2]),
-            ('34', (-10.4, 16.8), angle_PB - angle_M, Round, [67]),
-            ('71', (+26.6, 11.7), 90, Round, [67]),
-            ('71', (0, -12.2), 180, Round, [16]),
+            (mod_re, (0, -8.0),   0, BezierRound, [r]),
+            (mod_re, (4, -6.5),  90, BezierRound, [r]),
+            (mod_re, (8, -5.0),   0, BezierRound, [r]),
+            ('D65', (0, 2),     180, BezierRound, [r]),
+            (mod_re, (8, +5.0), 180, BezierRound, [r]),
+            (mod_re, (4, +6.5),  90, BezierRound, [r]),
+            (mod_re, (0, +8.0), 180, BezierRound, [r]),
+            #
+            (mod_re, (-4, +6.5), 270, BezierRound, [r]),
+            (mod_re, (-8, +5.0), 180, BezierRound, [r]),
+            ('CD11', (0, -2),      0, BezierRound, [r]),
+            (mod_re, (-8, -5.0),   0, BezierRound, [r]),
+            (mod_re, (-4, -6.5), 270, BezierRound, [r]),
         ]
-        for cnr in cnrs:
-            out_cnrs.append(cnr)
-            mid_cnrs.append(cnr)
-        # J2: USB PC
-        if board in [BDL]:
-            cnrs = [
-                (J2_mod, (2.62, -USBC_Width-1),  90, Round, [0.5]),
-                (J2_mod, (2.62-3, -USBC_Width), 180, Round, [0.5]),
-                (J2_mod, (2.62-USBC_Height, 0),  90, Round, [0.5]),
-                (J2_mod, (2.62-3, +USBC_Width),   0, Round, [0.5]),
-                # (J2_mod, (2.62, +USBC_Width+1),  90, Round, [0.5]),
-            ]
-            for cnr in cnrs:
-                out_cnrs.append(cnr)
-        if True:  # BDM
-            cnrs = [
-                (J2_mod, (2.62, -USBM-USBT*2-0.2),  90, Round, [0.5]),
-                (J2_mod, (-USBW+2, -USBM-USBT*2),  180, Round, [0.2]),
-                (J2_mod, (-USBW,   -USBM-USBT),     90, Round, [0.5]),
-                (J2_mod, (-USBW+2, -USBM),      0, Round, [0.5]),
-                (J2_mod, (2.62,    0),     90, Round, [0.5]),
-                (J2_mod, (-USBW+2, +USBM),    180, Round, [0.5]),
-                (J2_mod, (-USBW,   +USBM+USBT),     90, Round, [0.5]),
-                (J2_mod, (-USBW+2, +USBM+USBT*2),    0, Round, [0.5]),
-            ]
-            for cnr in cnrs:
-                mid_cnrs.append(cnr)
-        # bottom right
+        midcnrs_set.append(make_corners(cnrs))
+    # endregion
+    # region switch area
+    d = 1.2
+    hsz = 8.5
+    d_sw = hsz + d
+    if board in [BDC, BDM]:  # mid hole (4-fingers)
+        mod_rj = 'J1'
+        r = 2
+        d_dbnc = 3
         cnrs = [
-            (J2_mod, (2.62, 10), +90, Round, [0.5]),
-            (J2_mod, (-1, 14), 180, Round, [3]),
+            ('SW21', (0, d_sw), 180, BezierRound, [r]),
+            ('SW41', (0, d_sw), 180, BezierRound, [r]),
+            ('SW51', (0, d_sw), 180, BezierRound, [r]),
+            ('SW61', (4, d_sw+r+1.5), 270, BezierRound, [r]),
+            ('SW61', (0, d_sw), 180, BezierRound, [r]),
+            ('SW71', (hsz-d, d_sw+r+2.5), 270, BezierRound, [r]),
+            ('SW71', (0, d_sw), 180, BezierRound, [r]),
+            # right
+            ('SW71', (-d_sw, 0), 270, BezierRound, [6]),
+            ('SW82', (0, d_sw), 180, BezierRound, [r]),
+            ('SW82', (-d_sw, 0), 270, BezierRound, [r]),
+            ('SW83', (-8, -8), 310, BezierRound, [r]),
+            # bottom right
+            ('R81', (d_dbnc, -2), 90, BezierRound, [r]),
+            ('R81', (1.8, 4), 90 + 30, BezierRound, [r]),
+            ('R71', (d_dbnc, 0), 90, BezierRound, [r]),
+            ('R61', (0, 6), 90 + 45, BezierRound, [r]),
+            #
+            ('R51', (d_dbnc, 0), 90, BezierRound, [r]),
+            ('R41', (d_dbnc, 0), 90, BezierRound, [r]),
+            ('R31', (d_dbnc, 0), 90, BezierRound, [r]),
+            ('R21', (0, 8), 90 + 40, BezierRound, [r]),
+            # bottom left
+            ('R11', (d_dbnc, -2), 90, BezierRound, [r]),
+            ('R11', (0, 6), 90 + 45, BezierRound, [r]),
+            # left
+            ('SW13', (d_sw, 0), 90, BezierRound, [r]),
+            # top left
+            (mod_rj, (9, 12.6), 0, BezierRound, [r]),
+            ('C3', (0, -1.5), 0, BezierRound, [r]),
+            (mod_rj, (7, -4), 120, BezierRound, [r]),
         ]
-        for cnr in cnrs:
-            out_cnrs.append(cnr)
-            mid_cnrs.append(cnr)
-        # BDM
-        midcnrs_set.append(make_corners(mid_cnrs))
+        midcnrs_set.append(make_corners(cnrs))
+    # endregion
+    # region thumb key hole
+    if board in [BDC, BDM]:
+        r = 4
+        cnrs = [
+            ('SW15', (0, d_sw), 180, BezierRound, [r]),
+            ('SW15', (-d_sw, 4), 270, BezierRound, [r]),
+            ('SW25', (-d_sw, 4), 270, BezierRound, [r]),
+            ('SW35', (-d_sw, 0), 270, BezierRound, [r]),
+            ('SW35', (0, -d_sw),   0, BezierRound, [r]),
+            ('SW35', (+d_sw, 0),  90, BezierRound, [r]),
+            ('SW25', (+d_sw, 7),  90, BezierRound, [r]),
+            ('SW15', (+d_sw, 5),  90, BezierRound, [r]),
+        ]
+        midcnrs_set.append(make_corners(cnrs))
+    # endregion
+    layers = ['F.Fab'] if board == BDC else ['Edge.Cuts']  # ['F.SilkS', 'B.SilkS']
+    w = width * 2 if board == BDC else width
+    for midcnrs in midcnrs_set:
+        for layer in layers:
+            kad.draw_closed_corners(midcnrs, layer, w)
+    return
+    if False:
         # draw
-        if board is not BDM:
+        if board not in [BDM]:
             corners = make_corners(out_cnrs)
             kad.draw_closed_corners(corners, 'Edge.Cuts', width)
             if True:  # PCB Size
@@ -305,66 +286,6 @@ def draw_edge_cuts(board):
                 if True:
                     # print( 'Edge: (CX, CY) = ({:.2f}, {:.2f})'.format( Edge_CX, Edge_CY ) )
                     print('Edge: (W, H) = ({:.2f}, {:.2f})'.format(Edge_W, Edge_H))
-
-    if board in [BDL, BDR, BDM]:  # J3
-        off_y = -1
-        cnrs = [
-            (J3_mod, (+14.2, off_y - 0.70), 270, BezierRound, [0.5]),
-            (J3_mod, (+10.0, off_y - 1.27), 180, BezierRound, [0.5]),
-            (J3_mod, (-0.50, off_y - 0.70),  90, BezierRound, [0.5]),
-            (J3_mod, (+10.0, off_y - 0.00),   0, BezierRound, [0.5]),
-        ]
-        midcnrs_set.append(make_corners(cnrs))
-    if board in [BDL, BDR, BDM]:  # U1
-        cnrs = [
-            (U1_mod, (0,   -8),   0, Round, [1]),
-            (U1_mod, (13.6, 0),  90, Round, [1]),
-            (U1_mod, (0, 10.4), 180, Round, [1]),
-            (U1_mod, (-8,   0), 270, Round, [1]),
-        ]
-        midcnrs_set.append(make_corners(cnrs))
-    if board in [BDL, BDR, BDM]:  # mid hole (4-fingers)
-        cnrs = [
-            ('14', (-8, 0), 270, BezierRound, [3]),
-            ('24', (0, +8.8), 0, BezierRound, [5]),
-            ('34', (0, +8.8), 0, BezierRound, [3]),
-            ('54', (-9, +13.6), 90 + angle_PB, BezierRound, [3]),
-            ('64', (0, +9),     angle_PB,      BezierRound, [3]),
-            ('64', (+7, 0),  90, BezierRound, [3]),
-            ('73', (0, +8.8), 0, BezierRound, [3]),
-            ('73', (+7, 0),  90, BezierRound, [3]),
-            ('72', (+6.2, -7.6), 180, BezierRound, [3]),
-            ('71', (+11.4, 0), 90, BezierRound, [3]),
-            ('71', (0, -7.4), 180, BezierRound, [3]),
-            ('51', (-12, -4), 270, BezierRound, [3]),
-            ('41', (0, -7.4), 180, BezierRound, [3]),
-            ('21', (0, -7.4), 180, BezierRound, [3]),
-            ('11', (-16, -5.4), 180 + angle_PB, BezierRound, [3]),
-            ('91', (-7, 0),  270, BezierRound, [3]),
-            ('91', (0, +8.8),  0, BezierRound, [3]),
-            ('12', (-7, 4),  270, BezierRound, [3]),
-            ('13', (-7, +7.0), 0, BezierRound, [3]),
-        ]
-        midcnrs_set.append(make_corners(cnrs))
-    if board in [BDL, BDR, BDM]:  # mid hole (thumb)
-        cnrs = [
-            ('84', (0, +8.6),   0, BezierRound, [4]),
-            ('84', (+7.0, 0),  90, BezierRound, [4]),
-            ('83', (+7.0, 0),  90, BezierRound, [4]),
-            ('82', (+10, 4),    0, BezierRound, [1]),
-            ('82', (+11.6, 0), 90, BezierRound, [1]),
-            ('82', (0, -7.6), 180, BezierRound, [4]),
-            ('82', (-7.0, 0), 270, BezierRound, [4]),
-            ('83', (-7.0, 0), 270, BezierRound, [3]),
-            ('84', (-7.0, 0), 270, BezierRound, [3]),
-        ]
-        midcnrs_set.append(make_corners(cnrs))
-    if board in [BDL, BDR, BDM]:  # draw BDM
-        layers = ['Edge.Cuts'] if board == BDM else ['F.Fab']  # ['F.SilkS', 'B.SilkS']
-        w = width if board == BDM else width * 2
-        for midcnrs in midcnrs_set:
-            for layer in layers:
-                kad.draw_closed_corners(midcnrs, layer, w)
 
 
 def load_distance_image(path):
@@ -779,7 +700,7 @@ def place_mods():
     # DL1
     mod_sw = 'SW21'
     _, angle = kad.get_mod_pos_angle(mod_sw)
-    pos = kad.calc_pos_from_pad(mod_sw, '5', (1, 4.05))
+    pos = kad.calc_pos_from_pad(mod_sw, '5', (1, 4))
     kad.set_mod_pos_angle('DL1', pos, angle)
 
     # Debounce RRCs
@@ -806,7 +727,7 @@ def place_mods():
     for i in range(2):
         sgn = [+1, -1][i]
         cidx = [11, 12][i]
-        pos = kad.calc_pos_from_pad('RE1', 'AB'[i], (-5, -1 * sgn))
+        pos = kad.calc_pos_from_pad('RE1', 'AB'[i], (-5, 0 * sgn))
         kad.move_mods(pos, angle + 90 * sgn, [
             (f'CD{cidx}', (0, -1.6 * sgn), 0),
             (f'R{cidx}1', (0,  0), 0),
@@ -836,51 +757,22 @@ def place_mods():
         ]),
     ])
 
-    # # dummy pads
-    # if board in [BDM, BDS]:
-    #     for i in range(2):
-    #         dmy = 'P{}'.format(i + 1)
-    #         if kad.get_mod(dmy):
-    #             kad.set_mod_pos_angle(dmy, (J1_x + 20, J1_y), 0)
-
 
 def place_screw_holes(board):
     d = 4.0
-    dy = 6
+    dy = 8
     holes = [
-        ((Lx - 4, Ly - d), 0),
+        ((Lx - 8, Ly - d), 0),
         ((Lx + Ly - d, 0), 90),
         (vec2.add(vec2.add(vec2.scale(-d, vec2.rotate(-30)), vec2.scale(-dy, vec2.rotate(60))), (Lx * 1.5, -Ly)), 120),
-        ((Lx * 0.5 - 5, -2 * Ly + d), 0),
+        ((Lx * 0.5 - 8, -2 * Ly + d), 0),
     ]
     for idx, prm in enumerate(holes):
         (x, y), angle = prm
         for idx2, sign in enumerate([+1, -1]):
             ctr = vec2.add(org, (x * sign, y))
             hole = 'H{}'.format(2 * idx + idx2 + 1)
-            if kad.get_mod(hole):
-                kad.set_mod_pos_angle(hole, ctr, angle * sign)
-            else:
-                corners = []
-                if True:
-                    hsize = [3.2, 3.7] if board in [BDC] else [4.4, 5.0]
-                    for i in range(4):
-                        deg = i * 90 - angle
-                        pos = vec2.scale(hsize[i % 2] / 2.0, vec2.rotate(deg), ctr)
-                        corners.append([(pos, deg + 90), BezierRound, [1.2]])
-                else:
-                    for i in range(6):
-                        deg = i * 60 - 90
-                        pos = vec2.scale(2.1, vec2.rotate(deg), ctr)
-                        corners.append([(pos, deg + 90), BezierRound, [0.5]])
-                kad.draw_closed_corners(corners, 'Edge.Cuts', 0.2)
-                if False:
-                    corners = []
-                    for i in range(6):
-                        deg = i * 60 - 90
-                        pos = vec2.scale(2.0, vec2.rotate(deg), ctr)
-                        corners.append([(pos, deg + 90), Linear, [0]])
-                    kad.draw_closed_corners(corners, 'F.Fab', 0.1)
+            kad.set_mod_pos_angle(hole, ctr, angle * sign)
 
 
 def add_boundary_gnd_vias():
@@ -888,10 +780,10 @@ def add_boundary_gnd_vias():
     pnts = []
     # top
     for t in range(-2, 2 + 1):
-        pnts.append((7 * t, -2*Ly + dist))
+        pnts.append((6 * t, -2*Ly + dist))
     # bottom
     for t in range(-5, 5 + 1):
-        pnts.append((8 * t, Ly - dist))
+        pnts.append((7 * t, Ly - dist))
     # left / right
     for t in range(-4, 4):
         if t == -1:
@@ -1043,7 +935,7 @@ def wire_exp():
     for idx, i in enumerate('12'):
         mod_exp = f'U{i}'
         mod_cap = f'C{i}'
-        via_exp_cap_vcc[mod_cap] = kad.add_via_relative(mod_cap, '1', [(0, 2.8), (0, 1.4)][idx], via_size_pwr)
+        via_exp_cap_vcc[mod_cap] = kad.add_via_relative(mod_cap, '1', [(0, 2.8), (1.8, 1.6)][idx], via_size_pwr)
         via_exp_cap_gnd[mod_cap] = kad.add_via_relative(mod_cap, '2', [(0, 1.4), (1.8, 0)][idx], via_size_pwr)
         kad.wire_mod_pads([
             (mod_cap, '1', mod_exp, '5', w_exp, (Dird, 90, [(180, 1.25), 50], 1)),
@@ -1426,14 +1318,14 @@ def wire_debounce_rrc_rotenc():
         sign = [+1, -1][i]
 
         # row gnd and vcc vias
-        via_dbnc_gnd[cidx] = kad.add_via_relative(mod_r2, '2', (0, +1.6 * sign), via_size_pwr)
+        via_dbnc_gnd[cidx] = kad.add_via_relative(mod_r2, '2', (1.6, 0), via_size_pwr)
         via_dbnc_row[cidx] = kad.add_via_relative(mod_cd, '2', (1.6 * sign, [0, 2.0][i]), via_size_dat)
         # gnd via
         if i == 0:
             kad.add_via(kad.calc_pos_from_pad(mod_cd, '2', (1.6, 1.4)), GND, via_size_gnd)
         elif i == 1:
-            via_dbnc_row['Gnd1'] = kad.add_via(kad.calc_pos_from_pad(mod_cd, '2', (-2.6, 1.0)), GND, via_size_dat)
-            via_dbnc_row['Gnd2'] = kad.add_via(kad.calc_pos_from_pad(mod_cd, '2', (-0.6, 3.0)), GND, via_size_dat)
+            via_dbnc_row['Gnd1'] = kad.add_via(kad.calc_pos_from_pad(mod_cd, '2', (-3.3, 1.0)), GND, via_size_dat)
+            via_dbnc_row['Gnd2'] = kad.add_via(kad.calc_pos_from_pad(mod_cd, '2', (0, 3.0)), GND, via_size_dat)
 
         # resister and cap vias
         for layer in Cu_layers:
@@ -1445,8 +1337,8 @@ def wire_debounce_rrc_rotenc():
                 (mod_cd, '2', mod_cd, via_dbnc_row[cidx], w_dat, (Dird, 90, 0), layer),
                 (mod_r2, '2', mod_r2, via_dbnc_gnd[cidx], w_dat, (Dird, 90, 0, 0), layer),
                 # rotenc vcc & rea/b
-                (mod_re, 'C', mod_cd, '1', w_dat, (Dird, [(180, 1.6), 90], [(180, 1.2), 90], w_dat), layer),
-                (mod_re, 'AB'[i], mod_r2, '1', w_dat, (Dird, 90, 90, 0), layer),
+                (mod_re, 'C', mod_cd, '1', w_dat, (Dird, 0, 0, w_dat), layer),
+                (mod_re, 'AB'[i], mod_r2, '1', w_dat, (Dird, [30, 150][i], 90, 2.0), layer),
             ])
         # gnd via
         kad.wire_mod_pads([(mod_re, via_rotenc_gnd, mod_r2, via_dbnc_gnd[cidx], w_pwr, (Dird, 90, 90, r_dat), 'F.Cu')])
@@ -1454,8 +1346,11 @@ def wire_debounce_rrc_rotenc():
     # gnd between cols for col horz lines
     kad.wire_mod_pads([
         (mod_re, via_dbnc_row['Gnd1'], mod_re, via_dbnc_row['Gnd2'], w_dat, (Dird, 0, 90, 0.4), 'B.Cu'),
-        (mod_re, via_dbnc_row['Gnd2'], mod_re, via_dbnc_gnd[12], w_dat, (Dird, -90, [(-90, 1.0), 0], 0.4), 'B.Cu'),
+        (mod_re, via_dbnc_row['Gnd2'], mod_re, via_dbnc_gnd[12], w_dat, (Dird, -90, 0, 0.4), 'B.Cu'),
     ])
+    # cap vcc
+    for layer in Cu_layers:
+        kad.wire_mod_pads([('CD11', '1', 'CD12', '1', w_dat, (Strt), layer)])
 
     # vcc & gnd from row4
     tctr = kad.calc_pos_from_pad(mod_re, 'S1', (2, -10))
@@ -1509,9 +1404,12 @@ def wire_led():
         else:
             via_led_out = None
         # led data connection vias
-        via_led_rght[idx] = kad.add_via(kad.calc_pos_from_pad(mod_cap, '21'[lrx], (+3.6 * lrs, 0)), kad.get_pad_net(mod_led, '13'[lrx]), via_size_led_dat)
+        pos = kad.calc_pos_from_pad(mod_cap, '21'[lrx], (+3.6 * lrs, 0))
+        via_led_rght[idx] = kad.add_via(pos, kad.get_pad_net(mod_led, '13'[lrx]), via_size_led_dat)
         if idx not in ['35']:
-            via_led_left[idx] = kad.add_via(kad.calc_pos_from_pad(mod_cap, '12'[lrx], (-3.6 * lrs, 0)), kad.get_pad_net(mod_led, '75'[lrx]), via_size_led_dat)
+            dy = 1 if idx == '21' else 0
+            pos = kad.calc_pos_from_pad(mod_cap, '12'[lrx], (-3.6 * lrs, dy))
+            via_led_left[idx] = kad.add_via(pos, kad.get_pad_net(mod_led, '75'[lrx]), via_size_led_dat)
 
         # wiring centers
         ctr_row_sw[idx] = kad.calc_pos_from_pad(mod_sw, '3', (0, -10))
@@ -1728,10 +1626,10 @@ def wire_col_diode():
         for layer in Cu_layers:
             kad.wire_mod_pads([
                 (mod_dio, '1', mod_dio, wire_via_dio_col[idx], w_dat, (Dird, 0, 90), layer),
-                (mod_dio, '2', mod_dio, via_dio_sw, w_dat, (Dird, 90, 0), layer),
+                (mod_dio, '2', mod_dio, via_dio_sw, w_dat, (Dird, 90, -90-50*lrs), layer),
             ])
         # wire to SW pad
-        kad.wire_mod_pads([(mod_sw, '1', mod_sw, via_dio_sw, w_dat, (Dird, -45 * lrs, 90, 1.6), 'B.Cu')])
+        kad.wire_mod_pads([(mod_sw, '1', mod_dio, via_dio_sw, w_dat, (Dird, 9, -90-50*lrs, 1.6), 'B.Cu')])
 
     # RotEnc diode
     idx = SW_RotEnc
@@ -2253,7 +2151,6 @@ def main():
         offset = (40, 18.8)
         add_zone('GND', 'F.Cu', kad.make_rect((PCB_Width, PCB_Height), offset), zones)
         add_zone('GND', 'B.Cu', kad.make_rect((PCB_Width, PCB_Height), offset), zones)
-    return
 
     # draw top & bottom patterns
     if board in [BDT, BDB, BDS]:
