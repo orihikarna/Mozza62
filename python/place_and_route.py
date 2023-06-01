@@ -168,9 +168,22 @@ def draw_edge_cuts(board):
     # endregion
 
     midcnrs_set = []
+    # region RJ45
+    if board in [BDC, BDS, BDT]:
+        mod_rj = 'J1'
+        r = 1
+        w = 9
+        cnrs = [
+            (mod_rj, (0, +14.6),   0, BezierRound, [r]),
+            (mod_rj, (+w, 0),  90, BezierRound, [r]),
+            (mod_rj, (0, -2), 180, BezierRound, [r]),
+            (mod_rj, (-w, 0), 270, BezierRound, [r]),
+        ]
+        midcnrs_set.append(make_corners(cnrs))
+    # endregion
     # region U1, U2
+    mod_exp = 'U1'
     if board in [BDC, BDM]:
-        mod_exp = 'U1'
         r = 6.5
         cnrs = [
             (mod_exp, (0, -5),   0, BezierRound, [r]),
@@ -179,10 +192,19 @@ def draw_edge_cuts(board):
             (mod_exp, (-9, 3), 270, BezierRound, [2]),
         ]
         midcnrs_set.append(make_corners(cnrs))
+    if board in [BDC, BDS]:
+        r = 2
+        cnrs = [
+            (mod_exp, (0, -5),   0, BezierRound, [r]),
+            (mod_exp, (+5, 0),  90, BezierRound, [r]),
+            (mod_exp, (0, +5), 180, BezierRound, [r]),
+            (mod_exp, (-5, 0), 270, BezierRound, [2]),
+        ]
+        midcnrs_set.append(make_corners(cnrs))
     # endregion
     # region RotEnd
+    mod_re = 'RE1'
     if board in [BDC, BDM]:
-        mod_re = 'RE1'
         r = 1.4
         cnrs = [
             (mod_re, (0, -8.0),   0, BezierRound, [r]),
@@ -198,6 +220,16 @@ def draw_edge_cuts(board):
             ('CD11', (0, -2),      0, BezierRound, [r]),
             (mod_re, (-8, -5.0),   0, BezierRound, [r]),
             (mod_re, (-4, -6.5), 270, BezierRound, [r]),
+        ]
+        midcnrs_set.append(make_corners(cnrs))
+    if board in [BDC, BDS, BDT]:
+        r = 2
+        w, h = 9, 7.6
+        cnrs = [
+            (mod_re, (0, -h),   0, BezierRound, [r]),
+            (mod_re, (+w, 0),  90, BezierRound, [r]),
+            (mod_re, (0, +h), 180, BezierRound, [r]),
+            (mod_re, (-w, 0), 270, BezierRound, [r]),
         ]
         midcnrs_set.append(make_corners(cnrs))
     # endregion
