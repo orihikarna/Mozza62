@@ -2,7 +2,7 @@ import pcbnew
 import json
 import math
 import re
-from kadpy import kad, pnt, vec2, mat2
+from kadpy import kad, pnt, vec2, mat2, distance as dist
 
 import importlib
 
@@ -27,7 +27,7 @@ Round = kad.Round
 BezierRound = kad.BezierRound
 LinearRound = kad.LinearRound
 Spline = kad.Spline
-##
+
 
 # in mm
 VIA_Size = [(1.2, 0.6), (1.15, 0.5), (0.92, 0.4), (0.8, 0.3)]
@@ -142,6 +142,23 @@ Edge_CX, Edge_CY = 0, 0
 Edge_W, Edge_H = 0, 0
 
 
+def add_zone(net_name, layer_name, rect, zones):
+    layer = pcb.GetLayerID(layer_name)
+    zone, poly = kad.add_zone(rect, layer, len(zones), net_name)
+    #
+    settings = pcb.GetZoneSettings()
+    settings.m_ZoneClearance = pcbnew.FromMils(12)
+    pcb.SetZoneSettings(settings)
+    #
+    zone.SetMinThickness(pcbnew.FromMils(16))
+    # zone.SetThermalReliefGap( pcbnew.FromMils( 12 ) )
+    zone.SetThermalReliefSpokeWidth(pcbnew.FromMils(16))
+    # zone.Hatch()
+    #
+    zones.append(zone)
+    # polys.append( poly )
+
+
 def draw_edge_cuts(board):
     def make_corners(key_cnrs):
         corners = []
@@ -169,6 +186,22 @@ def draw_edge_cuts(board):
         ((vec2.add(org, (0, -Ly*2)), 180), Round, [Radius]),
     ]
     kad.draw_closed_corners(cnrs, 'Edge.Cuts', width)
+    if False:  # PCB Size
+        x0, x1 = +1e6, -1e6
+        y0, y1 = +1e6, -1e6
+        for (pos, _), _, _ in corners:
+            x, y = pos
+            x0 = min(x0, x)
+            x1 = max(x1, x)
+            y0 = min(y0, y)
+            y1 = max(y1, y)
+        global Edge_CX, Edge_CY
+        global Edge_W, Edge_H
+        Edge_CX, Edge_CY = (x0 + x1) / 2, (y0 + y1) / 2
+        Edge_W, Edge_H = x1 - x0, y1 - y0
+        if True:
+            # print( 'Edge: (CX, CY) = ({:.2f}, {:.2f})'.format( Edge_CX, Edge_CY ) )
+            print('Edge: (W, H) = ({:.2f}, {:.2f})'.format(Edge_W, Edge_H))
     # endregion
 
     midcnrs_set = []
@@ -384,106 +417,10 @@ def draw_edge_cuts(board):
             elif board == BDC:
                 layer = f'User.{bd+1}'
                 kad.add_arc(ctr, pos, 360, layer, width * 2)
+
+
+def draw_bottom():
     return
-    if False:
-        # draw
-        if board not in [BDM]:
-            corners = make_corners(out_cnrs)
-            kad.draw_closed_corners(corners, 'Edge.Cuts', width)
-            if True:  # PCB Size
-                x0, x1 = +1e6, -1e6
-                y0, y1 = +1e6, -1e6
-                for (pos, _), _, _ in corners:
-                    x, y = pos
-                    x0 = min(x0, x)
-                    x1 = max(x1, x)
-                    y0 = min(y0, y)
-                    y1 = max(y1, y)
-                global Edge_CX, Edge_CY
-                global Edge_W, Edge_H
-                Edge_CX, Edge_CY = (x0 + x1) / 2, (y0 + y1) / 2
-                Edge_W, Edge_H = x1 - x0, y1 - y0
-                if True:
-                    # print( 'Edge: (CX, CY) = ({:.2f}, {:.2f})'.format( Edge_CX, Edge_CY ) )
-                    print('Edge: (W, H) = ({:.2f}, {:.2f})'.format(Edge_W, Edge_H))
-
-
-def load_distance_image(path):
-    with open(path) as fin:
-        data = fin.readlines()
-        w = int(data[0])
-        h = int(data[1])
-        print(w, h)
-        dist = []
-        for y in range(h):
-            vals = data[y+2].split(',')
-            del vals[-1]
-            if len(vals) != w:
-                print('Error: len( vals )({}) != w({})'.format(len(vals), w))
-                break
-            vals = map(lambda v: float(v) / 100.0, vals)
-            dist.append(vals)
-    return (dist, w, h)
-
-
-def get_distance(dist_image, pnt):
-    dist, w, h = dist_image
-    x, y = vec2.scale(10, vec2.sub(pnt, (Edge_CX, Edge_CY)))
-    x, y = vec2.add((x, y), (w / 2.0, h / 2.0))
-    x = min(max(x, 0.), w - 1.01)
-    y = min(max(y, 0.), h - 1.01)
-    nx = int()
-    ny = int(math.floor(y))
-    # if nx < 0 or w <= nx + 1 or ny < 0 or h <= ny + 1:
-    #     return 0
-    dx = x - nx
-    dy = y - ny
-    d = dist[ny][nx] * (1 - dx) * (1 - dy)
-    d += dist[ny][nx+1] * dx * (1 - dy)
-    d += dist[ny+1][nx] * (1 - dx) * dy
-    d += dist[ny+1][nx+1] * dx * dy
-    return d
-
-
-CIDX, POS, NIDX = range(3)
-
-
-def connect_line_ends(line_ends, other_ends, curv_idx, pos, idx, layer, width):
-    # overwrite new line_end
-    line_ends[idx] = (curv_idx, pos, 0)
-
-    # connect with up/down neighbors
-    for nidx in [idx-1, idx+1]:
-        if nidx < 0 or len(line_ends) <= nidx:
-            continue
-        # up / down neighbor
-        neib = line_ends[nidx]
-        if not neib:  # no neibor
-            continue
-        if (neib[NIDX] & (1 << idx)) != 0:  # already connected with this index
-            #    L1-----R1      L1----
-            #    C  ...---^^^ <-- cannot connect L1(right) and L2,
-            #     L2--------R2    because L2 is already connected with L1(left)
-            continue
-
-        # The lines are drawn from left to right.
-        # For the right line ends, reject the neighbor if there is a left end after the neighbor right end.
-        # For the left line ends, reject the neighbor if there is a right end after the neighbor left end.
-        if other_ends[nidx] and other_ends[nidx][CIDX] > neib[CIDX]:
-            #    L1----------------------------R1
-            #    C             .....-----^^^^^    <-- cannot connect R1 and R2(right),
-            #     L2---------R2        L2---------R2  becuase L2(right) is on the right of R2(left)
-            #          neib[CIDX] left[CIDX]
-            continue
-            pass
-        # connect
-        curr = line_ends[idx]
-        line_ends[idx] = (curr[CIDX], curr[POS], curr[NIDX] | (1 << nidx))
-        line_ends[nidx] = (neib[CIDX], neib[POS], neib[NIDX] | (1 << idx))
-        kad.add_line(curr[POS], neib[POS], layer, width)
-
-
-def draw_top_bottom(board, sw_pos_angles):
     if board in [BDT, BDS]:  # keysw holes
         length = 13.94 if board == BDT else 14.80
         for sw_pos, angle in sw_pos_angles:
@@ -696,23 +633,6 @@ def draw_top_bottom(board, sw_pos_angles):
                         line_rights[m] = None
     kad.set_mod_pos_angle('P1', pos_dummy[0], 0)
     kad.set_mod_pos_angle('P2', pos_dummy[1], 0)
-
-
-def add_zone(net_name, layer_name, rect, zones):
-    layer = pcb.GetLayerID(layer_name)
-    zone, poly = kad.add_zone(rect, layer, len(zones), net_name)
-    #
-    settings = pcb.GetZoneSettings()
-    settings.m_ZoneClearance = pcbnew.FromMils(12)
-    pcb.SetZoneSettings(settings)
-    #
-    zone.SetMinThickness(pcbnew.FromMils(16))
-    # zone.SetThermalReliefGap( pcbnew.FromMils( 12 ) )
-    zone.SetThermalReliefSpokeWidth(pcbnew.FromMils(16))
-    # zone.Hatch()
-    #
-    zones.append(zone)
-    # polys.append( poly )
 
 
 Cu_layers = ['F.Cu', 'B.Cu']
@@ -2305,8 +2225,7 @@ def main():
 
     # draw top & bottom patterns
     if board in [BDB]:
-        pass
-        # draw_top_bottom(board, sw_pos_angles)
+        draw_bottom()
 
 
 if __name__ == '__main__':
