@@ -205,7 +205,7 @@ def get_via_pos_net(via):
 ##
 def _get_mod_pos(mod): return pnt.from_unit(mod.GetPosition(), UnitMM)
 def _get_mod_angle(mod): return mod.GetOrientation() / 10
-def _get_mod_layer(mod): return mod.GetLayer()
+def _get_mod_layer(mod): return mod.GetLayerName()
 #
 def get_mod(mod_name): return pcb.FindFootprintByReference(mod_name)
 def get_mod_pos(mod_name):        mod = get_mod(mod_name); return _get_mod_pos(mod)
@@ -254,7 +254,7 @@ def calc_relative_vec(mod_name, vec, pos=(0, 0)):
     mod = get_mod(mod_name)
     angle = _get_mod_angle(mod)
     layer = _get_mod_layer(mod)
-    if layer == pcb.GetLayerID('B.Cu'):
+    if layer == 'B.Cu':
         vec = (vec[0], -vec[1])
     vec_relative = vec2.mult(mat2.rotate(angle), vec, pos)
     return vec_relative
@@ -309,7 +309,7 @@ def add_wire_straight(pnts, net, layer, width, radii):
             continue
         length = vec2.distance(prev, curr)
         if length > 0.01:
-            add_track(prev, curr, net, layer, width)
+            add_track(prev, curr, net, pcb.GetLayerID(layer), width)
             prev = curr
 
 # params: pos, (offset length, offset angle / arc center) x n, direction angle
@@ -438,8 +438,8 @@ def wire_mod_pads(tracks):
             pos, net, angle, layer = get_pad_pos_net_angle_layer(mod, pad)
         return pos, angle, layer, net
     #
-    layer_FCu = pcb.GetLayerID('F.Cu')
-    layer_BCu = pcb.GetLayerID('B.Cu')
+    layer_FCu = 'F.Cu'
+    layer_BCu = 'B.Cu'
     for track in tracks:
         if track == None:
             continue
@@ -465,7 +465,7 @@ def wire_mod_pads(tracks):
             if track[6] == 'Opp':
                 layer = layer_BCu if layer == layer_FCu else layer_FCu
             else:
-                layer = pcb.GetLayerID(track[6])
+                layer = track[6]
         __wire_mod_sub(pos_a, angle_a, sign_a, pos_b, angle_b, sign_b, net, layer, width, prms)
 
 

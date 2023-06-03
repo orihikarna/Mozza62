@@ -1,4 +1,5 @@
 import pcbnew
+import json
 import math
 import re
 from kadpy import kad, pnt, vec2, mat2
@@ -31,13 +32,10 @@ Spline = kad.Spline
 # in mm
 VIA_Size = [(1.2, 0.6), (1.15, 0.5), (0.92, 0.4), (0.8, 0.3)]
 
+mod_props = {}
+
 PCB_Width = 189
 PCB_Height = 132
-
-unit = 17
-Lx = unit * 2.97
-Ly = unit * 2.97 * (math.sqrt(3)/2)
-org = vec2.add(kad.get_mod_pos('SW54'), vec2.scale(unit, (-1.1, 0.27)))
 
 keys = {
     '11': [91.452, -41.958, 16.910, 15.480, -21.2],  # r
@@ -96,6 +94,11 @@ dx_cols = [
     dx_Pinky, dx_Pinky, dx_Pinky,
 ]
 
+unit = 17
+Lx = unit * 2.97
+Ly = unit * 2.97 * (math.sqrt(3)/2)
+org = None
+
 
 def is_SW(idx: str):
     return idx not in [SW_RJ45, SW_RotEnc]
@@ -143,8 +146,15 @@ def draw_edge_cuts(board):
     def make_corners(key_cnrs):
         corners = []
         for mod, offset, dangle, cnr_type, prms in key_cnrs:
-            pos = kad.calc_pos_from_mod(mod, offset)
-            angle = kad.get_mod_angle(mod)
+            if False:
+                pos = kad.calc_pos_from_mod(mod, offset)
+                angle = kad.get_mod_angle(mod)
+            else:
+                _pos, angle, layer = mod_props[mod]
+                vec = offset
+                if layer == 'B.Cu':
+                    vec = (vec[0], -vec[1])
+                pos = vec2.mult(mat2.rotate(angle), vec, _pos)
             corners.append([(pos, -angle + dangle), cnr_type, prms])
         return corners
 
@@ -168,7 +178,7 @@ def draw_edge_cuts(board):
         if not is_SW(idx):
             continue
         mod_sw = f'SW{idx}'
-        for bd, sz, r in [(BDT, 13.96, 0.9)]:#, (BDS, 15, 1.6)]:
+        for bd, sz, r in [(BDT, 13.96, 0.9)]:  # , (BDS, 15, 1.6)]:
             hsz = sz / 2
             cnrs = [
                 (mod_sw, (0, -hsz),   0, BezierRound, [r]),
@@ -177,7 +187,7 @@ def draw_edge_cuts(board):
                 (mod_sw, (-hsz, 0), 270, BezierRound, [r]),
             ]
             midcnrs_set.append((make_corners(cnrs), [bd]))
-        pos = kad.get_mod_pos(mod_sw)
+        pos = mod_props[mod_sw][0]
         midarcs.append((pos, 5.2/2, [BDB]))
     # endregion
     # region RJ45
@@ -345,7 +355,7 @@ def draw_edge_cuts(board):
     midcnrs_set.append((make_corners(cnrs), [BDM]))
     # endregion
     # region thumb key hole
-    for bd, d, r in [(BDM, 2.4, 4)]:#, (BDS, 0, 1.6)]:
+    for bd, d, r in [(BDM, 2.4, 4)]:  # , (BDS, 0, 1.6)]:
         d_sw = hsz + d
         cnrs = [
             ('SW15', (0, d_sw), 180, BezierRound, [r]),
@@ -2188,6 +2198,8 @@ def set_refs(board):
         for idx in '2468':
             refs.append((3.6, 0, 0, [f'JPF{idx}']))
             refs.append((3.6, 0, 180, [f'JPB{idx}']))
+    if True:
+        refs.append((None, None, None, [f'H{i}' for i in range(1, 9)]))
     for offset_length, offset_angle, text_angle, mod_names in refs:
         for mod_name in mod_names:
             mod = kad.get_mod(mod_name)
@@ -2209,6 +2221,26 @@ def set_refs(board):
         for idx in range(9):
             pos = kad.calc_pos_from_pad('J1', f'{9-idx}', (0, 1.8 if (9-idx) % 2 == 1 else -1.8))
             kad.add_text(pos, angle, pads[idx], 'B.SilkS', (0.8, 0.8), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+
+
+prop_file = '../mod_props.json'
+
+
+def save_mod_props():
+    props = {}
+    for mod in pcb.GetFootprints():
+        name = mod.Reference().GetText()
+        pos, angle = kad.get_mod_pos_angle(name)
+        layer = kad.get_mod_layer(name)
+        props[name] = (pos, angle, layer)
+    with open(prop_file, 'w') as fout:
+        json.dump(props, fout)
+
+
+def load_mod_props():
+    with open(prop_file) as fin:
+        props = json.load(fin)
+    return props
 
 
 def main():
@@ -2234,9 +2266,10 @@ def main():
         #     'F.Cu', (1.2, 1.2), 0.2, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER )
 
     # place & route
-    place_key_switches()
-    place_mods()
     if board in [BDC]:
+        place_key_switches()
+        place_mods()
+        save_mod_props()
         wire_exp()
         wire_rj45()
         wire_rj45_vert_lines()
@@ -2251,11 +2284,17 @@ def main():
         remove_temporary_vias()
         add_boundary_gnd_vias()
 
+    global mod_props, org
+    mod_props = load_mod_props()
+    org = vec2.add(mod_props['SW54'][0], vec2.scale(unit, (-1.1, 0.27)))
+
     set_refs(board)
     draw_edge_cuts(board)
     place_screw_holes(board)
     # logo
-    kad.move_mods((175, 35), 0, [('G1', (0, 0), -30), ('G2', (0, 0), 150)])
+    for mod, angle in [('G1', -30), ('G2', 150)]:
+        if kad.get_mod(mod) is not None:
+            kad.move_mods((175, 35), 0, [(mod, (0, 0), angle)])
 
     # zones
     zones = []
@@ -2265,8 +2304,9 @@ def main():
         add_zone('GND', 'B.Cu', kad.make_rect((PCB_Width, PCB_Height), offset), zones)
 
     # draw top & bottom patterns
-    if board in [BDT, BDB, BDS]:
-        draw_top_bottom(board, sw_pos_angles)
+    if board in [BDB]:
+        pass
+        # draw_top_bottom(board, sw_pos_angles)
 
 
 if __name__ == '__main__':
