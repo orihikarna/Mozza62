@@ -39,12 +39,6 @@ Lx = unit * 2.97
 Ly = unit * 2.97 * (math.sqrt(3)/2)
 org = vec2.add(kad.get_mod_pos('SW54'), vec2.scale(unit, (-1.1, 0.27)))
 
-U1_x, U1_y = 82, 95
-J1_x, J1_y, J1_angle = 18, 98, 0
-J2_x, J2_y, J2_angle = 130, 100, 0
-J3_x, J3_y, J3_angle = 85, 118, 10
-D1_x, D1_y = 62, 106
-
 keys = {
     '11': [91.452, -41.958, 16.910, 15.480, -21.2],  # r
     '13': [89.129, -60.205, 17.000, 17.000, -21.2],  # |
@@ -134,11 +128,11 @@ def get_btm_row_idx(cidx: int):
 
 # Board Type
 # class Board(Enum):
-BDT = 2  # Top plate
-BDS = 1  # Second Top plate
-BDC = 0  # Circuit plate
-BDM = 3  # Middle plate
-BDB = 4  # Bottom plate
+BDT = 0  # Top
+BDS = 1  # Spacer
+BDC = 4  # Circuit
+BDM = 2  # Middle
+BDB = 3  # Bottom
 
 # Edge.Cuts size
 Edge_CX, Edge_CY = 0, 0
@@ -168,117 +162,191 @@ def draw_edge_cuts(board):
     # endregion
 
     midcnrs_set = []
+    midarcs = []
+    # region key holes
+    for idx in sorted(keys.keys()):
+        if not is_SW(idx):
+            continue
+        mod_sw = f'SW{idx}'
+        for bd, sz, r in [(BDT, 13.96, 0.9)]:#, (BDS, 15, 1.6)]:
+            hsz = sz / 2
+            cnrs = [
+                (mod_sw, (0, -hsz),   0, BezierRound, [r]),
+                (mod_sw, (+hsz, 0),  90, BezierRound, [r]),
+                (mod_sw, (0, +hsz), 180, BezierRound, [r]),
+                (mod_sw, (-hsz, 0), 270, BezierRound, [r]),
+            ]
+            midcnrs_set.append((make_corners(cnrs), [bd]))
+        pos = kad.get_mod_pos(mod_sw)
+        midarcs.append((pos, 5.2/2, [BDB]))
+    # endregion
     # region RJ45
-    if board in [BDC, BDS, BDT]:
-        mod_rj = 'J1'
-        r = 1
-        w = 9
+    mod_rj = 'J1'
+    r = 1.4
+    w = 9
+    cnrs = [
+        (mod_rj, (0, +14.6),   0, BezierRound, [r]),
+        (mod_rj, (+w, 0),  90, BezierRound, [r]),
+        (mod_rj, (0, -2), 180, BezierRound, [r]),
+        (mod_rj, (-w, 0), 270, BezierRound, [r]),
+    ]
+    midcnrs_set.append((make_corners(cnrs), [BDT, BDS]))
+    for sign in [+1, -1]:
+        dx = 5.715 * sign
+        dy = 8.89
+        hw = (2.0 + 0.4 + 1.27)/2
+        hh = (3.4 + 0.4)/2
+        r = 1.5
         cnrs = [
-            (mod_rj, (0, +14.6),   0, BezierRound, [r]),
-            (mod_rj, (+w, 0),  90, BezierRound, [r]),
-            (mod_rj, (0, -2), 180, BezierRound, [r]),
-            (mod_rj, (-w, 0), 270, BezierRound, [r]),
+            (mod_rj, (dx, dy+hh),   0, BezierRound, [r]),
+            (mod_rj, (dx+hw, dy),  90, BezierRound, [r]),
+            (mod_rj, (dx, dy-hh), 180, BezierRound, [r]),
+            (mod_rj, (dx-hw, dy), 270, BezierRound, [r]),
         ]
-        midcnrs_set.append(make_corners(cnrs))
+        midcnrs_set.append((make_corners(cnrs), [BDB]))
     # endregion
     # region U1, U2
     mod_exp = 'U1'
-    if board in [BDC, BDM]:
-        r = 6.5
-        cnrs = [
-            (mod_exp, (0, -5),   0, BezierRound, [r]),
-            (mod_exp, (+7, 3),  90, BezierRound, [r]),
-            (mod_exp, (0, 10), 180, BezierRound, [r]),
-            (mod_exp, (-9, 3), 270, BezierRound, [2]),
-        ]
-        midcnrs_set.append(make_corners(cnrs))
-    if board in [BDC, BDS]:
-        r = 2
-        cnrs = [
-            (mod_exp, (0, -5),   0, BezierRound, [r]),
-            (mod_exp, (+5, 0),  90, BezierRound, [r]),
-            (mod_exp, (0, +5), 180, BezierRound, [r]),
-            (mod_exp, (-5, 0), 270, BezierRound, [2]),
-        ]
-        midcnrs_set.append(make_corners(cnrs))
+    r = 6.5
+    cnrs = [
+        (mod_exp, (0, -5),   0, BezierRound, [r]),
+        (mod_exp, (+7, 3),  90, BezierRound, [r]),
+        (mod_exp, (0, 10), 180, BezierRound, [r]),
+        (mod_exp, (-9, 3), 270, BezierRound, [2]),
+    ]
+    midcnrs_set.append((make_corners(cnrs), [BDM]))
+    r = 2
+    cnrs = [
+        (mod_exp, (0, -5),   0, BezierRound, [r]),
+        (mod_exp, (+5, 0),  90, BezierRound, [r]),
+        (mod_exp, (0, +5), 180, BezierRound, [r]),
+        (mod_exp, (-5, 0), 270, BezierRound, [2]),
+    ]
+    midcnrs_set.append((make_corners(cnrs), [BDS]))
     # endregion
-    # region RotEnd
+    # region RotEnc
     mod_re = 'RE1'
-    if board in [BDC, BDM]:
-        r = 1.4
+    r = 1.4
+    cnrs = [
+        (mod_re, (0, -8.0),   0, BezierRound, [r]),
+        (mod_re, (4, -6.5),  90, BezierRound, [r]),
+        (mod_re, (8, -5.0),   0, BezierRound, [r]),
+        ('D65', (0, 2),     180, BezierRound, [r]),
+        (mod_re, (8, +5.0), 180, BezierRound, [r]),
+        (mod_re, (4, +6.5),  90, BezierRound, [r]),
+        (mod_re, (0, +8.0), 180, BezierRound, [r]),
+        #
+        (mod_re, (-4, +6.5), 270, BezierRound, [r]),
+        (mod_re, (-8, +5.0), 180, BezierRound, [r]),
+        ('CD11', (0, -2),      0, BezierRound, [r]),
+        (mod_re, (-8, -5.0),   0, BezierRound, [r]),
+        (mod_re, (-4, -6.5), 270, BezierRound, [r]),
+    ]
+    midcnrs_set.append((make_corners(cnrs), [BDM]))
+    #
+    r = 2
+    w, h = 9, 7.6
+    cnrs = [
+        (mod_re, (0, -h),   0, BezierRound, [r]),
+        (mod_re, (+w, 0),  90, BezierRound, [r]),
+        (mod_re, (0, +h), 180, BezierRound, [r]),
+        (mod_re, (-w, 0), 270, BezierRound, [r]),
+    ]
+    midcnrs_set.append((make_corners(cnrs), [BDS, BDT]))
+    #
+    for sign in [+1, -1]:
+        dy = 5.6 * sign
+        hw = (2.0 + 0.8)/2
+        hh = (2.0 + 0.4 + 1.6)/2
+        r = 1.0
         cnrs = [
-            (mod_re, (0, -8.0),   0, BezierRound, [r]),
-            (mod_re, (4, -6.5),  90, BezierRound, [r]),
-            (mod_re, (8, -5.0),   0, BezierRound, [r]),
-            ('D65', (0, 2),     180, BezierRound, [r]),
-            (mod_re, (8, +5.0), 180, BezierRound, [r]),
-            (mod_re, (4, +6.5),  90, BezierRound, [r]),
-            (mod_re, (0, +8.0), 180, BezierRound, [r]),
-            #
-            (mod_re, (-4, +6.5), 270, BezierRound, [r]),
-            (mod_re, (-8, +5.0), 180, BezierRound, [r]),
-            ('CD11', (0, -2),      0, BezierRound, [r]),
-            (mod_re, (-8, -5.0),   0, BezierRound, [r]),
-            (mod_re, (-4, -6.5), 270, BezierRound, [r]),
+            (mod_re, (0, dy-hh),   0, BezierRound, [r]),
+            (mod_re, (+hw, dy),   90, BezierRound, [r]),
+            (mod_re, (0, dy+hh), 180, BezierRound, [r]),
+            (mod_re, (-hw, dy),  270, BezierRound, [r]),
         ]
-        midcnrs_set.append(make_corners(cnrs))
-    if board in [BDC, BDS, BDT]:
-        r = 2
-        w, h = 9, 7.6
-        cnrs = [
-            (mod_re, (0, -h),   0, BezierRound, [r]),
-            (mod_re, (+w, 0),  90, BezierRound, [r]),
-            (mod_re, (0, +h), 180, BezierRound, [r]),
-            (mod_re, (-w, 0), 270, BezierRound, [r]),
-        ]
-        midcnrs_set.append(make_corners(cnrs))
+        midcnrs_set.append((make_corners(cnrs), [BDB]))
     # endregion
-    # region switch area
-    d = 1.2
+    mod_rj = 'J1'
+    # region switch area (separation)
+    hsz = 7.5
+    d_sw = hsz
+    r = 1
+    cnrs = [
+        ('SW21', (0, d_sw), 180, BezierRound, [r]),
+        ('SW41', (0, d_sw), 180, BezierRound, [r]),
+        ('SW51', (0, d_sw), 180, BezierRound, [r]),
+        ('SW61', (hsz-0.5, d_sw+r+1.5), 270, BezierRound, [r]),
+        ('SW61', (0, d_sw), 180, BezierRound, [r]),
+        ('SW71', (8.5, d_sw+r+2.5), 270, BezierRound, [r]),
+        ('SW71', (0, d_sw), 180, BezierRound, [r]),
+        # right
+        ('SW71', (-d_sw, 0), 270, BezierRound, [r]),
+        ('SW82', (0, d_sw), 180, BezierRound, [r]),
+        ('SW82', (-d_sw, 0), 270, BezierRound, [r]),
+        ('SW83', (-8, -8), 310, BezierRound, [r]),
+        # bottom right
+        ('SW84', (0, -d_sw), 0, BezierRound, [r]),
+        ('SW64', (d_sw, 0), 90, BezierRound, [r]),
+        ('SW54', (0, -d_sw), 0, BezierRound, [r]),
+        ('SW44', (0, -d_sw), 0, BezierRound, [r]),
+        ('SW24', (0, -d_sw), 0, BezierRound, [r]),
+        ('SW24', (d_sw, -4), 90, BezierRound, [r]),
+        # bottom left
+        ('SW14', (0, -d_sw), 0, BezierRound, [r]),
+        # left
+        ('SW13', (d_sw, 0), 90, BezierRound, [r]),
+        ('SW13', (0, d_sw), 180, BezierRound, [r]),
+        # top left
+        ('SW13', (-d_sw+0.5, 9), 90, BezierRound, [r]),
+        ('SW21', (d_sw, 0), 90, BezierRound, [r]),
+    ]
+    midcnrs_set.append((make_corners(cnrs), [BDS]))
+    # endregion
+    d = 2.4
     hsz = 8.5
     d_sw = hsz + d
-    if board in [BDC, BDM]:  # mid hole (4-fingers)
-        mod_rj = 'J1'
-        r = 2
-        d_dbnc = 3
-        cnrs = [
-            ('SW21', (0, d_sw), 180, BezierRound, [r]),
-            ('SW41', (0, d_sw), 180, BezierRound, [r]),
-            ('SW51', (0, d_sw), 180, BezierRound, [r]),
-            ('SW61', (4, d_sw+r+1.5), 270, BezierRound, [r]),
-            ('SW61', (0, d_sw), 180, BezierRound, [r]),
-            ('SW71', (hsz-d, d_sw+r+2.5), 270, BezierRound, [r]),
-            ('SW71', (0, d_sw), 180, BezierRound, [r]),
-            # right
-            ('SW71', (-d_sw, 0), 270, BezierRound, [6]),
-            ('SW82', (0, d_sw), 180, BezierRound, [r]),
-            ('SW82', (-d_sw, 0), 270, BezierRound, [r]),
-            ('SW83', (-8, -8), 310, BezierRound, [r]),
-            # bottom right
-            ('R81', (d_dbnc, -2), 90, BezierRound, [r]),
-            ('R81', (1.8, 4), 90 + 30, BezierRound, [r]),
-            ('R71', (d_dbnc, 0), 90, BezierRound, [r]),
-            ('R61', (0, 6), 90 + 45, BezierRound, [r]),
-            #
-            ('R51', (d_dbnc, 0), 90, BezierRound, [r]),
-            ('R41', (d_dbnc, 0), 90, BezierRound, [r]),
-            ('R31', (d_dbnc, 0), 90, BezierRound, [r]),
-            ('R21', (0, 8), 90 + 40, BezierRound, [r]),
-            # bottom left
-            ('R11', (d_dbnc, -2), 90, BezierRound, [r]),
-            ('R11', (0, 6), 90 + 45, BezierRound, [r]),
-            # left
-            ('SW13', (d_sw, 0), 90, BezierRound, [r]),
-            # top left
-            (mod_rj, (9, 12.6), 0, BezierRound, [r]),
-            ('C3', (0, -1.5), 0, BezierRound, [r]),
-            (mod_rj, (7, -4), 120, BezierRound, [r]),
-        ]
-        midcnrs_set.append(make_corners(cnrs))
+    # region switch area (middle)
+    r = 2
+    d_dbnc = 3
+    cnrs = [
+        ('SW21', (0, d_sw), 180, BezierRound, [16]),
+        ('SW41', (0, d_sw), 180, BezierRound, [r]),
+        ('SW51', (0, d_sw), 180, BezierRound, [r]),
+        ('SW61', (4, d_sw+r+1.5), 270, BezierRound, [r]),
+        ('SW61', (0, d_sw), 180, BezierRound, [r]),
+        ('SW71', (hsz-d, d_sw+r+2.5), 270, BezierRound, [r]),
+        ('SW71', (0, d_sw), 180, BezierRound, [r]),
+        # right
+        ('SW71', (-d_sw, 0), 270, BezierRound, [8]),
+        ('SW82', (0, d_sw), 180, BezierRound, [r]),
+        ('SW82', (-d_sw, 0), 270, BezierRound, [r]),
+        ('SW83', (-8, -8), 310, BezierRound, [r]),
+        # bottom right
+        ('R81', (d_dbnc, -2), 90, BezierRound, [r]),
+        ('R81', (1.8, 4), 90 + 30, BezierRound, [r]),
+        ('R71', (d_dbnc, 0), 90, BezierRound, [r]),
+        ('R61', (0, 6), 90 + 45, BezierRound, [r]),
+        #
+        ('R51', (d_dbnc, 0), 90, BezierRound, [r]),
+        ('R41', (d_dbnc, 0), 90, BezierRound, [r]),
+        ('R31', (d_dbnc, 0), 90, BezierRound, [r]),
+        ('R21', (0, 8), 90 + 40, BezierRound, [r]),
+        # bottom left
+        ('R11', (d_dbnc, -2), 90, BezierRound, [r]),
+        ('R11', (0, 6), 90 + 45, BezierRound, [r]),
+        # left
+        ('SW13', (d_sw, 0), 90, BezierRound, [r]),
+        # top left
+        (mod_rj, (9, 12.6), 0, BezierRound, [r]),
+        ('C3', (0, -1.5), 0, BezierRound, [r]),
+        # (mod_rj, (7, -4), 120, BezierRound, [r]),
+    ]
+    midcnrs_set.append((make_corners(cnrs), [BDM]))
     # endregion
     # region thumb key hole
-    if board in [BDC, BDM]:
-        r = 4
+    for bd, d, r in [(BDM, 2.4, 4)]:#, (BDS, 0, 1.6)]:
+        d_sw = hsz + d
         cnrs = [
             ('SW15', (0, d_sw), 180, BezierRound, [r]),
             ('SW15', (-d_sw, 4), 270, BezierRound, [r]),
@@ -289,13 +357,23 @@ def draw_edge_cuts(board):
             ('SW25', (+d_sw, 7),  90, BezierRound, [r]),
             ('SW15', (+d_sw, 5),  90, BezierRound, [r]),
         ]
-        midcnrs_set.append(make_corners(cnrs))
+        midcnrs_set.append((make_corners(cnrs), [bd]))
     # endregion
-    layers = ['F.Fab'] if board == BDC else ['Edge.Cuts']  # ['F.SilkS', 'B.SilkS']
-    w = width * 2 if board == BDC else width
-    for midcnrs in midcnrs_set:
-        for layer in layers:
-            kad.draw_closed_corners(midcnrs, layer, w)
+    for midcnrs, boards in midcnrs_set:
+        for bd in boards:
+            if board == bd:
+                kad.draw_closed_corners(midcnrs, 'Edge.Cuts', width)
+            elif board == BDC:
+                layer = f'User.{bd+1}'
+                kad.draw_closed_corners(midcnrs, layer, width * 2)
+    for ctr, rad, boards in midarcs:
+        pos = vec2.add(ctr, (rad, 0))
+        for bd in boards:
+            if board == bd:
+                kad.add_arc(ctr, pos, 360, 'Edge.Cuts', width)
+            elif board == BDC:
+                layer = f'User.{bd+1}'
+                kad.add_arc(ctr, pos, 360, layer, width * 2)
     return
     if False:
         # draw
@@ -2176,6 +2254,8 @@ def main():
     set_refs(board)
     draw_edge_cuts(board)
     place_screw_holes(board)
+    # logo
+    kad.move_mods((175, 35), 0, [('G1', (0, 0), -30), ('G2', (0, 0), 150)])
 
     # zones
     zones = []
