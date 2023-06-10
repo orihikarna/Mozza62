@@ -474,7 +474,8 @@ def wire_mod_pads(tracks):
 ##
 def removeDrawings():
     # pcb.DeleteZONEOutlines()
-    for zone in pcb.Zones():
+    for zone in reversed(pcb.Zones()):
+        # print(zone)
         pcb.Remove(zone)
     for draw in pcb.GetDrawings():
         pcb.Delete(draw)
@@ -639,19 +640,19 @@ def draw_corner(cnr_type, a, cnr_data, b, layer, width):
             pass
             #print( 'Round: warning bangle = {}'.format( bangle ) )
             #debug = True
-        if alen < radius:
-            print('Round: alen < radius, {} < {}'.format(alen, radius))
-            debug = True
-        if blen < radius:
-            print('Round: blen < radius, {} < {}'.format(blen, radius))
-            debug = True
-        if debug:
-            add_arc(xpos, vec2.add(xpos, (10, 0)), 360, layer, width)
-            return b, curv
         angle = vec2.angle(avec, bvec)
         angle = round(angle * 10) / 10
         tangent = math.tan(math.radians(abs(angle) / 2))
         side_len = radius / tangent
+        if alen < side_len:
+            print('Round: alen < side_len, {} < {}'.format(alen, side_len))
+            debug = True
+        if blen < side_len:
+            print('Round: blen < side_len, {} < {}'.format(blen, side_len))
+            debug = True
+        if debug:
+            add_arc(xpos, vec2.add(xpos, (10, 0)), 360, layer, width)
+            return b, curv
         # print( 'angle = {}, radius = {}, side_len = {}, tangent = {}'.format( angle, radius, side_len, tangent ) )
 
         amid = vec2.scale(-side_len, avec, xpos)
@@ -693,7 +694,7 @@ def draw_closed_corners(corners, layer, width):
 # zones
 
 
-def add_zone(rect, layer, idx=0, net_name='GND'):
+def add_zone(rect, layer, net_name='GND'):
     pnts = list(map(lambda pt: pnt.to_unit(vec2.round(pt, PointDigits), UnitMM), rect))
     net = pcb.FindNet(net_name).GetNetCode()
     zone = pcb.AddArea(None, net, layer, pnts[0], pcbnew.ZONE_BORDER_DISPLAY_STYLE_DIAGONAL_EDGE)

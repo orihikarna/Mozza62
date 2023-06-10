@@ -142,9 +142,9 @@ Edge_CX, Edge_CY = 0, 0
 Edge_W, Edge_H = 0, 0
 
 
-def add_zone(net_name, layer_name, rect, zones):
+def add_zone(net_name, layer_name, rect):
     layer = pcb.GetLayerID(layer_name)
-    zone, poly = kad.add_zone(rect, layer, len(zones), net_name)
+    zone, poly = kad.add_zone(rect, layer, net_name)
     #
     settings = pcb.GetZoneSettings()
     settings.m_ZoneClearance = pcbnew.FromMils(12)
@@ -155,7 +155,6 @@ def add_zone(net_name, layer_name, rect, zones):
     zone.SetThermalReliefSpokeWidth(pcbnew.FromMils(16))
     # zone.Hatch()
     #
-    zones.append(zone)
     # polys.append( poly )
 
 
@@ -420,6 +419,65 @@ def draw_edge_cuts(board):
 
 
 def draw_bottom():
+    layer = 'F.Cu'
+
+    if True: # rulearea (keepout)
+        r = 3
+        d = 3
+        def add_onigiri_area(pos, angle):
+            pnts = []
+            for idx, base0 in enumerate([0, 120, 240]):
+                base = base0 + angle
+                for deg in range(0, 120 + 1, 12):
+                    ctr = vec2.scale(d, vec2.rotate(base + 60))
+                    rad = vec2.scale(r, vec2.rotate(base + deg))
+                    pnts.append(vec2.add(ctr, rad))
+            pnts = [vec2.add(pos, pt) for pt in pnts]
+            pnts = [kad.pnt.to_unit(vec2.round(pt, kad.PointDigits), kad.UnitMM) for pt in pnts]
+            area = pcb.AddArea(None, GND.GetNetCode(), pcb.GetLayerID(layer), pnts[0], pcbnew.ZONE_BORDER_DISPLAY_STYLE_DIAGONAL_EDGE)
+            area.SetIsRuleArea(True)
+            # area.SetDoNotAllowTracks(no_tracks)
+            # area.SetDoNotAllowVias(no_vias)
+            area.SetDoNotAllowCopperPour(True)
+            poly = area.Outline()
+            for idx, pt in enumerate(pnts):
+                if idx == 0:
+                    continue
+                poly.Append(pt[0], pt[1])
+        for y in range(-5, 4):
+            for x in range(-10, 11):
+                sign = ((x+y+100) % 2) * 2 - 1
+                pos = vec2.add(org, (Lx/3/2 * x, +Ly/24 * sign + Ly/3*y))
+                add_onigiri_area(pos, 90 * sign)
+        return
+
+    for t in range(0, int(Ly*3/2), 3):
+        s = t / (Ly*3/2)
+        width = (0.2 + 0.8 * (1-abs(1 -2*s))) * 2
+        Radius = max(Ly - t, 0)
+        cnrs = [
+            ((vec2.add(org, vec2.scale(Ly*3/2 - t, vec2.rotate(-150), (-Lx/4, -Ly/2))), +120), Round, [Radius]),
+            ((vec2.add(org, (0, Ly - t)), 0), Round, [Radius]),
+            ((vec2.add(org, vec2.scale(Ly*3/2 - t, vec2.rotate(-30), (+Lx/4, -Ly/2))), -120), Round, [Radius]),
+            ((vec2.add(org, (0, -Ly*2 + t)), 180), Round, [Radius]),
+        ]
+        kad.draw_closed_corners(cnrs, layer, width)
+    return
+
+    width = 1.0
+
+    Radius = Ly
+    ctrs = [(-Lx, 0), (+Lx, 0), (+Lx/2, -Ly), (-Lx/2, -Ly)]
+    inits = [90, -30, -90, -150]
+    angles = [120, 120, 60, 60]
+    dirs = [-30, -150, +120, +60]
+    for idx, ctr in enumerate(ctrs):
+        vec = vec2.rotate(dirs[idx])
+        for t in range(0, int(Radius), 5):
+            _ctr = vec2.add(org, ctr)
+            # _ctr = vec2.scale(t, vec, _ctr)
+            _pos = vec2.scale(Radius - t, vec2.rotate(inits[idx]), _ctr)
+            kad.add_arc(_ctr, _pos, angles[idx], layer, width)
     return
     if board in [BDT, BDS]:  # keysw holes
         length = 13.94 if board == BDT else 14.80
@@ -2217,11 +2275,10 @@ def main():
             kad.move_mods((175, 35), 0, [(mod, (0, 0), angle)])
 
     # zones
-    zones = []
-    if board in [BDC]:
+    if board in [BDC, BDB]:
         offset = (40, 18.8)
-        add_zone('GND', 'F.Cu', kad.make_rect((PCB_Width, PCB_Height), offset), zones)
-        add_zone('GND', 'B.Cu', kad.make_rect((PCB_Width, PCB_Height), offset), zones)
+        add_zone('GND', 'F.Cu', kad.make_rect((PCB_Width, PCB_Height), offset))
+        add_zone('GND', 'B.Cu', kad.make_rect((PCB_Width, PCB_Height), offset))
 
     # draw top & bottom patterns
     if board in [BDB]:
