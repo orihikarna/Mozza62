@@ -1,10 +1,11 @@
-import pcbnew
+import importlib
 import json
 import math
 import re
-from kadpy import kad, pnt, vec2, mat2
+from enum import Enum
 
-import importlib
+import pcbnew
+from kadpy import kad, mat2, pnt, vec2
 
 importlib.reload(kad)
 importlib.reload(pnt)
@@ -15,23 +16,20 @@ kad.UnitMM = True
 kad.PointDigits = 3
 
 # alias
-Strt = kad.Straight  # Straight
-Dird = kad.Directed  # Directed + Offsets
-ZgZg = kad.ZigZag  # ZigZag
+Strt = kad.Straight
+Dird = kad.Directed
+ZgZg = kad.ZigZag
 
-Line = kad.Line
-Linear = kad.Linear
 Round = kad.Round
 BezierRound = kad.BezierRound
 LinearRound = kad.LinearRound
-Spline = kad.Spline
-
 
 # in mm
 VIA_Size = [(1.2, 0.6), (1.15, 0.5), (0.92, 0.4), (0.8, 0.3)]
 
 mod_props = {}
 
+# region keyboard layout
 keys = {
     '11': [91.452, -41.958, 16.910, 15.480, -21.2],  # r
     '13': [89.129, -60.205, 17.000, 17.000, -21.2],  # |
@@ -89,26 +87,20 @@ dx_cols = [
     dx_Pinky, dx_Pinky, dx_Pinky,
 ]
 
-unit = 17
-Lx = unit * 2.97
-Ly = unit * 2.97 * (math.sqrt(3)/2)
-org = None
+keysw_unit = 17
+Lx = keysw_unit * 2.97
+Ly = keysw_unit * 2.97 * (math.sqrt(3)/2)
+board_org = None
+# endregion
 
 
-# Board Type
-# class Board(Enum):
-BDT = 0  # Top
-BDS = 1  # Spacer
-BDC = 4  # Circuit
-BDM = 2  # Middle
-BDB = 3  # Bottom
+class Board(Enum):
+    Top = 0
+    Spacer = 1
+    Circuit = 4
+    Middle = 2
+    Bottom = 3
 
-PCB_Width = 189
-PCB_Height = 132
-
-# Edge.Cuts size
-Edge_CX, Edge_CY = 0, 0
-Edge_W, Edge_H = 0, 0
 
 Cu_layers = ['F.Cu', 'B.Cu']
 
@@ -120,9 +112,6 @@ VCC = pcb.FindNet('3V3')
 via_size_pwr = VIA_Size[1]
 via_size_dat = VIA_Size[2]
 via_size_gnd = VIA_Size[3]
-
-# switch positions
-sw_pos_angles = []
 
 # region switch prop
 
@@ -160,15 +149,14 @@ def get_btm_row_idx(cidx: int):
 def add_zone(net_name, layer_name, rect):
     layer = pcb.GetLayerID(layer_name)
     zone, _ = kad.add_zone(rect, layer, net_name)
-
-    settings = pcb.GetZoneSettings()
-    settings.m_ZoneClearance = pcbnew.FromMils(12)
-    pcb.SetZoneSettings(settings)
-
     zone.SetMinThickness(pcbnew.FromMils(16))
     # zone.SetThermalReliefGap( pcbnew.FromMils( 12 ) )
     zone.SetThermalReliefSpokeWidth(pcbnew.FromMils(16))
     # zone.Hatch()
+
+    settings = pcb.GetZoneSettings()
+    settings.m_ZoneClearance = pcbnew.FromMils(12)
+    pcb.SetZoneSettings(settings)
 
 
 def draw_edge_cuts(board):
@@ -192,13 +180,16 @@ def draw_edge_cuts(board):
     # region outer edge
     Radius = Ly
     cnrs = [
-        ((vec2.add(org, (Lx * (-2 + 1/2), -Ly)), +120), Round, [Radius]),
-        ((vec2.add(org, (0, Ly)), 0), Round, [Radius]),
-        ((vec2.add(org, (Lx * (+2 - 1/2), -Ly)), -120), Round, [Radius]),
-        ((vec2.add(org, (0, -Ly*2)), 180), Round, [Radius]),
+        ((vec2.add(board_org, (Lx * (-2 + 1/2), -Ly)), +120), Round, [Radius]),
+        ((vec2.add(board_org, (0, Ly)), 0), Round, [Radius]),
+        ((vec2.add(board_org, (Lx * (+2 - 1/2), -Ly)), -120), Round, [Radius]),
+        ((vec2.add(board_org, (0, -Ly*2)), 180), Round, [Radius]),
     ]
     kad.draw_closed_corners(cnrs, 'Edge.Cuts', width)
     if False:  # PCB Size
+        # Edge.Cuts size
+        Edge_CX, Edge_CY = 0, 0
+        Edge_W, Edge_H = 0, 0
         x0, x1 = +1e6, -1e6
         y0, y1 = +1e6, -1e6
         for (pos, _), _, _ in corners:
@@ -207,8 +198,8 @@ def draw_edge_cuts(board):
             x1 = max(x1, x)
             y0 = min(y0, y)
             y1 = max(y1, y)
-        global Edge_CX, Edge_CY
-        global Edge_W, Edge_H
+        # global Edge_CX, Edge_CY
+        # global Edge_W, Edge_H
         Edge_CX, Edge_CY = (x0 + x1) / 2, (y0 + y1) / 2
         Edge_W, Edge_H = x1 - x0, y1 - y0
         if True:
@@ -223,7 +214,7 @@ def draw_edge_cuts(board):
         if not is_SW(idx):
             continue
         mod_sw = f'SW{idx}'
-        for bd, sz, r in [(BDT, 13.96, 0.9)]:  # , (BDS, 15, 1.6)]:
+        for bd, sz, r in [(Board.Top, 13.96, 0.9)]:  # , (Board.Spacer, 15, 1.6)]:
             hsz = sz / 2
             cnrs = [
                 (mod_sw, (0, -hsz),   0, BezierRound, [r]),
@@ -233,7 +224,7 @@ def draw_edge_cuts(board):
             ]
             midcnrs_set.append((make_corners(cnrs), [bd]))
         pos = mod_props[mod_sw][0]
-        midarcs.append((pos, 5.2/2, [BDB]))
+        midarcs.append((pos, 5.2/2, [Board.Bottom]))
     # endregion
     # region RJ45
     mod_rj = 'J1'
@@ -245,7 +236,7 @@ def draw_edge_cuts(board):
         (mod_rj, (0, -2), 180, BezierRound, [r]),
         (mod_rj, (-w, 0), 270, BezierRound, [r]),
     ]
-    midcnrs_set.append((make_corners(cnrs), [BDT, BDS]))
+    midcnrs_set.append((make_corners(cnrs), [Board.Top, Board.Spacer]))
     for sign in [+1, -1]:
         dx = 5.715 * sign
         dy = 8.89
@@ -258,7 +249,7 @@ def draw_edge_cuts(board):
             (mod_rj, (dx, dy-hh), 180, BezierRound, [r]),
             (mod_rj, (dx-hw, dy), 270, BezierRound, [r]),
         ]
-        midcnrs_set.append((make_corners(cnrs), [BDB]))
+        midcnrs_set.append((make_corners(cnrs), [Board.Bottom]))
     # endregion
     # region U1, U2
     mod_exp = 'U1'
@@ -269,7 +260,7 @@ def draw_edge_cuts(board):
         (mod_exp, (0, 10), 180, BezierRound, [r]),
         (mod_exp, (-9, 3), 270, BezierRound, [2]),
     ]
-    midcnrs_set.append((make_corners(cnrs), [BDM]))
+    midcnrs_set.append((make_corners(cnrs), [Board.Middle]))
     r = 2
     cnrs = [
         (mod_exp, (0, -5),   0, BezierRound, [r]),
@@ -277,7 +268,7 @@ def draw_edge_cuts(board):
         (mod_exp, (0, +5), 180, BezierRound, [r]),
         (mod_exp, (-5, 0), 270, BezierRound, [2]),
     ]
-    midcnrs_set.append((make_corners(cnrs), [BDS]))
+    midcnrs_set.append((make_corners(cnrs), [Board.Spacer]))
     # endregion
     # region RotEnc
     mod_re = 'RE1'
@@ -297,7 +288,7 @@ def draw_edge_cuts(board):
         (mod_re, (-8, -5.0),   0, BezierRound, [r]),
         (mod_re, (-4, -6.5), 270, BezierRound, [r]),
     ]
-    midcnrs_set.append((make_corners(cnrs), [BDM]))
+    midcnrs_set.append((make_corners(cnrs), [Board.Middle]))
     #
     r = 2
     w, h = 9, 7.6
@@ -307,7 +298,7 @@ def draw_edge_cuts(board):
         (mod_re, (0, +h), 180, BezierRound, [r]),
         (mod_re, (-w, 0), 270, BezierRound, [r]),
     ]
-    midcnrs_set.append((make_corners(cnrs), [BDS, BDT]))
+    midcnrs_set.append((make_corners(cnrs), [Board.Spacer, Board.Top]))
     #
     for sign in [+1, -1]:
         dy = 5.6 * sign
@@ -320,7 +311,7 @@ def draw_edge_cuts(board):
             (mod_re, (0, dy+hh), 180, BezierRound, [r]),
             (mod_re, (-hw, dy),  270, BezierRound, [r]),
         ]
-        midcnrs_set.append((make_corners(cnrs), [BDB]))
+        midcnrs_set.append((make_corners(cnrs), [Board.Bottom]))
     # endregion
     mod_rj = 'J1'
     # region switch area (separation)
@@ -356,7 +347,7 @@ def draw_edge_cuts(board):
         ('SW13', (-d_sw+0.5, 9), 90, BezierRound, [r]),
         ('SW21', (d_sw, 0), 90, BezierRound, [r]),
     ]
-    midcnrs_set.append((make_corners(cnrs), [BDS]))
+    midcnrs_set.append((make_corners(cnrs), [Board.Spacer]))
     # endregion
     d = 2.4
     hsz = 8.5
@@ -397,10 +388,10 @@ def draw_edge_cuts(board):
         ('C3', (0, -1.5), 0, BezierRound, [r]),
         # (mod_rj, (7, -4), 120, BezierRound, [r]),
     ]
-    midcnrs_set.append((make_corners(cnrs), [BDM]))
+    midcnrs_set.append((make_corners(cnrs), [Board.Middle]))
     # endregion
     # region thumb key hole
-    for bd, d, r in [(BDM, 2.4, 4)]:  # , (BDS, 0, 1.6)]:
+    for bd, d, r in [(Board.Middle, 2.4, 4)]:  # , (Board.Spacer, 0, 1.6)]:
         d_sw = hsz + d
         cnrs = [
             ('SW15', (0, d_sw), 180, BezierRound, [r]),
@@ -418,7 +409,7 @@ def draw_edge_cuts(board):
         for bd in boards:
             if board == bd:
                 kad.draw_closed_corners(midcnrs, 'Edge.Cuts', width)
-            elif board == BDC:
+            elif board == Board.Circuit:
                 layer = f'User.{bd+1}'
                 kad.draw_closed_corners(midcnrs, layer, width * 2)
     for ctr, rad, boards in midarcs:
@@ -426,16 +417,14 @@ def draw_edge_cuts(board):
         for bd in boards:
             if board == bd:
                 kad.add_arc(ctr, pos, 360, 'Edge.Cuts', width)
-            elif board == BDC:
+            elif board == Board.Circuit:
                 layer = f'User.{bd+1}'
                 kad.add_arc(ctr, pos, 360, layer, width * 2)
 
 
 def draw_bottom():
-    layer = 'F.Cu'
-
     if True:  # rulearea (keepout)
-        div = 12
+        div = 16
         # div = 3
         r = Ly/div * 0.14
         d = Ly/div * 0.26
@@ -460,32 +449,33 @@ def draw_bottom():
                 if idx == 0:
                     continue
                 poly.Append(pt[0], pt[1])
-        for y in range(-2*div, div+1):
+        for y in range(-2*div, div+2):
             for x in range(-4*div, 4*div+1):
                 parity = (x + y) % 2
                 sign = parity * 2 - 1
-                # pos = vec2.add(org, (Lx/div/2 * x, d/3 * sign + Ly/div*(y - 0.5)))
-                pos = vec2.add(org, (Lx/div/2 * x, Ly/div/3*parity + Ly/div*(y - 0.5)))
+                # pos = vec2.add(board_org, (Lx/div/2 * x, d/3 * sign + Ly/div*(y - 0.5)))
+                pos = vec2.add(board_org, (Lx/div/2 * x, Ly/div/3*parity + Ly/div*(y - 0.5)))
                 layer = Cu_layers[parity]
                 # layer = Cu_layers[0]
                 add_onigiri_area(pos, 90 * sign, layer)
         return
+
+    layer = 'F.Cu'
 
     for t in range(0, int(Ly*3/2), 3):
         s = t / (Ly*3/2)
         width = (0.2 + 0.8 * (1-abs(1 - 2*s))) * 2
         Radius = max(Ly - t, 0)
         cnrs = [
-            ((vec2.add(org, vec2.scale(Ly*3/2 - t, vec2.rotate(-150), (-Lx/4, -Ly/2))), +120), Round, [Radius]),
-            ((vec2.add(org, (0, Ly - t)), 0), Round, [Radius]),
-            ((vec2.add(org, vec2.scale(Ly*3/2 - t, vec2.rotate(-30), (+Lx/4, -Ly/2))), -120), Round, [Radius]),
-            ((vec2.add(org, (0, -Ly*2 + t)), 180), Round, [Radius]),
+            ((vec2.add(board_org, vec2.scale(Ly*3/2 - t, vec2.rotate(-150), (-Lx/4, -Ly/2))), +120), Round, [Radius]),
+            ((vec2.add(board_org, (0, Ly - t)), 0), Round, [Radius]),
+            ((vec2.add(board_org, vec2.scale(Ly*3/2 - t, vec2.rotate(-30), (+Lx/4, -Ly/2))), -120), Round, [Radius]),
+            ((vec2.add(board_org, (0, -Ly*2 + t)), 180), Round, [Radius]),
         ]
         kad.draw_closed_corners(cnrs, layer, width)
     return
 
     width = 1.0
-
     Radius = Ly
     ctrs = [(-Lx, 0), (+Lx, 0), (+Lx/2, -Ly), (-Lx/2, -Ly)]
     inits = [90, -30, -90, -150]
@@ -494,7 +484,7 @@ def draw_bottom():
     for idx, ctr in enumerate(ctrs):
         vec = vec2.rotate(dirs[idx])
         for t in range(0, int(Radius), 5):
-            _ctr = vec2.add(org, ctr)
+            _ctr = vec2.add(board_org, ctr)
             # _ctr = vec2.scale(t, vec, _ctr)
             _pos = vec2.scale(Radius - t, vec2.rotate(inits[idx]), _ctr)
             kad.add_arc(_ctr, _pos, angles[idx], layer, width)
@@ -507,7 +497,6 @@ def place_key_switches():
     for idx in sorted(keys.keys()):
         px, py, _w, _h, angle = keys[idx]
         sw_pos = (px, -py)
-        sw_pos_angles.append((sw_pos, 180 - angle))
 
         if idx == SW_RJ45:
             kad.set_mod_pos_angle('J1', vec2.scale(6.2, vec2.rotate(-angle - 90), sw_pos), angle + 180)
@@ -664,7 +653,7 @@ def place_screw_holes(board):
     for idx, prm in enumerate(holes):
         (x, y), angle = prm
         for idx2, sign in enumerate([+1, -1]):
-            ctr = vec2.add(org, (x * sign, y))
+            ctr = vec2.add(board_org, (x * sign, y))
             hole = 'H{}'.format(2 * idx + idx2 + 1)
             kad.set_mod_pos_angle(hole, ctr, angle * sign)
 
@@ -696,7 +685,7 @@ def add_boundary_gnd_vias():
         pnts.append(vec2.scale(Ly - dist, vec2.rotate(90-th), (-Lx, 0)))
     # add vias
     for pnt in pnts:
-        kad.add_via(vec2.add(org, pnt), GND, via_size_gnd)
+        kad.add_via(vec2.add(board_org, pnt), GND, via_size_gnd)
 
 
 # expander
@@ -1943,7 +1932,7 @@ def set_refs(board):
         val = mod.Value()
         val.SetVisible(False)
     refs = []
-    if board == BDC:
+    if board == Board.Circuit:
         refs = [
             (6.4, +90, 180, ['J1']),
             (5.6, +135, 45, ['U1']),
@@ -1986,7 +1975,7 @@ def set_refs(board):
                 if type(item) is pcbnew.FP_TEXT and item.GetShownText() == ref.GetShownText():
                     set_text_prop(item, pos, angle, offset_length, offset_angle, text_angle)
     # J1
-    if board == BDC:
+    if board == Board.Circuit:
         angle = kad.get_mod_angle('J1')
         pads = ['LED', 'GNDD', 'SCK', '5VD', 'NRST', '3V3', 'SDA', 'GND', 'LED']
         for idx in range(9):
@@ -2028,19 +2017,19 @@ def main():
     # print( f'{boardname = }' )
 
     board = None
-    for bname, btype in [('C', BDC), ('T', BDT), ('B', BDB), ('M', BDM), ('S', BDS)]:
+    for bname, btype in [('C', Board.Circuit), ('T', Board.Top), ('B', Board.Bottom), ('M', Board.Middle), ('S', Board.Spacer)]:
         if boardname[0] == bname:
             board = btype
             break
     assert board != None
 
-    if board in [BDC, BDM, BDS]:
+    if board in [Board.Circuit, Board.Middle, Board.Spacer]:
         pass
         # kad.add_text( (120, 24), 0, f'  Mozza62{bname} by orihikarna 2023/05/09  ',
         #     'F.Cu', (1.2, 1.2), 0.2, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER )
 
     # place & route
-    if board in [BDC]:
+    if board in [Board.Circuit]:
         place_key_switches()
         place_mods()
         save_mod_props()
@@ -2058,27 +2047,36 @@ def main():
         remove_temporary_vias()
         add_boundary_gnd_vias()
 
-    global mod_props, org
+    global mod_props, board_org
     mod_props = load_mod_props()
-    org = vec2.add(mod_props['SW54'][0], vec2.scale(unit, (-1.1, 0.27)))
+    board_org = vec2.add(mod_props['SW54'][0], vec2.scale(keysw_unit, (-1.1, 0.27)))
 
     set_refs(board)
     draw_edge_cuts(board)
     place_screw_holes(board)
+
+    # draw bottom patterns
+    if board in [Board.Bottom]:
+        draw_bottom()
+
     # logo
     for mod, angle in [('G1', -30), ('G2', 150)]:
         if kad.get_mod(mod) is not None:
             kad.move_mods((175, 35), 0, [(mod, (0, 0), angle)])
 
-    # zones
-    if board in [BDC, BDB]:
-        offset = (40, 18.8)
-        add_zone('GND', 'F.Cu', kad.make_rect((PCB_Width, PCB_Height), offset))
-        add_zone('GND', 'B.Cu', kad.make_rect((PCB_Width, PCB_Height), offset))
+    # board size
+    left = int(math.floor(board_org[0]-Lx-Ly))
+    rght = int(math.ceil(board_org[0]+Lx+Ly))
+    top = int(math.floor(board_org[1]-2*Ly))
+    btm = int(math.ceil(board_org[1]+Ly))
+    width = rght - left
+    height = btm - top
+    # print(f'PCB size = {width}x{height}')
 
-    # draw top & bottom patterns
-    if board in [BDB]:
-        draw_bottom()
+    # zones
+    rect = list(kad.make_rect((width, height), (left, top)))
+    for layer in Cu_layers:
+        add_zone('GND', layer, rect)
 
 
 if __name__ == '__main__':
