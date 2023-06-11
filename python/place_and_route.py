@@ -2023,11 +2023,6 @@ def main():
             break
     assert board != None
 
-    if board in [Board.Circuit, Board.Middle, Board.Spacer]:
-        pass
-        # kad.add_text( (120, 24), 0, f'  Mozza62{bname} by orihikarna 2023/05/09  ',
-        #     'F.Cu', (1.2, 1.2), 0.2, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER )
-
     # place & route
     if board in [Board.Circuit]:
         place_key_switches()
@@ -2077,6 +2072,11 @@ def main():
     rect = list(kad.make_rect((width, height), (left, top)))
     for layer in Cu_layers:
         add_zone('GND', layer, rect)
+
+    # name
+    if board in [Board.Circuit, Board.Middle, Board.Spacer]:
+        kad.add_text(((left+rght)/2, btm - 5), 0, f'  Mozza62 {boardname} by orihikarna\n ver1.0 2023/06/18  ',
+                     'F.Silkscreen', (2.0, 2.0), 0.4, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
 
 
 if __name__ == '__main__':
