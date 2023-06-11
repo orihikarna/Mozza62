@@ -422,14 +422,16 @@ def draw_bottom():
     layer = 'F.Cu'
 
     if True: # rulearea (keepout)
-        r = 3
-        d = 3
-        def add_onigiri_area(pos, angle):
+        div = 12
+        div = 3
+        r = Ly/div * 0.15
+        d = Ly/div * 0.25
+        def add_onigiri_area(pos, angle, layer):
             pnts = []
             for idx, base0 in enumerate([0, 120, 240]):
                 base = base0 + angle
+                ctr = vec2.scale(d, vec2.rotate(base + 60))
                 for deg in range(0, 120 + 1, 12):
-                    ctr = vec2.scale(d, vec2.rotate(base + 60))
                     rad = vec2.scale(r, vec2.rotate(base + deg))
                     pnts.append(vec2.add(ctr, rad))
             pnts = [vec2.add(pos, pt) for pt in pnts]
@@ -444,11 +446,12 @@ def draw_bottom():
                 if idx == 0:
                     continue
                 poly.Append(pt[0], pt[1])
-        for y in range(-5, 4):
-            for x in range(-10, 11):
+        for y in range(-2*div, div+1):
+            for x in range(-4*div, 4*div+1):
                 sign = ((x+y+100) % 2) * 2 - 1
-                pos = vec2.add(org, (Lx/3/2 * x, +Ly/24 * sign + Ly/3*y))
-                add_onigiri_area(pos, 90 * sign)
+                pos = vec2.add(org, (Lx/div/2 * x, d/3 * sign + Ly/div*(y - 0.5)))
+                layer = Cu_layers[(x + y) % 2]
+                add_onigiri_area(pos, 90 * sign, layer)
         return
 
     for t in range(0, int(Ly*3/2), 3):
