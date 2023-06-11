@@ -2062,7 +2062,7 @@ def main():
     # logo
     for mod, angle in [('G1', -30), ('G2', 150)]:
         if kad.get_mod(mod) is not None:
-            kad.move_mods((175, 35), 0, [(mod, (0, 0), angle)])
+            kad.move_mods((175.5, 34.5), 0, [(mod, (0, 0), angle)])
 
     # board size
     left = int(math.floor(board_org[0]-Lx-Ly))
