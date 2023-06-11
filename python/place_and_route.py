@@ -423,9 +423,9 @@ def draw_bottom():
 
     if True: # rulearea (keepout)
         div = 12
-        div = 3
-        r = Ly/div * 0.15
-        d = Ly/div * 0.25
+        # div = 3
+        r = Ly/div * 0.12
+        d = Ly/div * 0.24
         def add_onigiri_area(pos, angle, layer):
             pnts = []
             for idx, base0 in enumerate([0, 120, 240]):
@@ -448,9 +448,12 @@ def draw_bottom():
                 poly.Append(pt[0], pt[1])
         for y in range(-2*div, div+1):
             for x in range(-4*div, 4*div+1):
-                sign = ((x+y+100) % 2) * 2 - 1
-                pos = vec2.add(org, (Lx/div/2 * x, d/3 * sign + Ly/div*(y - 0.5)))
-                layer = Cu_layers[(x + y) % 2]
+                parity = (x + y) % 2
+                sign = parity * 2 - 1
+                # pos = vec2.add(org, (Lx/div/2 * x, d/3 * sign + Ly/div*(y - 0.5)))
+                pos = vec2.add(org, (Lx/div/2 * x, Ly/div/3*parity + Ly/div*(y - 0.5)))
+                layer = Cu_layers[parity]
+                # layer = Cu_layers[0]
                 add_onigiri_area(pos, 90 * sign, layer)
         return
 
