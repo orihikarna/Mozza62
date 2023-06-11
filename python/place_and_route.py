@@ -2,7 +2,7 @@ import pcbnew
 import json
 import math
 import re
-from kadpy import kad, pnt, vec2, mat2, distance as dist
+from kadpy import kad, pnt, vec2, mat2
 
 import importlib
 
@@ -13,8 +13,6 @@ importlib.reload(mat2)
 
 kad.UnitMM = True
 kad.PointDigits = 3
-
-pcb = pcbnew.GetBoard()
 
 # alias
 Strt = kad.Straight  # Straight
@@ -33,9 +31,6 @@ Spline = kad.Spline
 VIA_Size = [(1.2, 0.6), (1.15, 0.5), (0.92, 0.4), (0.8, 0.3)]
 
 mod_props = {}
-
-PCB_Width = 189
-PCB_Height = 132
 
 keys = {
     '11': [91.452, -41.958, 16.910, 15.480, -21.2],  # r
@@ -100,6 +95,38 @@ Ly = unit * 2.97 * (math.sqrt(3)/2)
 org = None
 
 
+# Board Type
+# class Board(Enum):
+BDT = 0  # Top
+BDS = 1  # Spacer
+BDC = 4  # Circuit
+BDM = 2  # Middle
+BDB = 3  # Bottom
+
+PCB_Width = 189
+PCB_Height = 132
+
+# Edge.Cuts size
+Edge_CX, Edge_CY = 0, 0
+Edge_W, Edge_H = 0, 0
+
+Cu_layers = ['F.Cu', 'B.Cu']
+
+pcb = pcbnew.GetBoard()
+
+GND = pcb.FindNet('GND')
+VCC = pcb.FindNet('3V3')
+
+via_size_pwr = VIA_Size[1]
+via_size_dat = VIA_Size[2]
+via_size_gnd = VIA_Size[3]
+
+# switch positions
+sw_pos_angles = []
+
+# region switch prop
+
+
 def is_SW(idx: str):
     return idx not in [SW_RJ45, SW_RotEnc]
 
@@ -127,35 +154,21 @@ def get_btm_row_idx(cidx: int):
         return 3
     else:
         return 4
-
-
-# Board Type
-# class Board(Enum):
-BDT = 0  # Top
-BDS = 1  # Spacer
-BDC = 4  # Circuit
-BDM = 2  # Middle
-BDB = 3  # Bottom
-
-# Edge.Cuts size
-Edge_CX, Edge_CY = 0, 0
-Edge_W, Edge_H = 0, 0
+# endregion
 
 
 def add_zone(net_name, layer_name, rect):
     layer = pcb.GetLayerID(layer_name)
-    zone, poly = kad.add_zone(rect, layer, net_name)
-    #
+    zone, _ = kad.add_zone(rect, layer, net_name)
+
     settings = pcb.GetZoneSettings()
     settings.m_ZoneClearance = pcbnew.FromMils(12)
     pcb.SetZoneSettings(settings)
-    #
+
     zone.SetMinThickness(pcbnew.FromMils(16))
     # zone.SetThermalReliefGap( pcbnew.FromMils( 12 ) )
     zone.SetThermalReliefSpokeWidth(pcbnew.FromMils(16))
     # zone.Hatch()
-    #
-    # polys.append( poly )
 
 
 def draw_edge_cuts(board):
@@ -421,11 +434,12 @@ def draw_edge_cuts(board):
 def draw_bottom():
     layer = 'F.Cu'
 
-    if True: # rulearea (keepout)
+    if True:  # rulearea (keepout)
         div = 12
         # div = 3
-        r = Ly/div * 0.12
-        d = Ly/div * 0.24
+        r = Ly/div * 0.14
+        d = Ly/div * 0.26
+
         def add_onigiri_area(pos, angle, layer):
             pnts = []
             for idx, base0 in enumerate([0, 120, 240]):
@@ -459,7 +473,7 @@ def draw_bottom():
 
     for t in range(0, int(Ly*3/2), 3):
         s = t / (Ly*3/2)
-        width = (0.2 + 0.8 * (1-abs(1 -2*s))) * 2
+        width = (0.2 + 0.8 * (1-abs(1 - 2*s))) * 2
         Radius = max(Ly - t, 0)
         cnrs = [
             ((vec2.add(org, vec2.scale(Ly*3/2 - t, vec2.rotate(-150), (-Lx/4, -Ly/2))), +120), Round, [Radius]),
@@ -484,232 +498,8 @@ def draw_bottom():
             # _ctr = vec2.scale(t, vec, _ctr)
             _pos = vec2.scale(Radius - t, vec2.rotate(inits[idx]), _ctr)
             kad.add_arc(_ctr, _pos, angles[idx], layer, width)
-    return
-    if board in [BDT, BDS]:  # keysw holes
-        length = 13.94 if board == BDT else 14.80
-        for sw_pos, angle in sw_pos_angles:
-            corners = []
-            for i in range(4):
-                deg = i * 90 + angle
-                pos = vec2.scale(length / 2.0, vec2.rotate(deg), sw_pos)
-                # corners.append( [(pos, deg + 90), Round, [0.9]] )
-                corners.append([(pos, deg + 90), BezierRound, [0.9]])
-            kad.draw_closed_corners(corners, 'Edge.Cuts', 0.1)
-
-    if board == BDS:
-        return
-
-    if False:  # screw holes
-        for prm in holes:
-            x, y, angle = prm
-            ctr = (x, y)
-            kad.add_arc(ctr, vec2.add(ctr, (2.5, 0)), 360, 'Edge.Cuts', 0.1)
-        return
-
-    ctr_pos_angle_vec = []
-    anchors = [
-        (28, 125),
-        (27, 110),
-        (1, -3),
-        (5, +3),
-        (9, -3),
-        (13, +3),
-        (17, 24),
-        (20, 26),
-        (24, 28),
-    ]
-    for n in range(1, len(anchors)):
-        anchor_a = anchors[n-1]
-        anchor_b = anchors[n]
-        pos_a, angle_a = sw_pos_angles[anchor_a[0]]
-        pos_b, angle_b = sw_pos_angles[anchor_b[0]]
-        angle_a += anchor_a[1]
-        angle_b += anchor_b[1]
-        if abs(angle_a - angle_b) > 1:
-            vec_a = vec2.rotate(angle_a + 90)
-            vec_b = vec2.rotate(angle_b + 90)
-            ctr, _, _ = vec2.find_intersection(pos_a, vec_a, pos_b, vec_b)
-            if n == 1:
-                angle_a += (angle_a - angle_b) * 1.1
-            elif n + 1 == len(anchors):
-                angle_b += (angle_b - angle_a) * 1.5
-            if False:
-                layer = 'F.Fab'
-                width = 1.0
-                # print( ctr, ka, kb )
-                kad.add_line(ctr, pos_a, layer, width)
-                kad.add_line(ctr, pos_b, layer, width)
-        else:
-            ctr = None
-        ctr_pos_angle_vec.append((ctr, pos_a, angle_a, pos_b, angle_b))
-    # return
-
-    # read distance data
-    board_type = {BDT: 'T', BDB: 'B'}[board]
-    dist_image = load_distance_image('/Users/akihiro/repos/Hermit/Hermit{}/Edge_Fill.txt'.format(board_type))
-
-    # draw lines
-    pos_dummy = [None, None]
-    pitch = 2.0
-    nyrange = range(-559, 888, 16)
-    width0, width1 = 0.3, 1.3
-    for ny in nyrange:
-        y = ny * 0.1
-        uy = float(ny - nyrange[0]) / float(nyrange[-1] - nyrange[0])
-        if True:
-            if uy < 0.5:
-                uy = 2 * uy
-            else:
-                uy = 2 * (1 - uy)
-        # base position
-        idx_base = 2
-        anchor_base = anchors[idx_base]
-        pos_base, angle_base = sw_pos_angles[anchor_base[0]]
-        angle_base += anchor_base[1]
-        pos_base = vec2.mult(mat2.rotate(-angle_base), (0, y), pos_base)
-        # control points for one horizontal line
-        pos_angles = [(pos_base, angle_base)]
-        for dir in [-1, +1]:
-            idx = idx_base
-            pos_a, angle_a = pos_base, angle_base
-            while 0 < idx and idx < len(ctr_pos_angle_vec):
-                idx2 = idx + dir
-                if dir == -1:
-                    ctr, _, angle_b, _, angle_a = ctr_pos_angle_vec[idx2]
-                else:  # dir == +1:
-                    ctr, _, angle_a, _, angle_b = ctr_pos_angle_vec[idx]
-                idx = idx2
-                #
-                vec_b = vec2.rotate(angle_b + 90)
-                pos_b = vec2.scale(-vec2.distance(pos_a, ctr), vec_b, ctr)
-                pos_angles.append((pos_b, angle_b))
-                pos_a = pos_b
-            if dir == -1:
-                pos_angles.reverse()
-
-        # one horizontal line with nearly constant pitch
-        curv = []
-        for idx, (pos_b, angle_b) in enumerate(pos_angles):
-            if idx == 0:
-                curv.append(pos_b)
-                continue
-            if False:
-                curv.append(pos_b)
-            else:
-                pos_a, angle_a = pos_angles[idx-1]
-                # pnts = kad.calc_bezier_round_points( pos_a, vec2.rotate( angle_a ), pos_b, vec2.rotate( angle_b + 180 ), 8 )
-                pnts = kad.calc_bezier_corner_points(pos_a, vec2.rotate(angle_a), pos_b, vec2.rotate(angle_b + 180), pitch, ratio=0.8)
-                for idx in range(1, len(pnts)):
-                    curv.append(pnts[idx])
-
-        gap = 0.5
-        if True:  # divide if close to the edge
-            div = 10
-            thick = width1 / 2.0 + gap
-            curv2 = []
-            for idx, pnt in enumerate(curv):
-                dist = get_distance(dist_image, pnt)
-                if idx == 0:
-                    prev_pnt = pnt
-                    prev_dist = dist
-                    curv2.append(pnt)
-                    continue
-                if max(dist, prev_dist) > -pitch and min(dist, prev_dist) < thick:
-                    vec = vec2.sub(pnt, prev_pnt)
-                    for i in range(1, div):
-                        curv2.append(vec2.scale(i / float(div), vec, prev_pnt))
-                curv2.append(pnt)
-                prev_pnt = pnt
-                prev_dist = dist
-            curv = curv2
-
-        # draw horizontal line avoiding key / screw holes
-        w_thin = 0.25
-        thick_thin = w_thin / 2.0 + gap
-        for lidx, layer in enumerate(['F.Cu', 'B.Cu']):
-            if lidx == 0:
-                w = width0 + (width1 - width0) * uy
-            else:
-                w = width1 + (width0 - width1) * uy
-            thick = w / 2.0 + gap
-            num_lines = int(math.ceil(w / (w_thin * 0.96)))
-            line_sep = (w - w_thin) / (num_lines - 1)
-            line_lefts = [None for _ in range(num_lines)]
-            line_rights = [None for _ in range(num_lines)]
-            last_pnt = [None for _ in range(num_lines)]
-            for cidx in range(1, len(curv)):
-                pnt_a = curv[cidx-1]
-                pnt_b = curv[cidx]
-                if False:
-                    kad.add_line(pnt_a, pnt_b, layer, w)
-                    # kad.add_arc( pnt_a, vec2.add( pnt_a, (w / 2, 0) ), 360, layer, 0.1 )
-                    continue
-                vec_ba = vec2.sub(pnt_b, pnt_a)
-                unit_ba = vec2.normalize(vec_ba)[0]
-                norm_ba = (unit_ba[1], -unit_ba[0])
-                # multiple horizontal lines
-                single = True
-                lines = []
-                for m in range(num_lines):
-                    delta = line_sep * m + w_thin / 2.0 - w / 2.0
-                    q0 = vec2.scale(delta, norm_ba, pnt_a)
-                    q1 = vec2.scale(delta, norm_ba, pnt_b)
-                    d0 = get_distance(dist_image, q0)
-                    d1 = get_distance(dist_image, q1)
-                    if min(d0, d1) < thick:
-                        single = False
-                    if d0 >= thick_thin and d1 >= thick_thin:  # single line
-                        pass
-                    elif d0 >= thick_thin:
-                        while d1 < thick_thin - 0.01:
-                            diff = thick_thin - d1
-                            q1 = vec2.scale(-diff * 0.94, unit_ba, q1)
-                            d1 = get_distance(dist_image, q1)
-                        connect_line_ends(line_lefts, line_rights, cidx, q1, m, layer, w_thin)
-                    elif d1 >= thick_thin:
-                        while d0 < thick_thin - 0.01:
-                            diff = thick_thin - d0
-                            q0 = vec2.scale(+diff * 0.94, unit_ba, q0)
-                            d0 = get_distance(dist_image, q0)
-                        connect_line_ends(line_rights, line_lefts, cidx, q0, m, layer, w_thin)
-                    else:  # no line
-                        q0 = None
-                        q1 = None
-                    if q0 and q1:
-                        lines.append((q0, q1))
-                        if last_pnt[m]:
-                            d = vec2.distance(last_pnt[m], q0)
-                            if 0.01 < d and d < 0.8:  # close tiny gap
-                                kad.add_line(last_pnt[m], q0, layer, w_thin)
-                        last_pnt[m] = q1
-
-                if single:
-                    kad.add_line(pnt_a, pnt_b, layer, w)
-                    if not pos_dummy[lidx] and w > 1.1:
-                        pos_dummy[lidx] = pnt_a
-                else:
-                    for (q0, q1) in lines:
-                        kad.add_line(q0, q1, layer, w_thin)
-                # clear line_ends when single or no line
-                if single or len(lines) == 0:
-                    for m in range(num_lines):
-                        line_lefts[m] = None
-                        line_rights[m] = None
     kad.set_mod_pos_angle('P1', pos_dummy[0], 0)
     kad.set_mod_pos_angle('P2', pos_dummy[1], 0)
-
-
-Cu_layers = ['F.Cu', 'B.Cu']
-
-GND = pcb.FindNet('GND')
-VCC = pcb.FindNet('3V3')
-
-via_size_pwr = VIA_Size[1]
-via_size_dat = VIA_Size[2]
-via_size_gnd = VIA_Size[3]
-
-# switch positions
-sw_pos_angles = []
 
 
 # Set key positios
