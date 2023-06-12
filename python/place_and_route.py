@@ -2,7 +2,7 @@ import importlib
 import json
 import math
 import re
-from enum import Enum
+from enum import IntEnum
 
 import pcbnew
 from kadpy import kad, mat2, pnt, vec2
@@ -94,7 +94,7 @@ board_org = None
 # endregion
 
 
-class Board(Enum):
+class Board(IntEnum):
     Top = 0
     Spacer = 1
     Circuit = 4
@@ -214,7 +214,7 @@ def draw_edge_cuts(board):
         if not is_SW(idx):
             continue
         mod_sw = f'SW{idx}'
-        for bd, sz, r in [(Board.Top, 13.96, 0.9)]:  # , (Board.Spacer, 15, 1.6)]:
+        for bd, sz, r in [(Board.Top, 13.96, 0.9), (Board.Spacer, 15, 1.2)]:
             hsz = sz / 2
             cnrs = [
                 (mod_sw, (0, -hsz),   0, BezierRound, [r]),
@@ -347,7 +347,7 @@ def draw_edge_cuts(board):
         ('SW13', (-d_sw+0.5, 9), 90, BezierRound, [r]),
         ('SW21', (d_sw, 0), 90, BezierRound, [r]),
     ]
-    midcnrs_set.append((make_corners(cnrs), [Board.Spacer]))
+    # midcnrs_set.append((make_corners(cnrs), [Board.Spacer]))
     # endregion
     d = 2.4
     hsz = 8.5
@@ -2040,11 +2040,13 @@ def main():
         wire_col_horz_lines()
         wire_exp_row_vert_col_horz()
         remove_temporary_vias()
-        add_boundary_gnd_vias()
 
     global mod_props, board_org
     mod_props = load_mod_props()
     board_org = vec2.add(mod_props['SW54'][0], vec2.scale(keysw_unit, (-1.1, 0.27)))
+
+    if board in [Board.Circuit]:
+        add_boundary_gnd_vias()
 
     set_refs(board)
     draw_edge_cuts(board)
