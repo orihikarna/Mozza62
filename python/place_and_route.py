@@ -422,42 +422,53 @@ def draw_edge_cuts(board):
                 kad.add_arc(ctr, pos, 360, layer, width * 2)
 
 
-def draw_bottom():
-    if True:  # rulearea (keepout)
-        div = 16
-        # div = 3
-        r = Ly/div * 0.14
-        d = Ly/div * 0.26
+def add_rule_area(pnts, net, layer):
+    pnts = [kad.pnt.to_unit(vec2.round(pt, kad.PointDigits), kad.UnitMM) for pt in pnts]
+    area = pcb.AddArea(None, net.GetNetCode(), pcb.GetLayerID(layer), pnts[0], pcbnew.ZONE_BORDER_DISPLAY_STYLE_DIAGONAL_EDGE)
+    area.SetIsRuleArea(True)
+    # area.SetDoNotAllowTracks(no_tracks)
+    # area.SetDoNotAllowVias(no_vias)
+    area.SetDoNotAllowCopperPour(True)
+    poly = area.Outline()
+    for idx, pt in enumerate(pnts):
+        if idx == 0:
+            continue
+        poly.Append(pt[0], pt[1])
 
-        def add_onigiri_area(pos, angle, layer):
+def draw_rule_area(board):
+    if True:  # rulearea (keepout)
+        if board == Board.Bottom:
+            div = 16
+        elif board == Board.Middle:
+            div = 8
+        elif board == Board.Spacer:
+            div = 12
+        else:
+            assert False
+        r = Ly/div * 0.12
+        d = Ly/div * 0.24
+        layers = [0]
+
+        def make_onigiri_area(pos, angle):
             pnts = []
-            for idx, base0 in enumerate([0, 120, 240]):
+            for base0 in [0, 120, 240]:
                 base = base0 + angle
                 ctr = vec2.scale(d, vec2.rotate(base + 60))
                 for deg in range(0, 120 + 1, 12):
                     rad = vec2.scale(r, vec2.rotate(base + deg))
                     pnts.append(vec2.add(ctr, rad))
             pnts = [vec2.add(pos, pt) for pt in pnts]
-            pnts = [kad.pnt.to_unit(vec2.round(pt, kad.PointDigits), kad.UnitMM) for pt in pnts]
-            area = pcb.AddArea(None, GND.GetNetCode(), pcb.GetLayerID(layer), pnts[0], pcbnew.ZONE_BORDER_DISPLAY_STYLE_DIAGONAL_EDGE)
-            area.SetIsRuleArea(True)
-            # area.SetDoNotAllowTracks(no_tracks)
-            # area.SetDoNotAllowVias(no_vias)
-            area.SetDoNotAllowCopperPour(True)
-            poly = area.Outline()
-            for idx, pt in enumerate(pnts):
-                if idx == 0:
-                    continue
-                poly.Append(pt[0], pt[1])
+            return pnts
+
         for y in range(-2*div, div+2):
             for x in range(-4*div, 4*div+1):
                 parity = (x + y) % 2
                 sign = parity * 2 - 1
-                # pos = vec2.add(board_org, (Lx/div/2 * x, d/3 * sign + Ly/div*(y - 0.5)))
                 pos = vec2.add(board_org, (Lx/div/2 * x, Ly/div/3*parity + Ly/div*(y - 0.5)))
-                layer = Cu_layers[parity]
-                # layer = Cu_layers[0]
-                add_onigiri_area(pos, 90 * sign, layer)
+                pnts = make_onigiri_area(pos, 90 * sign)
+                for _layer in layers:
+                    layer = Cu_layers[parity ^ _layer]
+                    add_rule_area(pnts, GND, layer)
         return
 
     layer = 'F.Cu'
@@ -2052,9 +2063,9 @@ def main():
     draw_edge_cuts(board)
     place_screw_holes(board)
 
-    # draw bottom patterns
-    if board in [Board.Bottom]:
-        draw_bottom()
+    # draw rule area
+    if board in [Board.Spacer, Board.Middle, Board.Bottom]:
+        draw_rule_area(board)
 
     # logo
     for mod, angle in [('G1', -30), ('G2', 150)]:
@@ -2077,7 +2088,8 @@ def main():
 
     # name
     if board in [Board.Circuit, Board.Middle, Board.Spacer]:
-        kad.add_text(((left+rght)/2, btm - 5), 0, f'  Mozza62 {boardname} by orihikarna\n ver1.0 2023/06/18  ',
+        kad.add_text((board_org[0], btm - 5), 0,
+                     f'Mozza62 {boardname} by orihikarna\n ver1.0 2023/06/18',
                      'F.Silkscreen', (2.0, 2.0), 0.4, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
 
 
