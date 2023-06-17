@@ -356,7 +356,7 @@ def draw_edge_cuts(board):
     r = 2
     d_dbnc = 3
     cnrs = [
-        ('SW21', (0, d_sw), 180, BezierRound, [16]),
+        ('SW21', (0, d_sw), 180, BezierRound, [r]),
         ('SW41', (0, d_sw), 180, BezierRound, [r]),
         ('SW51', (0, d_sw), 180, BezierRound, [r]),
         ('SW61', (4, d_sw+r+1.5), 270, BezierRound, [r]),
@@ -384,9 +384,11 @@ def draw_edge_cuts(board):
         # left
         ('SW13', (d_sw, 0), 90, BezierRound, [r]),
         # top left
-        (mod_rj, (9, 12.6), 0, BezierRound, [r]),
+        (mod_rj, (9.5, 13), 0, BezierRound, [r]),
         ('C3', (0, -1.5), 0, BezierRound, [r]),
-        # (mod_rj, (7, -4), 120, BezierRound, [r]),
+        (mod_rj, (9.5, 5), 180, BezierRound, [r]),
+        (mod_rj, (7, 2), 90, BezierRound, [r]),
+        (mod_rj, (0, -10), 150, BezierRound, [r]),
     ]
     midcnrs_set.append((make_corners(cnrs), [Board.Middle]))
     # endregion
@@ -434,6 +436,7 @@ def add_rule_area(pnts, net, layer):
         if idx == 0:
             continue
         poly.Append(pt[0], pt[1])
+
 
 def draw_rule_area(board):
     if True:  # rulearea (keepout)
