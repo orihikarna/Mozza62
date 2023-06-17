@@ -265,6 +265,7 @@ def calc_pos_from_pad(mod_name, pad_name, offset_vec):
     pos_relative = calc_relative_vec(mod_name, offset_vec, pos_pad)
     return pos_relative
 
+
 def calc_pos_from_mod(mod_name, offset_vec):
     pos_mod = get_mod_pos(mod_name)
     pos_relative = calc_relative_vec(mod_name, offset_vec, pos_mod)
@@ -694,19 +695,31 @@ def draw_closed_corners(corners, layer, width):
 # zones
 
 
-def add_zone(rect, layer, net_name='GND'):
-    pnts = list(map(lambda pt: pnt.to_unit(vec2.round(pt, PointDigits), UnitMM), rect))
-    net = pcb.FindNet(net_name).GetNetCode()
-    zone = pcb.AddArea(None, net, layer, pnts[0], pcbnew.ZONE_BORDER_DISPLAY_STYLE_DIAGONAL_EDGE)
-    poly = zone.Outline()
+def _add_area(pnts, layer, net_name):
+    net = -1 if net_name is None else pcb.FindNet(net_name).GetNetCode()
+    pnts = [pnt.to_unit(vec2.round(pt, PointDigits), UnitMM) for pt in pnts]
+    area = pcb.AddArea(None, net, pcb.GetLayerID(layer), pnts[0], pcbnew.ZONE_BORDER_DISPLAY_STYLE_DIAGONAL_EDGE)
+    poly = area.Outline()
     for idx, pt in enumerate(pnts):
         if idx == 0:
             continue
         poly.Append(pt[0], pt[1])
-    return zone, poly
+    return area
 
 
-##
+def add_zone(rect, layer, net_name='GND'):
+    area = _add_area(rect, layer, net_name)
+    return area
+
+
+def add_rule_area(pnts, layer):
+    area = _add_area(pnts, layer, None)
+    area.SetIsRuleArea(True)
+    # area.SetDoNotAllowTracks(no_tracks)
+    # area.SetDoNotAllowVias(no_vias)
+    area.SetDoNotAllowCopperPour(True)
+
+
 def make_rect(size, offset=(0, 0)):
     FourCorners = [(0, 0), (1, 0), (1, 1), (0, 1)]
-    return map(lambda pt: vec2.add((size[0] * pt[0], size[1] * pt[1]), offset), FourCorners)
+    return [vec2.add((size[0] * cnr[0], size[1] * cnr[1]), offset) for cnr in FourCorners]

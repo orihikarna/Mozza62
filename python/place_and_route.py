@@ -147,16 +147,15 @@ def get_btm_row_idx(cidx: int):
 
 
 def add_zone(net_name, layer_name, rect):
-    layer = pcb.GetLayerID(layer_name)
-    zone, _ = kad.add_zone(rect, layer, net_name)
+    settings = pcb.GetZoneSettings()
+    settings.m_ZoneClearance = pcbnew.FromMils(12)
+    pcb.SetZoneSettings(settings)
+
+    zone = kad.add_zone(rect, layer_name, net_name)
     zone.SetMinThickness(pcbnew.FromMils(16))
     # zone.SetThermalReliefGap( pcbnew.FromMils( 12 ) )
     zone.SetThermalReliefSpokeWidth(pcbnew.FromMils(16))
     # zone.Hatch()
-
-    settings = pcb.GetZoneSettings()
-    settings.m_ZoneClearance = pcbnew.FromMils(12)
-    pcb.SetZoneSettings(settings)
 
 
 def draw_edge_cuts(board):
@@ -214,7 +213,7 @@ def draw_edge_cuts(board):
         if not is_SW(idx):
             continue
         mod_sw = f'SW{idx}'
-        for bd, sz, r in [(Board.Top, 13.96, 0.9), (Board.Spacer, 15, 1.2)]:
+        for bd, sz, r in [(Board.Top, 13.96, 0.9)]:#, (Board.Spacer, 15, 1.2)]:
             hsz = sz / 2
             cnrs = [
                 (mod_sw, (0, -hsz),   0, BezierRound, [r]),
@@ -291,7 +290,7 @@ def draw_edge_cuts(board):
     midcnrs_set.append((make_corners(cnrs), [Board.Middle]))
     #
     r = 2
-    w, h = 9, 7.6
+    w, h = 9.4, 7.6
     cnrs = [
         (mod_re, (0, -h),   0, BezierRound, [r]),
         (mod_re, (+w, 0),  90, BezierRound, [r]),
@@ -347,7 +346,7 @@ def draw_edge_cuts(board):
         ('SW13', (-d_sw+0.5, 9), 90, BezierRound, [r]),
         ('SW21', (d_sw, 0), 90, BezierRound, [r]),
     ]
-    # midcnrs_set.append((make_corners(cnrs), [Board.Spacer]))
+    midcnrs_set.append((make_corners(cnrs), [Board.Spacer]))
     # endregion
     d = 2.4
     hsz = 8.5
@@ -393,7 +392,7 @@ def draw_edge_cuts(board):
     midcnrs_set.append((make_corners(cnrs), [Board.Middle]))
     # endregion
     # region thumb key hole
-    for bd, d, r in [(Board.Middle, 2.4, 4)]:  # , (Board.Spacer, 0, 1.6)]:
+    for bd, d, r in [(Board.Middle, 2.4, 4), (Board.Spacer, 0, 1.6)]:
         d_sw = hsz + d
         cnrs = [
             ('SW15', (0, d_sw), 180, BezierRound, [r]),
@@ -424,24 +423,13 @@ def draw_edge_cuts(board):
                 kad.add_arc(ctr, pos, 360, layer, width * 2)
 
 
-def add_rule_area(pnts, net, layer):
-    pnts = [kad.pnt.to_unit(vec2.round(pt, kad.PointDigits), kad.UnitMM) for pt in pnts]
-    area = pcb.AddArea(None, net.GetNetCode(), pcb.GetLayerID(layer), pnts[0], pcbnew.ZONE_BORDER_DISPLAY_STYLE_DIAGONAL_EDGE)
-    area.SetIsRuleArea(True)
-    # area.SetDoNotAllowTracks(no_tracks)
-    # area.SetDoNotAllowVias(no_vias)
-    area.SetDoNotAllowCopperPour(True)
-    poly = area.Outline()
-    for idx, pt in enumerate(pnts):
-        if idx == 0:
-            continue
-        poly.Append(pt[0], pt[1])
-
-
 def draw_rule_area(board):
     if True:  # rulearea (keepout)
+        layers = [0]
         if board == Board.Bottom:
             div = 16
+            # div = 4
+            # layers = [0, 1]
         elif board == Board.Middle:
             div = 8
         elif board == Board.Spacer:
@@ -450,7 +438,6 @@ def draw_rule_area(board):
             assert False
         r = Ly/div * 0.12
         d = Ly/div * 0.24
-        layers = [0]
 
         def make_onigiri_area(pos, angle):
             pnts = []
@@ -471,7 +458,7 @@ def draw_rule_area(board):
                 pnts = make_onigiri_area(pos, 90 * sign)
                 for _layer in layers:
                     layer = Cu_layers[parity ^ _layer]
-                    add_rule_area(pnts, GND, layer)
+                    kad.add_rule_area(pnts, layer)
         return
 
     layer = 'F.Cu'
@@ -670,6 +657,8 @@ def place_screw_holes(board):
             ctr = vec2.add(board_org, (x * sign, y))
             hole = 'H{}'.format(2 * idx + idx2 + 1)
             kad.set_mod_pos_angle(hole, ctr, angle * sign)
+            if board == Board.Top:
+                kad.add_arc(ctr, vec2.add(ctr, (1.1, 0)), 360, 'Edge.Cuts', 0.12)
 
 
 def add_boundary_gnd_vias():
@@ -2082,10 +2071,10 @@ def main():
     btm = int(math.ceil(board_org[1]+Ly))
     width = rght - left
     height = btm - top
-    # print(f'PCB size = {width}x{height}')
+    print(f'PCB size = {width}x{height}')
 
     # zones
-    rect = list(kad.make_rect((width, height), (left, top)))
+    rect = kad.make_rect((width, height), (left, top))
     for layer in Cu_layers:
         add_zone('GND', layer, rect)
 
