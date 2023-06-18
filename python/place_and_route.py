@@ -213,7 +213,7 @@ def draw_edge_cuts(board):
         if not is_SW(idx):
             continue
         mod_sw = f'SW{idx}'
-        for bd, sz, r in [(Board.Top, 13.96, 0.9)]:#, (Board.Spacer, 15, 1.2)]:
+        for bd, sz, r in [(Board.Top, 13.96, 0.9)]:  # , (Board.Spacer, 15, 1.2)]:
             hsz = sz / 2
             cnrs = [
                 (mod_sw, (0, -hsz),   0, BezierRound, [r]),
@@ -2016,7 +2016,6 @@ def main():
     # print( f'{filename = }' )
     m = re.search(r'/Mozza([^/]*)\.kicad_pcb', filename)
     assert m
-
     boardname = m.group(1)
     # print( f'{boardname = }' )
 
@@ -2072,7 +2071,7 @@ def main():
     btm = int(math.ceil(board_org[1]+Ly))
     width = rght - left
     height = btm - top
-    print(f'PCB size = {width}x{height}')
+    print(f'PCB size = {width}x{height} ({2*(Lx+Ly):.4f} x {3*Ly:.4f})')
 
     # zones
     rect = kad.make_rect((width, height), (left, top))
@@ -2087,8 +2086,15 @@ def main():
     if board == Board.Circuit:
         kad.add_text((board_org[0] - 15, btm - 13), -6, 'R*1 = 10k\nR*2 = 4k7\nCD* = 33n', 'B.Silkscreen', (1.2, 1.2), 0.3)
 
+
 if __name__ == '__main__':
     kad.removeDrawings()
     kad.removeTracksAndVias()
     main()
     pcbnew.Refresh()
+
+# Plot to DXF
+# SVG to DXF
+# https://anyconv.com/ja/svg-to-dxf-konbata/
+# Confirm DXF on
+# https://viewer.autodesk.com/designviews
