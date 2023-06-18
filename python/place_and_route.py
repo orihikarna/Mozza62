@@ -428,7 +428,7 @@ def draw_rule_area(board):
         layers = [0]
         if board == Board.Bottom:
             div = 16
-            # div = 4
+            div = 3
             # layers = [0, 1]
         elif board == Board.Middle:
             div = 8
@@ -436,8 +436,8 @@ def draw_rule_area(board):
             div = 12
         else:
             assert False
-        r = Ly/div * 0.12
-        d = Ly/div * 0.24
+        d = Ly/div * 0.16
+        r = Ly/div * 0.18
 
         def make_onigiri_area(pos, angle):
             pnts = []
