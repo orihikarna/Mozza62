@@ -688,7 +688,7 @@ def add_boundary_gnd_vias():
         pnts.append(vec2.scale(Ly - dist, vec2.rotate(90-th), (-Lx, 0)))
     # add vias
     for pnt in pnts:
-        kad.add_via(vec2.add(board_org, pnt), GND, via_size_gnd)
+        kad.add_via(vec2.add(board_org, pnt), GND, via_size_dat)
 
 
 # expander
@@ -1966,6 +1966,7 @@ def set_refs(board):
             refs.append((3.6, 0, 180, [f'JPB{idx}']))
     if True:
         refs.append((None, None, None, [f'H{i}' for i in range(1, 9)]))
+        refs.append((None, None, None, [f'G{i}' for i in range(1, 3)]))
     for offset_length, offset_angle, text_angle, mod_names in refs:
         for mod_name in mod_names:
             mod = kad.get_mod(mod_name)
@@ -2083,7 +2084,8 @@ def main():
         kad.add_text((board_org[0], btm - 5), 0,
                      f'Mozza62 {boardname} by orihikarna\n ver1.0 2023/06/18',
                      'F.Silkscreen', (2.0, 2.0), 0.4, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
-
+    if board == Board.Circuit:
+        kad.add_text((board_org[0] - 15, btm - 13), -6, 'R*1 = 10k\nR*2 = 4k7\nCD* = 33n', 'B.Silkscreen', (1.2, 1.2), 0.3)
 
 if __name__ == '__main__':
     kad.removeDrawings()

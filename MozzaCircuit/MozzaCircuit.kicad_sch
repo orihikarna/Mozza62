@@ -1661,7 +1661,7 @@
     (property "Reference" "C2" (id 0) (at 170.815 112.395 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "C_Small" (id 1) (at 173.99 118.1162 0)
+    (property "Value" "0.1u" (id 1) (at 173.99 118.1162 0)
       (effects (font (size 1.27 1.27)) (justify left) hide)
     )
     (property "Footprint" "00_KeyParts:C_1608_HandSolder" (id 2) (at 171.45 116.84 0)
@@ -1732,7 +1732,7 @@
     (property "Reference" "C3" (id 0) (at 177.165 112.395 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "C_Small" (id 1) (at 180.34 118.1162 0)
+    (property "Value" "0.1u" (id 1) (at 180.34 118.1162 0)
       (effects (font (size 1.27 1.27)) (justify left) hide)
     )
     (property "Footprint" "00_KeyParts:C_1608_HandSolder_both_sides" (id 2) (at 177.8 116.84 0)
@@ -1803,7 +1803,7 @@
     (property "Reference" "C4" (id 0) (at 167.005 127.635 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "C_Small" (id 1) (at 170.18 133.3562 0)
+    (property "Value" "0.1u" (id 1) (at 170.18 133.3562 0)
       (effects (font (size 1.27 1.27)) (justify left) hide)
     )
     (property "Footprint" "00_KeyParts:C_1608_HandSolder_both_sides" (id 2) (at 167.64 132.08 0)
@@ -2341,136 +2341,136 @@
       (reference "C1") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder")
     )
     (path "/54545bb1-2b96-4182-82a6-c6c8033edb00"
-      (reference "C2") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder")
+      (reference "C2") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder")
     )
     (path "/663cfaee-64ad-4911-8af9-1534f7686d4a"
-      (reference "C3") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C3") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/7acae76f-8f32-4cdc-8f49-bf94ec5ae198"
-      (reference "C4") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C4") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/ee6443d6-4e22-4bbc-83a6-640a8cf146b2"
-      (reference "C13") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C13") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/3f07d010-f525-4889-b35d-2c573f2fe087"
-      (reference "C14") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C14") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/4ae6a39a-2fb7-4f23-8b07-007f392c0bef"
-      (reference "C15") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C15") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/822dbaaa-2882-483b-af09-fc71a09ac544"
       (reference "C21") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/3f3609fc-d8af-4236-a520-81f6014410d1"
-      (reference "C22") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C22") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/ad7dff4d-5541-4280-89ba-194c35779b06"
-      (reference "C23") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C23") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/787c1f00-2441-4a39-a5f1-7d05d7ca131d"
-      (reference "C24") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C24") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/4795fb5a-f389-458f-a6d2-62e1ee1135e2"
-      (reference "C25") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C25") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/8d48555e-e1b5-4b18-b7e5-2d079e37b07d"
-      (reference "C31") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C31") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/af1e38d5-7127-465d-be9b-35a9760c983c"
-      (reference "C32") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C32") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/1646d038-15da-4930-ab4c-7c75cb78fab8"
-      (reference "C33") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C33") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/69a316c5-da83-4b99-813f-b877f4129b2f"
-      (reference "C34") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C34") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/cea1740e-b37a-4bc4-bcbf-daf049f69beb"
-      (reference "C35") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C35") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/163588dc-cc04-4349-b802-3894491a5c18"
-      (reference "C41") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C41") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/785d63bc-3ab5-414f-8e52-0e23f06ac56f"
-      (reference "C42") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C42") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/3144ab1f-d4b8-4993-9d19-8f93cbd43782"
-      (reference "C43") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C43") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/30f6b2f2-8060-4c11-8fb3-c30ecbf0f8f9"
-      (reference "C44") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C44") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/fd6a46f5-6e7d-493c-bb32-ce5e6c2d25c4"
-      (reference "C51") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C51") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/87976d41-3966-421c-b3f9-b8f911d67fee"
-      (reference "C52") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C52") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/f039846f-5314-4f8c-bba6-52e9fe003b20"
-      (reference "C53") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C53") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/2fa01c11-670c-4317-9bce-9ef785b3445c"
-      (reference "C54") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C54") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/b58ffbad-2300-4b1f-966e-ed80fbb72a71"
-      (reference "C61") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C61") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/90e3f01b-6e5e-4c06-a95b-514cb5a89367"
-      (reference "C62") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C62") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/45251f80-8f3d-4046-a926-bf6f4db98fec"
-      (reference "C63") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C63") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/734c4cf9-fedf-46af-b6ea-4487c45f6c8b"
-      (reference "C64") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C64") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/f6a6da0a-da52-4403-9b49-da3b65d9bc61"
-      (reference "C71") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C71") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/2f1814d1-4e79-4224-8f05-289220ad64e4"
-      (reference "C72") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C72") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/810b9cc7-7683-46c1-8cb6-7e61d287b33f"
-      (reference "C73") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C73") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/99119731-d255-4cbf-a0ab-adcfe7e5704d"
-      (reference "C82") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C82") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/49ba23e4-d49e-43da-9ccb-3d7a55090344"
-      (reference "C83") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C83") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/096fe43d-bb63-4e85-b408-1b08ff8375d2/cb669599-a153-4cd5-a3bd-888a596cfc87"
-      (reference "C84") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "C84") (unit 1) (value "0.1u") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/f4b8ad53-f2ef-41a9-becd-fa8a5cce0915"
       (reference "CD1") (unit 1) (value "33n") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/590a44c7-6fa8-4e36-921e-e51f3061ce09"
-      (reference "CD2") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "CD2") (unit 1) (value "33n") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/89cc3880-8535-4cba-8be1-9dc0332db0ab"
-      (reference "CD3") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "CD3") (unit 1) (value "33n") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/a70043ec-b269-4dd5-be27-cf87dadee8a3"
-      (reference "CD4") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "CD4") (unit 1) (value "33n") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/600bc971-b20f-49f5-b0be-55f9e36e8010"
-      (reference "CD5") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "CD5") (unit 1) (value "33n") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/0925a605-47b1-4cef-a559-4c6ae38bae0d"
-      (reference "CD6") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "CD6") (unit 1) (value "33n") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/286926d2-e880-4f62-ac38-31f11d44efac"
-      (reference "CD7") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "CD7") (unit 1) (value "33n") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/b058ea3d-73b6-4f8d-b761-beb28badf6d5"
-      (reference "CD8") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "CD8") (unit 1) (value "33n") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/481ff183-85e3-4c7e-9a5b-1988a8ca38ab"
       (reference "CD11") (unit 1) (value "33n") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/bdb40568-967c-4768-8565-b012d5df3e69"
-      (reference "CD12") (unit 1) (value "C_Small") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
+      (reference "CD12") (unit 1) (value "33n") (footprint "00_KeyParts:C_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/cf902e5e-bea0-422a-b0c4-daa292a39158"
       (reference "D13") (unit 1) (value "D_Small") (footprint "00_KeyParts:D_SOD-323_both_sides")
@@ -2725,46 +2725,46 @@
       (reference "R12") (unit 1) (value "4k7") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/fb0e6c77-4133-4544-b5f3-7e1ef7a01945"
-      (reference "R21") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R21") (unit 1) (value "10k") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/1b232f61-c00c-4dd2-baec-959100fd3e09"
-      (reference "R22") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R22") (unit 1) (value "4k7") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/f437f4b8-b00a-4d96-8505-5253e39c6c14"
-      (reference "R31") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R31") (unit 1) (value "10k") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/c6334fc2-2704-455b-b2d6-2b976672ac7e"
-      (reference "R32") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R32") (unit 1) (value "4k7") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/ee5237af-6a34-4dc8-8d12-b6d56a3236f1"
-      (reference "R41") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R41") (unit 1) (value "10k") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/bcdb3c00-6eed-48f0-9960-acebb56dd07f"
-      (reference "R42") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R42") (unit 1) (value "4k7") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/bfd20332-f001-40cb-a018-66e30dac2f34"
-      (reference "R51") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R51") (unit 1) (value "10k") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/4925137d-03c3-44c7-a132-6eb1305707e1"
-      (reference "R52") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R52") (unit 1) (value "4k7") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/2c4a3cda-b4e9-4b62-8e2f-eabe2021fda9"
-      (reference "R61") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R61") (unit 1) (value "10k") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/95868f25-c65b-4bcc-be23-48abc9ec7ed8"
-      (reference "R62") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R62") (unit 1) (value "4k7") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/fdb3a81a-256a-4366-a9ce-3dddd109b1e5"
-      (reference "R71") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R71") (unit 1) (value "10k") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/fa830e08-6115-4f30-8995-b9b710e4ba16"
-      (reference "R72") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R72") (unit 1) (value "4k7") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/20c4c352-b0da-4429-b452-e0be44505166"
-      (reference "R81") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R81") (unit 1) (value "10k") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/56df9a42-4d3c-450d-9f9a-f0c5a41469ac"
-      (reference "R82") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R82") (unit 1) (value "4k7") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/922e8e75-85e8-43b4-b537-f4565dc0dd01"
       (reference "R111") (unit 1) (value "10k") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
@@ -2773,10 +2773,10 @@
       (reference "R112") (unit 1) (value "4k7") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/5f71ec45-0245-4201-a180-bb3969808e93"
-      (reference "R121") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R121") (unit 1) (value "10k") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/d7b56276-032b-4569-a49a-709d0cd13f94"
-      (reference "R122") (unit 1) (value "R_Small_US") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
+      (reference "R122") (unit 1) (value "4k7") (footprint "00_KeyParts:R_1608_HandSolder_both_sides")
     )
     (path "/640a3fc7-fa1f-4829-bcbd-ff561d335477/7902f8d7-02f1-4b1c-894c-bd9de998a510"
       (reference "RE1") (unit 1) (value "RotaryEncoder_Switch") (footprint "00_KeyParts:RotaryEncoder_Bourns_PEC12R-4215F")
