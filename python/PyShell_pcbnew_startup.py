@@ -1,0 +1,1 @@
+/Users/akihiro/Library/Preferences/kicad/6.0/PyShell_pcbnew_startup.py
