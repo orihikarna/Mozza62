@@ -145,8 +145,8 @@ class keyboard_layout:
         draw = ImageDraw.Draw( image )
         for key in self.keys:
             ctr = key.getCenterPos()
-            if ctr[0] < xctr:
-                continue
+            # if ctr[0] < xctr:
+            #     continue
             w, h, rot, name = key.w, key.h, key.r, key.name
 
             ctr *= L
@@ -364,7 +364,7 @@ def make_kbd_layout( unit, output_type ):
     if output_type in ['png', 'scad']:
         if isHexa:
             angle_Dot = 26 - 30 *0
-            org_Dot = vec2( 5.3, -0.5 )
+            org_Dot = vec2( 5.9, -0.5 )
         else:
             angle_Dot = 27 - 45 *1
             org_Dot = vec2( 6.0, -1 )
