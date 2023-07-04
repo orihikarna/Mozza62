@@ -187,8 +187,8 @@ class keyboard_layout:
             idx = 0
             for key in self.keys:
                 ctr = key.getCenterPos()
-                if ctr[0] < xctr:
-                    continue
+                # if ctr[0] < xctr:
+                #     continue
                 w, h, rot = key.w, key.h, key.r
 
                 ctr *= unit
@@ -198,7 +198,7 @@ class keyboard_layout:
                 idx += 1
             fout.write( '];\n' )
 
-            if True:
+            if False:
                 fout.write( 'edgecuts=[' )
                 outline = calc_bspline( arc_pnts, 16 )
                 for idx, pnt in enumerate( outline ):
