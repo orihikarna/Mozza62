@@ -190,11 +190,14 @@ class keyboard_layout:
                 # if ctr[0] < xctr:
                 #     continue
                 w, h, rot = key.w, key.h, key.r
+                name = key.name
+                name = name.replace('\n', '')
+                name = name.replace('"', '\\"')
 
                 ctr *= unit
                 w *= unit
                 h *= unit
-                fout.write( '    [{:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {}, "{}"],\n'.format( ctr[0], -ctr[1], -rot, w, h, idx, key.name ) )
+                fout.write( '    [{:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, {}, "{}"],\n'.format( ctr[0], -ctr[1], -rot, w, h, idx, name ) )
                 idx += 1
             fout.write( '];\n' )
 
