@@ -15,7 +15,7 @@ Adafruit_MCP23X17 mcp;
 
 // constants
 #define NUM_LEDS 25
-#define NUM_LEFT_LEDS 3
+#define NUM_LEFT_LEDS 31
 
 // static variable
 CRGB s_leds[NUM_LEDS];
@@ -146,10 +146,10 @@ void loop() {
     //set_led(CHSV(i, 255, 255));
     //set_left_led(CHSV(i, 255, 255));
     for (uint16_t n = 0; n < NUM_LEDS; ++n) {
-      s_leds[n] = CHSV((i + 4 * n) & 255, 255, 255);
+      s_leds[n] = CHSV((i + 8 * n) & 255, 255, 255);
     }
     for (uint16_t n = 0; n < NUM_LEFT_LEDS; ++n) {
-      s_leds_left[n] = CHSV((i + 16 * n) & 255, 255, 255);
+      s_leds_left[n] = CHSV((i + 4 * n) & 255, 255, 255);
     }
     FastLED.show();
     delay(10);
@@ -158,13 +158,14 @@ void loop() {
     // B4, B3, B7, B6, A1
     constexpr uint8_t row_pins[] = {12, 11, 15, 14, 1};
     // B5, B2
-    constexpr uint8_t col_pins[] = {13, 10};
+    constexpr uint8_t col_pins[] = {13, 10, 9, 8, 7, 6, 5, 4};
+    constexpr uint8_t rot_pins[] = {3, 2};
     for (uint8_t row = 0; row < 5; ++row) {
       // printf("row %d:", row);
       mcp.digitalWrite(row_pins[row], HIGH);
       delay(2);
       const uint16_t vals = mcp.readGPIOAB();
-      for (uint8_t col = 0; col < 2; ++col) {
+      for (uint8_t col = 0; col < 8; ++col) {
         if ((vals & (uint16_t(1) << col_pins[col]))) {
         //if (mcp.digitalRead(col_pins[col]) == LOW) {
           // printf(" col%d, ", col);
@@ -173,6 +174,12 @@ void loop() {
       }
       // printf("\n");
       mcp.digitalWrite(row_pins[row], LOW);
+    }
+    const uint16_t vals = mcp.readGPIOAB();
+    for (uint8_t rot = 0; rot < 2; ++rot) {
+      if ((vals & (uint16_t(1) << rot_pins[rot]))) {
+        printf("rot %d\n", rot);
+      }
     }
   }
 }
