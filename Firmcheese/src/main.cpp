@@ -43,39 +43,43 @@ void setup() {
   // while (!Serial) delay(100);
 
   scan_I2C();
-
+  if (true) {  // xiao LED
+    for (int n = 0; n < 3; ++n) {
+      pinMode(leds[n], OUTPUT);
+    }
+  }
   if (true) {  // setup mcp
     mcp.begin_I2C(0x21);
-    // in = 0, out = 1
-    constexpr uint16_t pin_inout = 0xd802;
+    constexpr uint16_t pin_inout = 0xd802;  // in = 0, out = 1
     for (uint8_t pin = 0; pin < 16; ++pin) {
       mcp.pinMode(pin, (pin_inout & (1 << pin)) ? OUTPUT : INPUT);
     }
   }
-
-  // put your setup code here, to run once:
-  for (int n = 0; n < 3; ++n) {
-    pinMode(leds[n], OUTPUT);
-  }
-
-  for (auto& strip : strips) {
-    strip.begin();
-    strip.show();
+  if (true) {  // full color LED
+    for (auto& strip : strips) {
+      strip.begin();
+      // strip.show();
+    }
   }
 }
 
 void loop() {
-  // scan_I2C();
-  // delay(1000);
   // put your main code here, to run repeatedly:
   cnt += 1;
-  for (int n = 0; n < 3; ++n) {
-    digitalWrite(leds[n], HIGH);
+  if (true) {  // xiao LED
+    for (int n = 0; n < 3; ++n) {
+      digitalWrite(leds[n], HIGH);
+    }
+    digitalWrite(leds[cnt % 3], LOW);
   }
-  digitalWrite(leds[cnt % 3], LOW);
+  if (true) {
+    scan_I2C();
+    delay(1000);
+    return;
+  }
   // Serial.printf("%d\n", cnt);
   // delay(1000);
-  if (true) {  // key scan
+  if (false) {  // key scan left
     // B4, B3, B7, B6, A1
     constexpr uint8_t row_pins[] = {12, 11, 15, 14, 1};
     // B5, B2
@@ -102,10 +106,12 @@ void loop() {
         printf("rot %d\n", rot);
       }
     }
+  } else {
+    delay(20);
   }
-  if (false) {  // LED
+  if (true) {  // full color LED
     for (uint16_t n = 0; n < NUM_LEDS; ++n) {
-      const uint16_t hue = ((16 * cnt + n * 4) & 255) << 8;
+      const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
       for (auto& strip : strips) {
         strip.setPixelColor(n, Adafruit_NeoPixel::ColorHSV(hue, 255, 10));
       }
