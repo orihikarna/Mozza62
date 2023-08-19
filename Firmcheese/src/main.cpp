@@ -1,20 +1,35 @@
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_NeoPixel.h>
-#include <Adafruit_TinyUSB.h>  // for Serial
 #include <Arduino.h>
 
 #include <array>
 
-constexpr int leds[3] = {LED_RED, LED_BLUE, LED_GREEN};
+// #define BOARD_XIAO_BLE
+#define BOARD_M5ATOM
+
+#ifdef BOARD_XIAO_BLE
+#include <Adafruit_TinyUSB.h>  // for Serial
+constexpr std::array<int, 3> leds = {LED_RED, LED_BLUE, LED_GREEN};
+#define LED_PIN_LEFT D0
+#define LED_PIN_RIGHT D1
+#endif
+
+#ifdef BOARD_M5ATOM
+// #include <M5Atom.h>
+#define LED_PIN_MATRIX 27
+#define LED_PIN_LEFT 19
+#define LED_PIN_RIGHT 22
+constexpr uint16_t NUM_MATRIX_LEDS = 25;
+Adafruit_NeoPixel matrix_strip(NUM_MATRIX_LEDS, LED_PIN_MATRIX,
+                               NEO_GRB + NEO_KHZ800);
+#endif
 
 constexpr uint16_t NUM_LEDS = 30;
 std::array<Adafruit_NeoPixel, 2> strips = {
-    Adafruit_NeoPixel(NUM_LEDS, D0, NEO_GRB + NEO_KHZ800),
-    Adafruit_NeoPixel(NUM_LEDS, D1, NEO_GRB + NEO_KHZ800),
+    Adafruit_NeoPixel(NUM_LEDS, LED_PIN_LEFT, NEO_GRB + NEO_KHZ800),
+    Adafruit_NeoPixel(NUM_LEDS, LED_PIN_RIGHT, NEO_GRB + NEO_KHZ800),
 };
 
-// GPIO4(SDA)  <-> SDA
-// GPIO5(SCL)  <-> SCL
 Adafruit_MCP23X17 mcp;
 
 void scan_I2C() {
@@ -41,19 +56,20 @@ void setup() {
   // Serial.begin(9600);
   Serial.begin(115200);
   // while (!Serial) delay(100);
+#ifdef BOARD_M5ATOM
+  Wire.begin(25, 21, 100000UL);
+#endif
 
   scan_I2C();
-  if (true) {  // xiao LED
-    for (int n = 0; n < 3; ++n) {
-      pinMode(leds[n], OUTPUT);
+  if (true) {  // LED
+#ifdef BOARD_XIAO_BLE
+    for (auto led : leds) {
+      pinMode(led, OUTPUT);
     }
-  }
-  if (true) {  // setup mcp
-    mcp.begin_I2C(0x21);
-    constexpr uint16_t pin_inout = 0xd802;  // in = 0, out = 1
-    for (uint8_t pin = 0; pin < 16; ++pin) {
-      mcp.pinMode(pin, (pin_inout & (1 << pin)) ? OUTPUT : INPUT);
-    }
+#endif
+#ifdef BOARD_M5ATOM
+    matrix_strip.begin();
+#endif
   }
   if (true) {  // full color LED
     for (auto& strip : strips) {
@@ -61,16 +77,48 @@ void setup() {
       // strip.show();
     }
   }
+  if (true) {             // setup mcp
+    mcp.begin_I2C(0x20);  // right
+    // mcp.begin_I2C(0x21); // left
+    constexpr uint16_t pin_inout = 0xd802;  // in = 0, out = 1
+    for (uint8_t pin = 0; pin < 16; ++pin) {
+      mcp.pinMode(pin, (pin_inout & (1 << pin)) ? OUTPUT : INPUT);
+    }
+  }
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   cnt += 1;
-  if (true) {  // xiao LED
-    for (int n = 0; n < 3; ++n) {
-      digitalWrite(leds[n], HIGH);
+  if (true) {  // board LED
+#ifdef BOARD_XIAO_BLE
+    for (auto led : leds) {
+      digitalWrite(led, HIGH);
     }
-    digitalWrite(leds[cnt % 3], LOW);
+    digitalWrite(leds[cnt % leds.size()], LOW);
+#endif
+#ifdef BOARD_M5ATOM
+    {
+      for (uint16_t n = 0; n < NUM_MATRIX_LEDS; ++n) {
+        const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
+        for (auto& strip : strips) {
+          matrix_strip.setPixelColor(n,
+                                     Adafruit_NeoPixel::ColorHSV(hue, 255, 10));
+        }
+      }
+    }
+#endif
+  }
+  if (true) {  // full color LED
+    for (uint16_t n = 0; n < NUM_LEDS; ++n) {
+      const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
+      for (auto& strip : strips) {
+        strip.setPixelColor(n, Adafruit_NeoPixel::ColorHSV(hue, 255, 10));
+      }
+    }
+    for (auto& strip : strips) {
+      strip.show();
+    }
   }
   if (true) {
     scan_I2C();
@@ -108,16 +156,5 @@ void loop() {
     }
   } else {
     delay(20);
-  }
-  if (true) {  // full color LED
-    for (uint16_t n = 0; n < NUM_LEDS; ++n) {
-      const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
-      for (auto& strip : strips) {
-        strip.setPixelColor(n, Adafruit_NeoPixel::ColorHSV(hue, 255, 10));
-      }
-    }
-    for (auto& strip : strips) {
-      strip.show();
-    }
   }
 }
