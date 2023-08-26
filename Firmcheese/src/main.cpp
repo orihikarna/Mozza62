@@ -77,10 +77,15 @@ void setup() {
       // strip.show();
     }
   }
-  if (true) {             // setup mcp
-    mcp.begin_I2C(0x20);  // right
-    // mcp.begin_I2C(0x21); // left
-    constexpr uint16_t pin_inout = 0xd802;  // in = 0, out = 1
+  if (true) {  // setup mcp
+    uint16_t pin_inout = 0;
+    if (false) {  // left
+      mcp.begin_I2C(0x21);
+      pin_inout = 0xd802;  // in = 0, out = 1
+    } else {               // right
+      mcp.begin_I2C(0x20);
+      pin_inout = 0x8036;  // in = 0, out = 1
+    }
     for (uint8_t pin = 0; pin < 16; ++pin) {
       mcp.pinMode(pin, (pin_inout & (1 << pin)) ? OUTPUT : INPUT);
     }
@@ -120,19 +125,27 @@ void loop() {
       strip.show();
     }
   }
-  if (true) {
+  if (false) {
     scan_I2C();
     delay(1000);
     return;
   }
   // Serial.printf("%d\n", cnt);
   // delay(1000);
-  if (false) {  // key scan left
+  if (true) {
+    // key scan left
     // B4, B3, B7, B6, A1
-    constexpr uint8_t row_pins[] = {12, 11, 15, 14, 1};
+    // constexpr uint8_t row_pins[] = {12, 11, 15, 14, 1};
     // B5, B2
-    constexpr uint8_t col_pins[] = {13, 10, 9, 8, 7, 6, 5, 4};
-    constexpr uint8_t rot_pins[] = {3, 2};
+    // constexpr uint8_t col_pins[] = {13, 10, 9, 8, 7, 6, 5, 4};
+    // constexpr uint8_t rot_pins[] = {3, 2};
+
+    // key scan right
+    // A4, A5, A1, A2, B7
+    constexpr uint8_t row_pins[] = {4, 5, 1, 2, 15};
+    // A3, A6, A7, B0
+    constexpr uint8_t col_pins[] = {3, 6, 7, 8, 9, 10, 11, 12};
+    constexpr uint8_t rot_pins[] = {13, 14};
     for (uint8_t row = 0; row < 5; ++row) {
       // printf("row %d:", row);
       mcp.digitalWrite(row_pins[row], HIGH);
