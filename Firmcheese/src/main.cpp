@@ -4,6 +4,8 @@
 
 #include <array>
 
+#include "key_scanner.hpp"
+
 // #define BOARD_XIAO_BLE
 #define BOARD_M5ATOM
 
@@ -30,25 +32,27 @@ std::array<Adafruit_NeoPixel, 2> strips = {
     Adafruit_NeoPixel(NUM_LEDS, LED_PIN_RIGHT, NEO_GRB + NEO_KHZ800),
 };
 
-Adafruit_MCP23X17 mcp;
-
 void scan_I2C() {
+  Adafruit_MCP23X17 mcp;
   Serial.println("I2C Scan");
   for (int address = 1; address < 0x80; address++) {
-    const int error = mcp.begin_I2C(address);
-    if (error != 0) {
+    const bool ret = mcp.begin_I2C(address);
+    if (ret) {
       Serial.printf("%02X", address);
     } else {
       Serial.print(" .");
     }
-
     if (address % 16 == 0) {
       Serial.print("\n");
     }
-    delay(20);
+    delay(10);
   }
   Serial.print("end\n\n");
 }
+
+KeyScanner scanner;
+
+Adafruit_MCP23X17 mcp;
 
 int cnt = 0;
 
@@ -56,6 +60,7 @@ void setup() {
   // Serial.begin(9600);
   Serial.begin(115200);
   // while (!Serial) delay(100);
+
 #ifdef BOARD_M5ATOM
   Wire.begin(25, 21, 100000UL);
 #endif
@@ -72,12 +77,13 @@ void setup() {
 #endif
   }
   if (true) {  // full color LED
-    for (auto& strip : strips) {
+    for (auto &strip : strips) {
       strip.begin();
       // strip.show();
     }
   }
-  if (true) {  // setup mcp
+  scanner.init();
+  if (false) {  // setup mcp
     uint16_t pin_inout = 0;
     if (false) {  // left
       mcp.begin_I2C(0x21);
@@ -103,13 +109,11 @@ void loop() {
     digitalWrite(leds[cnt % leds.size()], LOW);
 #endif
 #ifdef BOARD_M5ATOM
-    {
-      for (uint16_t n = 0; n < NUM_MATRIX_LEDS; ++n) {
-        const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
-        for (auto& strip : strips) {
-          matrix_strip.setPixelColor(n,
-                                     Adafruit_NeoPixel::ColorHSV(hue, 255, 10));
-        }
+    for (uint16_t n = 0; n < NUM_MATRIX_LEDS; ++n) {
+      const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
+      for (auto &strip : strips) {
+        const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 20);
+        matrix_strip.setPixelColor(n, clr);
       }
     }
 #endif
@@ -117,11 +121,12 @@ void loop() {
   if (true) {  // full color LED
     for (uint16_t n = 0; n < NUM_LEDS; ++n) {
       const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
-      for (auto& strip : strips) {
-        strip.setPixelColor(n, Adafruit_NeoPixel::ColorHSV(hue, 255, 10));
+      for (auto &strip : strips) {
+        const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 10);
+        strip.setPixelColor(n, clr);
       }
     }
-    for (auto& strip : strips) {
+    for (auto &strip : strips) {
       strip.show();
     }
   }
@@ -130,9 +135,14 @@ void loop() {
     delay(1000);
     return;
   }
+  if (true) {
+    scanner.scan();
+    delay(5);
+    return;
+  }
   // Serial.printf("%d\n", cnt);
   // delay(1000);
-  if (true) {
+  if (false) {
     // key scan left
     // B4, B3, B7, B6, A1
     // constexpr uint8_t row_pins[] = {12, 11, 15, 14, 1};
