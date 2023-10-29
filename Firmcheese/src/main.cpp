@@ -50,9 +50,58 @@ void scan_I2C() {
   Serial.print("end\n\n");
 }
 
-// KeyScanner scanner;
-
 Adafruit_MCP23X17 mcp;
+
+void scan_test_setup() {
+  uint16_t pin_inout = 0;
+  if (false) {  // left
+    mcp.begin_I2C(0x21);
+    pin_inout = 0xd802;  // in = 0, out = 1
+  } else {               // right
+    mcp.begin_I2C(0x20);
+    pin_inout = 0x8036;  // in = 0, out = 1
+  }
+  for (uint8_t pin = 0; pin < 16; ++pin) {
+    mcp.pinMode(pin, (pin_inout & (1 << pin)) ? OUTPUT : INPUT);
+  }
+}
+
+void scan_test_loop() {
+  // key scan left
+  // B4, B3, B7, B6, A1
+  // constexpr uint8_t row_pins[] = {12, 11, 15, 14, 1};
+  // B5, B2
+  // constexpr uint8_t col_pins[] = {13, 10, 9, 8, 7, 6, 5, 4};
+  // constexpr uint8_t rot_pins[] = {3, 2};
+
+  // key scan right
+  // A4, A5, A1, A2, B7
+  constexpr uint8_t row_pins[] = {4, 5, 1, 2, 15};
+  // A3, A6, A7, B0
+  constexpr uint8_t col_pins[] = {3, 6, 7, 8, 9, 10, 11, 12};
+  constexpr uint8_t rot_pins[] = {13, 14};
+  for (uint8_t row = 0; row < 5; ++row) {
+    // printf("row %d:", row);
+    mcp.digitalWrite(row_pins[row], HIGH);
+    delay(3);
+    const uint16_t vals = mcp.readGPIOAB();
+    for (uint8_t col = 0; col < 8; ++col) {
+      if ((vals & (uint16_t(1) << col_pins[col]))) {
+        printf("row %d, col %d\n", row, col);
+      }
+    }
+    // printf("\n");
+    mcp.digitalWrite(row_pins[row], LOW);
+  }
+  const uint16_t vals = mcp.readGPIOAB();
+  for (uint8_t rot = 0; rot < 2; ++rot) {
+    if ((vals & (uint16_t(1) << rot_pins[rot]))) {
+      printf("rot %d\n", rot);
+    }
+  }
+}
+
+KeyScanner scanner;
 
 int cnt = 0;
 
@@ -82,20 +131,8 @@ void setup() {
       // strip.show();
     }
   }
-  //scanner.init();
-  if (true) {  // setup mcp
-    uint16_t pin_inout = 0;
-    if (false) {  // left
-      mcp.begin_I2C(0x21);
-      pin_inout = 0xd802;  // in = 0, out = 1
-    } else {               // right
-      mcp.begin_I2C(0x20);
-      pin_inout = 0x8036;  // in = 0, out = 1
-    }
-    for (uint8_t pin = 0; pin < 16; ++pin) {
-      mcp.pinMode(pin, (pin_inout & (1 << pin)) ? OUTPUT : INPUT);
-    }
-  }
+  scanner.init();
+  // scan_test_setup();
 }
 
 void loop() {
@@ -130,53 +167,9 @@ void loop() {
       strip.show();
     }
   }
-  if (false) {
-    scan_I2C();
-    delay(1000);
-    return;
-  }
-  if (false) {
-    // scanner.scan();
-    delay(200);
-    return;
-  }
-  // Serial.printf("%d\n", cnt);
-  // delay(1000);
   if (true) {
-    // key scan left
-    // B4, B3, B7, B6, A1
-    // constexpr uint8_t row_pins[] = {12, 11, 15, 14, 1};
-    // B5, B2
-    // constexpr uint8_t col_pins[] = {13, 10, 9, 8, 7, 6, 5, 4};
-    // constexpr uint8_t rot_pins[] = {3, 2};
-
-    // key scan right
-    // A4, A5, A1, A2, B7
-    constexpr uint8_t row_pins[] = {4, 5, 1, 2, 15};
-    // A3, A6, A7, B0
-    constexpr uint8_t col_pins[] = {3, 6, 7, 8, 9, 10, 11, 12};
-    constexpr uint8_t rot_pins[] = {13, 14};
-    for (uint8_t row = 0; row < 5; ++row) {
-      // printf("row %d:", row);
-      mcp.digitalWrite(row_pins[row], HIGH);
-      delay(3);
-      const uint16_t vals = mcp.readGPIOAB();
-      for (uint8_t col = 0; col < 8; ++col) {
-        if ((vals & (uint16_t(1) << col_pins[col]))) {
-          printf("row %d, col %d\n", row, col);
-        }
-      }
-      // printf("\n");
-      mcp.digitalWrite(row_pins[row], LOW);
-    }
-    const uint16_t vals = mcp.readGPIOAB();
-    for (uint8_t rot = 0; rot < 2; ++rot) {
-      if ((vals & (uint16_t(1) << rot_pins[rot]))) {
-        printf("rot %d\n", rot);
-      }
-    }
-    delay(100);
-  } else {
-    delay(20);
+    scanner.scan();
+    // scan_test_loop();
   }
+  delay(2);
 }

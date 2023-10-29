@@ -27,11 +27,12 @@ class KeyScanner {
   std::array<bool, kNumSides> mcp_inited_;
 
   void mcp_init();
-  uint16_t mcp_read(size_t side);
-  void mcp_write_all(uint8_t row, uint8_t value);
+  uint16_t mcp_get_col(size_t side);
+  void mcp_set_row(uint8_t row);
 
  private:
-  uint8_t row_idx_;
+  static constexpr uint8_t mcp_enabled_mask_ = 0x02;
+  uint8_t row_idx_ = 0;
   std::array<uint8_t, EKeySW::NumSWs> sw_state_;
 
  public:
