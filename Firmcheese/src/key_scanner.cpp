@@ -102,7 +102,7 @@ uint16_t KeyScanner::mcp_read(size_t side) {
   uint16_t col = 0;
   if (mcp_inited_[side]) {
     col = mcp_[side].readGPIOAB();
-    if (col == 0xff) {
+    if (col == 0xffff) {
       mcp_inited_[side] = false;
     }
   }
@@ -110,7 +110,7 @@ uint16_t KeyScanner::mcp_read(size_t side) {
 }
 
 void KeyScanner::mcp_write_all(uint8_t row, uint8_t value) {
-  for (size_t side = 0; side < kNumSides; ++side) {
+  for (size_t side = 1; side < kNumSides; ++side) {
     // uint16_t val = uint16_t(1) << mcp_row_bits[side][row];
     if (mcp_inited_[side]) {
       mcp_[side].digitalWrite(mcp_row_bits[side][row], value);
@@ -147,8 +147,10 @@ void KeyScanner::scan(/*KeyEventBuffer *fifo*/) {
 
   // minimize delay between read and write to allow the debounce circuit for
   // more settling time
-  const uint16_t bits_L = mcp_read(ESide::Left);
+  const uint16_t bits_L = 0;
+  // mcp_read(ESide::Left);
   const uint16_t bits_R = mcp_read(ESide::Right);
+  printf("bits_R = 0x04d\n", bits_R);
   mcp_write_all(curr_row, LOW);
   mcp_write_all(next_row, HIGH);
   {  // read col lines
@@ -184,10 +186,10 @@ void KeyScanner::update_key_state(/*KeyEventBuffer *fifo, */ uint8_t key,
       is_pressed | ((old_state << 1) & ~ESwitchState::IsPressed) | is_on;
   sw_state_[key] = new_state;
   if (val != 0 && (old_state & 1) == 0) {
-    printf("key %d on\n");
+    printf("key %d on\n", key);
   }
   if (val == 0 && (old_state & 1) == 1) {
-    printf("key %d off\n");
+    printf("key %d off\n", key);
   }
 
   // push to fifo

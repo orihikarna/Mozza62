@@ -50,7 +50,7 @@ void scan_I2C() {
   Serial.print("end\n\n");
 }
 
-KeyScanner scanner;
+// KeyScanner scanner;
 
 Adafruit_MCP23X17 mcp;
 
@@ -82,8 +82,8 @@ void setup() {
       // strip.show();
     }
   }
-  scanner.init();
-  if (false) {  // setup mcp
+  //scanner.init();
+  if (true) {  // setup mcp
     uint16_t pin_inout = 0;
     if (false) {  // left
       mcp.begin_I2C(0x21);
@@ -135,14 +135,14 @@ void loop() {
     delay(1000);
     return;
   }
-  if (true) {
-    scanner.scan();
-    delay(5);
+  if (false) {
+    // scanner.scan();
+    delay(200);
     return;
   }
   // Serial.printf("%d\n", cnt);
   // delay(1000);
-  if (false) {
+  if (true) {
     // key scan left
     // B4, B3, B7, B6, A1
     // constexpr uint8_t row_pins[] = {12, 11, 15, 14, 1};
@@ -159,12 +159,10 @@ void loop() {
     for (uint8_t row = 0; row < 5; ++row) {
       // printf("row %d:", row);
       mcp.digitalWrite(row_pins[row], HIGH);
-      delay(2);
+      delay(3);
       const uint16_t vals = mcp.readGPIOAB();
       for (uint8_t col = 0; col < 8; ++col) {
         if ((vals & (uint16_t(1) << col_pins[col]))) {
-          // if (mcp.digitalRead(col_pins[col]) == LOW) {
-          //  printf(" col%d, ", col);
           printf("row %d, col %d\n", row, col);
         }
       }
@@ -177,6 +175,7 @@ void loop() {
         printf("rot %d\n", rot);
       }
     }
+    delay(100);
   } else {
     delay(20);
   }
