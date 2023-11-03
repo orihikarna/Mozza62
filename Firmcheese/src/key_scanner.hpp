@@ -32,17 +32,18 @@ class KeyScanner {
 
  private:
   static constexpr uint8_t mcp_enabled_mask_ = 0x02;
-  uint8_t row_idx_ = 0;
-  std::array<uint8_t, EKeySW::NumSWs> sw_state_;
+  uint8_t scan_row_ = 0;
+  std::array<uint8_t, EKeySW::NumSWs> key_state_;
+  std::array<uint8_t, kNumSides> rot_state_;
 
  public:
   void init();
   void scan(/*KeyEventBuffer *fifo*/);
 #if 0
   inline bool is_pressed(uint8_t swidx) const {
-    return sw_state_[swidx] & static_cast<int>(ESwitchState::IsPressed);
+    return key_state_[swidx] & static_cast<int>(ESwitchState::IsPressed);
   }
-  inline uint8_t *getSwitchStateData() { return sw_state_.data(); }
+  inline uint8_t *getSwitchStateData() { return key_state_.data(); }
 #endif
 
  private:

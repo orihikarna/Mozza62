@@ -7,13 +7,8 @@ enum EKeySW {
   L82, L72, L62, L52, L42, L32, L22,               R22, R32, R42, R52, R62, R72, R82,
   L83, L73, L63, L53, L43, L33, L23, L13,     R13, R23, R33, R43, R53, R63, R73, R83,
   L84,      L64, L54, L44, L34, L24, L14,     R14, R24, R34, R44, R54, R64,      R84,
-            L65,           L35, L25, L15,     R15, R25, R35,           R65,
+            L65, LRB, LRA, L35, L25, L15,     R15, R25, R35, RRA, RRB, R65,
   NumSWs
-};
-
-enum ERotSW {
-  TLB, TLA,     TRA, TRB,
-  NumOrtSWs
 };
 
 constexpr uint8_t kNumRows = 5;

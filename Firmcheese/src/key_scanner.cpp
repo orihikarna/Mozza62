@@ -67,6 +67,11 @@ constexpr uint8_t mcp_rot_bits[kNumSides][kNumRots] = {
     },
 };
 
+constexpr uint8_t rot_keys[kNumSides][kNumRots] = {
+    {LRA, LRB},
+    {RRA, RRB},
+};
+
 inline uint8_t get_col_bit(uint8_t side, uint16_t val, int8_t col) {
   return (val >> mcp_col_bits[side][col]) & 1;
 }
@@ -135,8 +140,9 @@ void KeyScanner::init() {
   mcp_inited_.fill(false);
   mcp_init();
 
-  sw_state_.fill(0);
-  row_idx_ = 0;
+  scan_row_ = 0;
+  key_state_.fill(0);
+  rot_state_.fill(0);
 }
 
 void KeyScanner::scan(/*KeyEventBuffer *fifo*/) {
@@ -148,53 +154,80 @@ void KeyScanner::scan(/*KeyEventBuffer *fifo*/) {
   mcp_init();  // init mcp if timed out last time
 
   // increment row index
-  const uint8_t curr_row = row_idx_;
-  row_idx_ += 1;
-  if (row_idx_ >= kNumRows) {
-    row_idx_ = 0;
+  const uint8_t curr_row = scan_row_;
+  scan_row_ += 1;
+  if (scan_row_ >= kNumRows) {
+    scan_row_ = 0;
   }
-  const uint8_t next_row = row_idx_;
+  const uint8_t next_row = scan_row_;
 
   // minimize delay between read and write to allow the debounce circuit for
   // more settling time
-  const uint16_t bits_L = mcp_get_col(ESide::Left);
-  const uint16_t bits_R = mcp_get_col(ESide::Right);
-  if (curr_row == 1) {
-    // printf("%bits_R = %04x\n", bits_R);
-  }
+  const uint16_t bits[kNumSides] = {
+      mcp_get_col(ESide::Left),
+      mcp_get_col(ESide::Right),
+  };
   mcp_set_row(next_row);
+
   {  // read col lines
-    const uint8_t *key_line_L = key_matrix_L[curr_row];
-    const uint8_t *key_line_R = key_matrix_R[curr_row];
-    for (uint8_t col = 0; col < kNumCols; ++col) {
-      update_key_state(/*fifo,*/ key_line_L[col],
-                       get_col_bit(ESide::Left, bits_L, col));
-      update_key_state(/*fifo,*/ key_line_R[col],
-                       get_col_bit(ESide::Right, bits_R, col));
+    const uint8_t *key_lines[kNumSides] = {
+        key_matrix_L[curr_row],
+        key_matrix_R[curr_row],
+    };
+    for (size_t side = 0; side < kNumSides; ++side) {
+      for (uint8_t col = 0; col < kNumCols; ++col) {
+        update_key_state(/*fifo,*/ key_lines[side][col],
+                         get_col_bit(side, bits[side], col));
+      }
     }
   }
   {  // read rot values
-    for (uint8_t rot = 0; rot < kNumRots; ++rot) {
-      // update_key_state(fifo, , get_rot_bit(side, bits_L, rot));
-      // update_key_state(fifo, , get_rot_bit(side, bits_R, rot));
+    for (size_t side = 0; side < kNumSides; ++side) {
+      // extract rotary encoder bits
+      uint8_t rot_bits = 0;
+      for (uint8_t rot = 0; rot < kNumRots; ++rot) {
+        const uint8_t rot_bit = 1 << rot;
+        if (get_rot_bit(side, bits[side], rot)) {
+          rot_bits |= rot_bit;
+        }
+      }
+      // dir = the first non-zero value
+      //   A : 0 -> (1) -> [2] -> 0
+      //   B : 0 -> (2) -> [1] -> 0
+      // - rot_state_ keeps (the first non-zero value)
+      // - the key state will be ON when [the second value] is observed
+      // - the key state will be OFF when the final 0 is observed
+      uint8_t dir = 0;
+      if (rot_state_[side] == 0) {
+        rot_state_[side] = rot_bits;
+      } else {
+        if (rot_bits == 0) {
+          // released
+          rot_state_[side] = 0;
+        } else if (rot_state_[side] | rot_bits == 3) {
+          dir = rot_state_[side];
+        }
+      }
+      update_key_state(/*fifo,*/ rot_keys[side][0], (dir == 1) ? 1 : 0);
+      update_key_state(/*fifo,*/ rot_keys[side][1], (dir == 2) ? 1 : 0);
     }
   }
   // LOG_DEBUG("elapsed = %ld us", et.getElapsedMicroSec());
 }
 
-void KeyScanner::update_key_state(/*KeyEventBuffer *fifo, */ uint8_t key,
-                                  uint8_t val) {
+void KeyScanner::update_key_state(/*KeyEventBuffer *fifo, */
+                                  uint8_t key, uint8_t val) {
   if (key >= 255) {  // no key
     return;
   }
-  const uint8_t old_state = sw_state_[key];
+  const uint8_t old_state = key_state_[key];
   const uint8_t is_on = (val) ? ESwitchState::IsON : 0;
   // keysw was on for continuous two times
   const uint8_t is_pressed =
       ((old_state & 1) == 1 && is_on) ? ESwitchState::IsPressed : 0;
   const uint8_t new_state =
       is_pressed | ((old_state << 1) & ~ESwitchState::IsPressed) | is_on;
-  sw_state_[key] = new_state;
+  key_state_[key] = new_state;
   if (val != 0 && (old_state & 1) == 0) {
     printf("key %d on\n", key);
   }
@@ -205,9 +238,11 @@ void KeyScanner::update_key_state(/*KeyEventBuffer *fifo, */ uint8_t key,
   // push to fifo
   if ((~old_state & new_state) & ESwitchState::IsPressed) {
     // printf( "[%s] Pressed: key = %x\n", __FUNCTION__, key );
-    // fifo->push_back(KeyEvent(idx, EKeyEvent::Pressed, 0/*_LL_GetTick()*/));
+    // fifo->push_back(KeyEvent(idx, EKeyEvent::Pressed,
+    // 0/*_LL_GetTick()*/));
   } else if ((old_state & ~new_state) & ESwitchState::IsPressed) {
     // printf( "[%s] Released: key = %x\n", __FUNCTION__, key );
-    // fifo->push_back(KeyEvent(idx, EKeyEvent::Released, 0/*_LL_GetTick()*/));
+    // fifo->push_back(KeyEvent(idx, EKeyEvent::Released,
+    // 0/*_LL_GetTick()*/));
   }
 }

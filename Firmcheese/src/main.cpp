@@ -157,7 +157,7 @@ void loop() {
   }
   if (true) {  // full color LED
     for (uint16_t n = 0; n < NUM_LEDS; ++n) {
-      const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
+      const uint16_t hue = ((cnt * 1 + n * 4) & 255) << 8;
       for (auto &strip : strips) {
         const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 10);
         strip.setPixelColor(n, clr);
@@ -171,5 +171,5 @@ void loop() {
     scanner.scan();
     // scan_test_loop();
   }
-  delay(2);
+  delay(1);
 }
