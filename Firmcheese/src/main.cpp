@@ -6,6 +6,7 @@
 
 #include "key_event.hpp"
 #include "key_scanner.hpp"
+#include "ringbuf.hpp"
 
 // #define BOARD_XIAO_BLE
 #define BOARD_M5ATOM
@@ -23,8 +24,7 @@ constexpr std::array<int, 3> leds = {LED_RED, LED_BLUE, LED_GREEN};
 #define LED_PIN_LEFT 19
 #define LED_PIN_RIGHT 22
 constexpr uint16_t NUM_MATRIX_LEDS = 25;
-Adafruit_NeoPixel matrix_strip(NUM_MATRIX_LEDS, LED_PIN_MATRIX,
-                               NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel matrix_strip(NUM_MATRIX_LEDS, LED_PIN_MATRIX, NEO_GRB + NEO_KHZ800);
 #endif
 
 constexpr uint16_t NUM_LEDS = 30;
@@ -137,6 +137,22 @@ void setup() {
   // NScanTest::scan_test_setup();
 }
 
+std::array<KeyEvent, 12> keva_input;  // 1 rows + extra
+std::array<KeyEvent, 12> keva_layer;
+std::array<KeyEvent, 12> keva_emacs;
+std::array<KeyEvent, 6> keva_unmod;
+
+KeyEventBuffer kevb_input(keva_input.data(), keva_input.size());
+KeyEventBuffer kevb_layer(keva_layer.data(), keva_layer.size());
+KeyEventBuffer kevb_emacs(keva_emacs.data(), keva_emacs.size());
+KeyEventBuffer kevb_unmod(keva_unmod.data(), keva_unmod.size());
+
+// LedProc led_proc;
+// KeyLayerProc proc_layer;
+// KeyEmacsProc proc_emacs;
+// KeyUnmodProc proc_unmod;
+// KeyNkroProc proc_nkro;
+
 void loop() {
   // put your main code here, to run repeatedly:
   static int cnt = 0;
@@ -160,7 +176,7 @@ void loop() {
   }
   if (true) {  // key scan
     // NScanTest::scan_test_loop();
-    scanner.scan();
+    scanner.scan(&kevb_input);
   }
   if (true) {  // full color LED
     for (uint16_t n = 0; n < NUM_LEDS; ++n) {

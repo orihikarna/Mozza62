@@ -13,7 +13,6 @@ static constexpr size_t kNumSides = 2;
 enum ESide {
   Left = 0,
   Right = 1,
-  NumSides,
 };
 
 enum ESwitchState : uint8_t {
@@ -35,11 +34,11 @@ class KeyScanner {
   static constexpr uint8_t mcp_enabled_mask_ = 0x02;
   uint8_t scan_row_ = 0;
   std::array<uint8_t, EKeySW::NumSWs> key_state_;
-  std::array<uint8_t, ESide::NumSides> rot_state_;
+  std::array<uint8_t, kNumSides> rot_state_;
 
  public:
   void init();
-  void scan(/*KeyEventBuffer *fifo*/);
+  void scan(KeyEventBuffer *evbuf);
 #if 0
   inline bool is_pressed(uint8_t swidx) const {
     return key_state_[swidx] & static_cast<int>(ESwitchState::IsPressed);
@@ -48,5 +47,5 @@ class KeyScanner {
 #endif
 
  private:
-  void update_key_state(/*KeyEventBuffer *fifo,*/ uint8_t key, uint8_t val);
+  void update_key_state(KeyEventBuffer *fifo, uint8_t key, uint8_t val);
 };

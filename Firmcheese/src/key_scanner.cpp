@@ -97,8 +97,7 @@ void KeyScanner::mcp_init() {
 
     mcp_[side].begin_I2C(mcp_addr[side]);
     for (uint8_t pin = 0; pin < 16; ++pin) {
-      const uint8_t mode =
-          (mcp_pin_inout[side] & (uint16_t(1) << pin)) ? OUTPUT : INPUT;
+      const uint8_t mode = (mcp_pin_inout[side] & (uint16_t(1) << pin)) ? OUTPUT : INPUT;
       mcp_[side].pinMode(pin, mode);
     }
     // if (mcp_[side].set_ctrl_reg(0b00100000) == false) { continue; }
@@ -145,7 +144,7 @@ void KeyScanner::init() {
   rot_state_.fill(0);
 }
 
-void KeyScanner::scan(/*KeyEventBuffer *fifo*/) {
+void KeyScanner::scan(KeyEventBuffer *fifo) {
   // if (fifo->can_push() < kNumCols) {
   //   return;
   // }  // buffer vacancy is not enough
@@ -176,8 +175,7 @@ void KeyScanner::scan(/*KeyEventBuffer *fifo*/) {
     };
     for (size_t side = 0; side < kNumSides; ++side) {
       for (uint8_t col = 0; col < kNumCols; ++col) {
-        update_key_state(/*fifo,*/ key_lines[side][col],
-                         get_col_bit(side, bits[side], col));
+        update_key_state(fifo, key_lines[side][col], get_col_bit(side, bits[side], col));
       }
     }
   }
@@ -208,41 +206,30 @@ void KeyScanner::scan(/*KeyEventBuffer *fifo*/) {
           dir = rot_state_[side];
         }
       }
-      update_key_state(/*fifo,*/ rot_keys[side][0], (dir == 1) ? 1 : 0);
-      update_key_state(/*fifo,*/ rot_keys[side][1], (dir == 2) ? 1 : 0);
+      update_key_state(fifo, rot_keys[side][0], (dir == 1) ? 1 : 0);
+      update_key_state(fifo, rot_keys[side][1], (dir == 2) ? 1 : 0);
     }
   }
   // LOG_DEBUG("elapsed = %ld us", et.getElapsedMicroSec());
 }
 
-void KeyScanner::update_key_state(/*KeyEventBuffer *fifo, */
-                                  uint8_t key, uint8_t val) {
+void KeyScanner::update_key_state(KeyEventBuffer *evbuf, uint8_t key, uint8_t val) {
   if (key >= 255) {  // no key
     return;
   }
   const uint8_t old_state = key_state_[key];
   const uint8_t is_on = (val) ? ESwitchState::IsON : 0;
   // keysw was on for continuous two times
-  const uint8_t is_pressed =
-      ((old_state & 1) == 1 && is_on) ? ESwitchState::IsPressed : 0;
-  const uint8_t new_state =
-      is_pressed | ((old_state << 1) & ~ESwitchState::IsPressed) | is_on;
+  const uint8_t is_pressed = ((old_state & 1) == 1 && is_on) ? ESwitchState::IsPressed : 0;
+  const uint8_t new_state = is_pressed | ((old_state << 1) & ~ESwitchState::IsPressed) | is_on;
   key_state_[key] = new_state;
-  if (val != 0 && (old_state & 1) == 0) {
-    printf("key %d on\n", key);
-  }
-  if (val == 0 && (old_state & 1) == 1) {
-    printf("key %d off\n", key);
-  }
 
   // push to fifo
   if ((~old_state & new_state) & ESwitchState::IsPressed) {
-    // printf( "[%s] Pressed: key = %x\n", __FUNCTION__, key );
-    // fifo->push_back(KeyEvent(idx, EKeyEvent::Pressed,
-    // 0/*_LL_GetTick()*/));
+    printf("Pressed: key = %x\n", key);
+    evbuf->push_back(KeyEvent(key, EKeyEvent::Pressed, 0 /*_LL_GetTick()*/));
   } else if ((old_state & ~new_state) & ESwitchState::IsPressed) {
-    // printf( "[%s] Released: key = %x\n", __FUNCTION__, key );
-    // fifo->push_back(KeyEvent(idx, EKeyEvent::Released,
-    // 0/*_LL_GetTick()*/));
+    printf("Released: key = %x\n", key);
+    evbuf->push_back(KeyEvent(key, EKeyEvent::Released, 0 /*_LL_GetTick()*/));
   }
 }
