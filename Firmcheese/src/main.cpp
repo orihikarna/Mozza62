@@ -4,6 +4,7 @@
 
 #include <array>
 
+#include "key_event.hpp"
 #include "key_scanner.hpp"
 
 // #define BOARD_XIAO_BLE
@@ -50,6 +51,7 @@ void scan_I2C() {
   Serial.print("end\n\n");
 }
 
+namespace NScanTest {
 Adafruit_MCP23X17 mcp;
 
 void scan_test_setup() {
@@ -100,10 +102,9 @@ void scan_test_loop() {
     }
   }
 }
+}  // namespace NScanTest
 
 KeyScanner scanner;
-
-int cnt = 0;
 
 void setup() {
   // Serial.begin(9600);
@@ -115,6 +116,7 @@ void setup() {
 #endif
 
   scan_I2C();
+
   if (true) {  // LED
 #ifdef BOARD_XIAO_BLE
     for (auto led : leds) {
@@ -132,11 +134,12 @@ void setup() {
     }
   }
   scanner.init();
-  // scan_test_setup();
+  // NScanTest::scan_test_setup();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  static int cnt = 0;
   cnt += 1;
   if (true) {  // board LED
 #ifdef BOARD_XIAO_BLE
@@ -155,6 +158,10 @@ void loop() {
     }
 #endif
   }
+  if (true) {  // key scan
+    // NScanTest::scan_test_loop();
+    scanner.scan();
+  }
   if (true) {  // full color LED
     for (uint16_t n = 0; n < NUM_LEDS; ++n) {
       const uint16_t hue = ((cnt * 1 + n * 4) & 255) << 8;
@@ -166,10 +173,6 @@ void loop() {
     for (auto &strip : strips) {
       strip.show();
     }
-  }
-  if (true) {
-    scanner.scan();
-    // scan_test_loop();
   }
   delay(1);
 }

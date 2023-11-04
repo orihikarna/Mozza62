@@ -5,14 +5,15 @@
 #include <array>
 #include <cstdint>
 
-#include "keyevent.hpp"
-#include "keyswitch.hpp"
+#include "key_event.hpp"
+#include "key_switch.hpp"
 
 static constexpr size_t kNumSides = 2;
 
 enum ESide {
   Left = 0,
   Right = 1,
+  NumSides,
 };
 
 enum ESwitchState : uint8_t {
@@ -34,7 +35,7 @@ class KeyScanner {
   static constexpr uint8_t mcp_enabled_mask_ = 0x02;
   uint8_t scan_row_ = 0;
   std::array<uint8_t, EKeySW::NumSWs> key_state_;
-  std::array<uint8_t, kNumSides> rot_state_;
+  std::array<uint8_t, ESide::NumSides> rot_state_;
 
  public:
   void init();

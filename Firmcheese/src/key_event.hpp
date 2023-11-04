@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ringbuf.hpp"
-// #include "util.hpp"
 
 enum class EKeyEvent {
   None = 0x00,
