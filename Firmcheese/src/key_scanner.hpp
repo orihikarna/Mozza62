@@ -8,8 +8,6 @@
 #include "key_event.hpp"
 #include "key_switch.hpp"
 
-static constexpr size_t kNumSides = 2;
-
 enum ESide {
   Left = 0,
   Right = 1,
@@ -27,7 +25,7 @@ class KeyScanner {
   std::array<bool, kNumSides> mcp_inited_;
 
   void mcp_init();
-  uint16_t mcp_get_col(size_t side);
+  uint16_t mcp_get_col(uint8_t side);
   void mcp_set_row(uint8_t row);
 
  private:

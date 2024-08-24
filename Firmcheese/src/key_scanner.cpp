@@ -72,18 +72,13 @@ constexpr uint8_t rot_keys[kNumSides][kNumRots] = {
     {RRA, RRB},
 };
 
-inline uint8_t get_col_bit(uint8_t side, uint16_t val, int8_t col) {
-  return (val >> mcp_col_bits[side][col]) & 1;
-}
-
-inline uint8_t get_rot_bit(uint8_t side, uint16_t val, int8_t rot) {
-  return (val >> mcp_rot_bits[side][rot]) & 1;
-}
+inline uint8_t get_col_bit(uint8_t side, uint16_t val, int8_t col) { return (val >> mcp_col_bits[side][col]) & 1; }
+inline uint8_t get_rot_bit(uint8_t side, uint16_t val, int8_t rot) { return (val >> mcp_rot_bits[side][rot]) & 1; }
 
 }  // namespace
 
 void KeyScanner::mcp_init() {
-  for (size_t side = 0; side < kNumSides; ++side) {
+  for (uint8_t side = 0; side < kNumSides; ++side) {
     if ((mcp_enabled_mask_ & (1 << side)) == 0) {
       continue;
     }
@@ -106,31 +101,33 @@ void KeyScanner::mcp_init() {
   }
 }
 
-uint16_t KeyScanner::mcp_get_col(size_t side) {
+uint16_t KeyScanner::mcp_get_col(uint8_t side) {
   uint16_t col = 0;
-  if ((mcp_enabled_mask_ & (1 << side)) == 0) {
-    return col;
-  }
-  if (mcp_inited_[side]) {
-    col = mcp_[side].readGPIOAB();
-    // LOG_DEBUG("col = 0x%04x\n", col);
-    if (col == 0xffff) {
-      mcp_inited_[side] = false;
+  if ((mcp_enabled_mask_ & (1 << side)) == 0) {  // disabled
+    // ...
+  } else {  // enabled
+    if (mcp_inited_[side]) {
+      col = mcp_[side].readGPIOAB();
+      // LOG_DEBUG("col = 0x%04x\n", col);
+      if (col == 0xffff) {
+        mcp_inited_[side] = false;
+      }
     }
   }
   return col;
 }
 
 void KeyScanner::mcp_set_row(uint8_t row) {
-  for (size_t side = 0; side < kNumSides; ++side) {
-    if ((mcp_enabled_mask_ & (1 << side)) == 0) {
-      continue;
-    }
-    if (mcp_inited_[side]) {
-      mcp_[side].writeGPIOAB(1 << mcp_row_bits[side][row]);
-      // if (mcp_[side].mcp_write(MCP23017::Port::B, val) == false) {
-      //   mcp_inited_[side] = false;
-      // }
+  for (uint8_t side = 0; side < kNumSides; ++side) {
+    if ((mcp_enabled_mask_ & (1 << side)) == 0) {  // disabled
+      // ...
+    } else {  // enabled
+      if (mcp_inited_[side]) {
+        mcp_[side].writeGPIOAB(1 << mcp_row_bits[side][row]);
+        // if (mcp_[side].mcp_write(MCP23017::Port::B, val) == false) {
+        //   mcp_inited_[side] = false;
+        // }
+      }
     }
   }
 }
@@ -169,18 +166,15 @@ void KeyScanner::scan(KeyEventBuffer *fifo) {
   mcp_set_row(next_row);
 
   {  // read col lines
-    const uint8_t *key_lines[kNumSides] = {
-        key_matrix_L[curr_row],
-        key_matrix_R[curr_row],
-    };
-    for (size_t side = 0; side < kNumSides; ++side) {
+    for (uint8_t side = 0; side < kNumSides; ++side) {
+      const uint8_t *key_row = key_matrices[side][curr_row];
       for (uint8_t col = 0; col < kNumCols; ++col) {
-        update_key_state(fifo, key_lines[side][col], get_col_bit(side, bits[side], col));
+        update_key_state(fifo, key_row[col], get_col_bit(side, bits[side], col));
       }
     }
   }
   {  // read rot values
-    for (size_t side = 0; side < kNumSides; ++side) {
+    for (uint8_t side = 0; side < kNumSides; ++side) {
       // extract rotary encoder bits
       uint8_t rot_bits = 0;
       for (uint8_t rot = 0; rot < kNumRots; ++rot) {
