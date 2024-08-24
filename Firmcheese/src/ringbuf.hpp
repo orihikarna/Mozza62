@@ -6,6 +6,10 @@
 
 template <typename T>
 class RingBuffer {
+ public:
+  using size_t = uint8_t;
+  using ssize_t = int8_t;
+
  private:
   T* buff_;
   size_t size_;

@@ -208,9 +208,8 @@ void KeyScanner::scan(KeyEventBuffer *fifo) {
 }
 
 void KeyScanner::update_key_state(KeyEventBuffer *evbuf, uint8_t key, uint8_t val) {
-  if (key >= 255) {  // no key
-    return;
-  }
+  if (key >= 255) return;  // no key
+
   const uint8_t old_state = key_state_[key];
   const uint8_t is_on = (val) ? ESwitchState::IsON : 0;
   // keysw was on for continuous two times

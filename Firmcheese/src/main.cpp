@@ -6,6 +6,7 @@
 
 #include "key_event.hpp"
 #include "key_scanner.hpp"
+#include "proc_layer.hpp"
 #include "ringbuf.hpp"
 
 // #define BOARD_XIAO_BLE
@@ -148,13 +149,13 @@ KeyEventBuffer kevb_emacs(keva_emacs.data(), keva_emacs.size());
 KeyEventBuffer kevb_unmod(keva_unmod.data(), keva_unmod.size());
 
 // LedProc led_proc;
-// KeyLayerProc proc_layer;
+KeyProcLayer proc_layer;
 // KeyEmacsProc proc_emacs;
 // KeyUnmodProc proc_unmod;
 // KeyNkroProc proc_nkro;
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  // return;
   static int cnt = 0;
   cnt += 1;
   if (true) {  // board LED
@@ -178,6 +179,18 @@ void loop() {
     // NScanTest::scan_test_loop();
     scanner.scan(&kevb_input);
   }
+
+  KeyEventBuffer *pkevb_in = nullptr;
+  KeyEventBuffer *pkevb_out = &kevb_input;
+
+#define _set_kevb(kevb) \
+  pkevb_in = pkevb_out; \
+  pkevb_out = &kevb
+  _set_kevb(kevb_layer);
+  while (proc_layer.process(*pkevb_in, *pkevb_out));
+  // _set_kevb( kevb_emacs ); while (proc_emacs.process( *pkevb_in, *pkevb_out )) {}
+  // _set_kevb( kevb_unmod ); while (proc_unmod.process( *pkevb_in, *pkevb_out )) {}
+#undef _set_kevb
   if (true) {  // full color LED
     for (uint16_t n = 0; n < NUM_LEDS; ++n) {
       const uint16_t hue = ((cnt * 1 + n * 4) & 255) << 8;

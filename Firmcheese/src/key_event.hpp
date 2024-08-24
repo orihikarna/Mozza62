@@ -11,13 +11,13 @@ enum class EKeyEvent {
 using keycode_t = uint16_t;
 
 struct KeyEvent {
-  KeyEvent(keycode_t _code = 0, EKeyEvent _event = EKeyEvent::None, int16_t _tick_ms = 0)
-      : code(_code), event(_event), tick_ms(_tick_ms) {}
-  keycode_t code;
-  EKeyEvent event;
-  int16_t tick_ms;
+  KeyEvent(keycode_t code = 0, EKeyEvent event = EKeyEvent::None, int16_t tick_ms = 0)
+      : code_(code), event_(event), tick_ms_(tick_ms) {}
+  keycode_t code_;
+  EKeyEvent event_;
+  int16_t tick_ms_;
 
-  inline bool isPressed() const { return event == EKeyEvent::Pressed; }
+  inline bool isPressed() const { return event_ == EKeyEvent::Pressed; }
 };
 
 using KeyEventBuffer = RingBuffer<KeyEvent>;
