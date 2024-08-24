@@ -180,14 +180,14 @@ void loop() {
     scanner.scan(&kevb_input);
   }
 
-  KeyEventBuffer *pkevb_in = nullptr;
-  KeyEventBuffer *pkevb_out = &kevb_input;
+  KeyEventBuffer *ptr_kevb_in = nullptr;
+  KeyEventBuffer *ptr_kevb_out = &kevb_input;
 
-#define _set_kevb(kevb) \
-  pkevb_in = pkevb_out; \
-  pkevb_out = &kevb
+#define _set_kevb(kevb)       \
+  ptr_kevb_in = ptr_kevb_out; \
+  ptr_kevb_out = &kevb
   _set_kevb(kevb_layer);
-  while (proc_layer.process(*pkevb_in, *pkevb_out));
+  while (proc_layer.process(*ptr_kevb_in, *ptr_kevb_out));
   // _set_kevb( kevb_emacs ); while (proc_emacs.process( *pkevb_in, *pkevb_out )) {}
   // _set_kevb( kevb_unmod ); while (proc_unmod.process( *pkevb_in, *pkevb_out )) {}
 #undef _set_kevb
