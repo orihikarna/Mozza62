@@ -1,6 +1,12 @@
 #pragma once
-
+#include <array>
 #include <cstdint>
+
+constexpr uint8_t kNumSides = 2;
+constexpr uint8_t kNumRows = 5;
+constexpr uint8_t kNumCols = 8;
+constexpr uint8_t kNumRots = 2;
+constexpr uint8_t kNumLeds = 31;
 
 // clang-format off
 enum EKeySW {
@@ -11,12 +17,31 @@ enum EKeySW {
             L65, LRB, LRA, L35, L25, L15,     R15, R25, R35, RRA, RRB, R65,
   NumSWs
 };
-// clang-format on
 
-constexpr uint8_t kNumSides = 2;
-constexpr uint8_t kNumRows = 5;
-constexpr uint8_t kNumCols = 8;
-constexpr uint8_t kNumRots = 2;
+static constexpr std::array<uint8_t, kNumLeds*2> g_led2sw_index = {
+       L21, L31, L41, L51, L61, L71,
+  L82, L72, L62, L52, L42, L32, L22,
+  L13, L23, L33, L43, L53, L63, L73, L83,
+  L84,      L64, L54, L44, L34, L24, L14,
+  L15, L25, L35,
+       R21, R31, R41, R51, R61, R71,
+  R82, R72, R62, R52, R42, R32, R22,
+  R13, R23, R33, R43, R53, R63, R73, R83,
+  R84,      R64, R54, R44, R34, R24, R14,
+  R15, R25, R35,
+};
+
+#define __ 255
+static constexpr std::array<uint8_t, EKeySW::NumSWs> g_sw2led_index = {
+       5,  4,  3,  2,  1,  0,           31, 32, 33, 34, 35, 36,
+   6,  7,  8,  9, 10, 11, 12,           42, 41, 40, 39, 38, 37, 36,
+  20, 19, 18, 17, 16, 15, 14, 13,   43, 44, 45, 46, 47, 48, 49, 50,
+  21,     22, 23, 24, 25, 26, 27,   57, 56, 55, 54, 53, 52,     51,
+          __, __, __, 30, 29, 28,   58, 59, 60, __, __, __,
+};
+#undef __
+
+// clang-format on
 
 #define ___ 255
 

@@ -7,32 +7,32 @@
 #include "key_event.hpp"
 #include "key_scanner.hpp"
 #include "proc_layer.hpp"
+#include "proc_led.hpp"
 #include "ringbuf.hpp"
 
 // #define BOARD_XIAO_BLE
-#define BOARD_M5ATOM
 
 #ifdef BOARD_XIAO_BLE
 #include <Adafruit_TinyUSB.h>  // for Serial
 constexpr std::array<int, 3> leds = {LED_RED, LED_BLUE, LED_GREEN};
-#define LED_PIN_LEFT D0
-#define LED_PIN_RIGHT D1
+// #define LED_PIN_LEFT D0
+// #define LED_PIN_RIGHT D1
 #endif
 
 #ifdef BOARD_M5ATOM
 // #include <M5Atom.h>
 #define LED_PIN_MATRIX 27
-#define LED_PIN_LEFT 19
-#define LED_PIN_RIGHT 22
+// #define LED_PIN_LEFT 19
+// #define LED_PIN_RIGHT 22
 constexpr uint16_t NUM_MATRIX_LEDS = 25;
 Adafruit_NeoPixel matrix_strip(NUM_MATRIX_LEDS, LED_PIN_MATRIX, NEO_GRB + NEO_KHZ800);
 #endif
 
-constexpr uint16_t NUM_LEDS = 30;
-std::array<Adafruit_NeoPixel, 2> strips = {
-    Adafruit_NeoPixel(NUM_LEDS, LED_PIN_LEFT, NEO_GRB + NEO_KHZ800),
-    Adafruit_NeoPixel(NUM_LEDS, LED_PIN_RIGHT, NEO_GRB + NEO_KHZ800),
-};
+// constexpr uint16_t NUM_LEDS = 30;
+// std::array<Adafruit_NeoPixel, 2> strips = {
+//     Adafruit_NeoPixel(NUM_LEDS, LED_PIN_LEFT, NEO_GRB + NEO_KHZ800),
+//     Adafruit_NeoPixel(NUM_LEDS, LED_PIN_RIGHT, NEO_GRB + NEO_KHZ800),
+// };
 
 void scan_I2C() {
   Adafruit_MCP23X17 mcp;
@@ -47,12 +47,12 @@ void scan_I2C() {
     if (address % 16 == 0) {
       Serial.print("\n");
     }
-    delay(10);
+    delay(2);
   }
   Serial.print("end\n\n");
 }
 
-namespace NScanTest {
+namespace NKeyScanTest {
 Adafruit_MCP23X17 mcp;
 
 void scan_test_setup() {
@@ -103,7 +103,7 @@ void scan_test_loop() {
     }
   }
 }
-}  // namespace NScanTest
+}  // namespace NKeyScanTest
 
 KeyScanner scanner;
 
@@ -128,12 +128,6 @@ void setup() {
     matrix_strip.begin();
 #endif
   }
-  if (true) {  // full color LED
-    for (auto &strip : strips) {
-      strip.begin();
-      // strip.show();
-    }
-  }
   scanner.init();
   // NScanTest::scan_test_setup();
 }
@@ -148,11 +142,13 @@ KeyEventBuffer kevb_layer(keva_layer.data(), keva_layer.size());
 KeyEventBuffer kevb_emacs(keva_emacs.data(), keva_emacs.size());
 KeyEventBuffer kevb_unmod(keva_unmod.data(), keva_unmod.size());
 
-// LedProc led_proc;
+ProcLed proc_led;
 KeyProcLayer proc_layer;
 // KeyEmacsProc proc_emacs;
 // KeyUnmodProc proc_unmod;
 // KeyNkroProc proc_nkro;
+
+// USBHIDKeyboard keyboard;
 
 void loop() {
   // return;
@@ -168,40 +164,39 @@ void loop() {
 #ifdef BOARD_M5ATOM
     for (uint16_t n = 0; n < NUM_MATRIX_LEDS; ++n) {
       const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
-      for (auto &strip : strips) {
-        const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 20);
-        matrix_strip.setPixelColor(n, clr);
-      }
+      const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 20);
+      matrix_strip.setPixelColor(n, clr);
     }
 #endif
   }
   if (true) {  // key scan
     // NScanTest::scan_test_loop();
     scanner.scan(&kevb_input);
+    // proc_led.process(scanner.getSwitchStateData());
   }
 
   KeyEventBuffer *ptr_kevb_in = nullptr;
   KeyEventBuffer *ptr_kevb_out = &kevb_input;
 
-#define _set_kevb(kevb)       \
-  ptr_kevb_in = ptr_kevb_out; \
-  ptr_kevb_out = &kevb
-  _set_kevb(kevb_layer);
-  while (proc_layer.process(*ptr_kevb_in, *ptr_kevb_out));
+  // clang-format off
+#define _set_kevb(kevb)  ptr_kevb_in = ptr_kevb_out;  ptr_kevb_out = &(kevb)
+  _set_kevb(kevb_layer); while (proc_layer.process(*ptr_kevb_in, *ptr_kevb_out));
   // _set_kevb( kevb_emacs ); while (proc_emacs.process( *pkevb_in, *pkevb_out )) {}
   // _set_kevb( kevb_unmod ); while (proc_unmod.process( *pkevb_in, *pkevb_out )) {}
 #undef _set_kevb
+  // clang-format on
+
   if (true) {  // full color LED
-    for (uint16_t n = 0; n < NUM_LEDS; ++n) {
-      const uint16_t hue = ((cnt * 1 + n * 4) & 255) << 8;
-      for (auto &strip : strips) {
-        const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 10);
-        strip.setPixelColor(n, clr);
-      }
-    }
-    for (auto &strip : strips) {
-      strip.show();
-    }
+    // for (uint16_t n = 0; n < NUM_LEDS; ++n) {
+    //   const uint16_t hue = ((cnt * 1 + n * 4) & 255) << 8;
+    //   for (auto &strip : strips) {
+    //     const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 10);
+    //     strip.setPixelColor(n, clr);
+    //   }
+    // }
+    // for (auto &strip : strips) {
+    //   strip.show();
+    // }
   }
   delay(1);
 }
