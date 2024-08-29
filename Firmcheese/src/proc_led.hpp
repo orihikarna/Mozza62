@@ -26,14 +26,12 @@ class ProcLed {
 
  private:
   void update_led(const uint8_t* sw_state);
-  void update_color(bool is_left);
+  void update_color(uint8_t side);
 
  private:
   uint8_t stage_;
   uint16_t counter_;
-  Adafruit_NeoPixel nxp_L_;
-  Adafruit_NeoPixel nxp_R_;
+  std::array<Adafruit_NeoPixel, 2> npx_;
 
-  std::array<uint8_t, kNumLeds * 2> data_;              // both hands
-  std::array<uint8_t, kNumLeds * kNumPixelBytes> rgb_;  // one hand
+  std::array<uint8_t, kNumLeds * 2> data_;  // both hands
 };

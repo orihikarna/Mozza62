@@ -129,24 +129,24 @@ constexpr int16_t maxv = 255;
 }  // namespace NImpl
 namespace {  // color conversion
 
-void set_hue(uint8_t* rgb, const uint8_t* dat, uint8_t sat = 255, uint8_t vis = 12) {
+void set_hue(Adafruit_NeoPixel& nxp, const uint8_t* dat, uint8_t sat = 255, uint8_t vis = 12) {
   for (uint8_t n = 0; n < kNumLeds; ++n) {
-    // hsv2grb(dat[n] >> 1, sat, vis, rgb);
-    rgb += kNumPixelBytes;
+    const uint32_t clr = Adafruit_NeoPixel::ColorHSV(dat[n] << 8, sat, vis);
+    nxp.setPixelColor(n, clr);
   }
 }
 
-void set_sat(uint8_t* rgb, const uint8_t* dat, uint8_t hue, uint8_t vis = 12) {
+void set_sat(Adafruit_NeoPixel& nxp, const uint8_t* dat, uint8_t hue, uint8_t vis = 12) {
   for (uint8_t n = 0; n < kNumLeds; ++n) {
     int16_t val = (int8_t)dat[n];
     val = std::abs(val);
     val = std::min<int16_t>(std::max<int16_t>((val << 2) - 256, 0), 255);
-    // hsv2grb(hue, val, vis, rgb);
-    rgb += kNumPixelBytes;
+    const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue << 8, val, vis);
+    nxp.setPixelColor(n, clr);
   }
 }
 
-void set_rgb(uint8_t* rgb, const uint8_t* dat, bool red, bool green, bool blue) {
+void set_rgb(Adafruit_NeoPixel& nxp, const uint8_t* dat, bool red, bool green, bool blue) {
   const uint8_t r_mask = (red) ? 0xff : 0;
   const uint8_t g_mask = (green) ? 0xff : 0;
   const uint8_t b_mask = (blue) ? 0xff : 0;
@@ -154,20 +154,21 @@ void set_rgb(uint8_t* rgb, const uint8_t* dat, bool red, bool green, bool blue) 
     int8_t val = (int8_t)dat[n];
     val = std::abs(val) - 96;
     val = std::max<int8_t>(val, 0);
-    *rgb++ = g_mask & val;
-    *rgb++ = r_mask & val;
-    *rgb++ = b_mask & val;
+    nxp.setPixelColor(n, r_mask & val, g_mask & val, b_mask & val);
   }
 }
 }  // namespace
 
 ProcLed::ProcLed()
-    : nxp_L_(kNumLeds, LED_PIN_LEFT, NEO_GRB + NEO_KHZ800),
-      nxp_R_(kNumLeds, LED_PIN_RIGHT, NEO_GRB + NEO_KHZ800) {}
+    : npx_{
+          Adafruit_NeoPixel(kNumLeds, LED_PIN_LEFT, NEO_GRB + NEO_KHZ800),
+          Adafruit_NeoPixel(kNumLeds, LED_PIN_RIGHT, NEO_GRB + NEO_KHZ800),
+      } {}
 
 void ProcLed::init() {
-  nxp_L_.begin();
-  nxp_R_.begin();
+  for (uint8_t side = 0; side < kNumSides; ++side) {
+    npx_[side].begin();
+  }
 
   stage_ = ES_UpdateLed;
   counter_ = 0;
@@ -221,37 +222,36 @@ void ProcLed::update_led(const uint8_t* sw_state) {
   counter_ += 1;
 }
 
-void ProcLed::update_color(bool is_left) {
+void ProcLed::update_color(uint8_t side) {
   if (CONFIG_DATA(CFG_RGB_TYPE) == ERGB::Off) {
-    rgb_.fill(0);
+    npx_[side].clear();
     return;
   }
-  const uint8_t* src = &data_[(is_left) ? 0 : kNumLeds];
-  uint8_t* dst = rgb_.data();
+  const uint8_t* src = &data_[(side == 0) ? 0 : kNumLeds];
   switch (uint8_t(CONFIG_DATA(CFG_CLR_TYPE))) {
     case ECLR::Rainbow:
-      set_hue(dst, src);
+      set_hue(npx_[side], src);
       break;
     case ECLR::Red:
-      set_rgb(dst, src, true, false, false);
+      set_rgb(npx_[side], src, true, false, false);
       break;
     case ECLR::Green:
-      set_rgb(dst, src, false, true, false);
+      set_rgb(npx_[side], src, false, true, false);
       break;
     case ECLR::Blue:
-      set_rgb(dst, src, false, false, true);
+      set_rgb(npx_[side], src, false, false, true);
       break;
     case ECLR::White:
-      set_rgb(dst, src, true, true, true);
+      set_rgb(npx_[side], src, true, true, true);
       break;
     case ECLR::RedSat:
-      set_sat(dst, src, 0);
+      set_sat(npx_[side], src, 0);
       break;
     case ECLR::GreenSat:
-      set_sat(dst, src, 43);
+      set_sat(npx_[side], src, 43);
       break;
     case ECLR::BlueSat:
-      set_sat(dst, src, 85);
+      set_sat(npx_[side], src, 85);
       break;
   }
 }
@@ -263,16 +263,16 @@ void ProcLed::process(const uint8_t* sw_state) {
       update_led(sw_state);
       break;
     case ES_UpdateColorLeft:
-      update_color(true);
+      update_color(0);
       break;
     case ES_SendLeft:
-      nxp_L_.show();
+      npx_[0].show();
       break;
     case ES_UpdateColorRight:
-      update_color(false);
+      update_color(1);
       break;
     case ES_SendRight:
-      nxp_R_.show();
+      npx_[1].show();
       break;
   }
   if (stage_ == ES_UpdateLed) {

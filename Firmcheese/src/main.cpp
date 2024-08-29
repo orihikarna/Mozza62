@@ -10,8 +10,6 @@
 #include "proc_led.hpp"
 #include "ringbuf.hpp"
 
-// #define BOARD_XIAO_BLE
-
 #ifdef BOARD_XIAO_BLE
 #include <Adafruit_TinyUSB.h>  // for Serial
 constexpr std::array<int, 3> leds = {LED_RED, LED_BLUE, LED_GREEN};
