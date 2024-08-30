@@ -222,10 +222,10 @@ void KeyScanner::update_key_state(KeyEventBuffer *evbuf, uint8_t key, uint8_t va
 
   // push to fifo
   if ((~old_state & new_state) & ESwitchState::IsPressed) {
-    LOG_DEBUG("Pressed: key = %x\n", key);
+    LOG_DEBUG("Pressed: key = %d", key);
     evbuf->push_back(KeyEvent(key, EKeyEvent::Pressed, millis()));
   } else if ((old_state & ~new_state) & ESwitchState::IsPressed) {
-    LOG_DEBUG("Released: key = %x\n", key);
+    LOG_DEBUG("Released: key = %d", key);
     evbuf->push_back(KeyEvent(key, EKeyEvent::Released, millis()));
   }
 }

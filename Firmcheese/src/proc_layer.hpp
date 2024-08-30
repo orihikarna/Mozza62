@@ -61,14 +61,14 @@ class KeyProcLayer {
         // pressed
         kev_out.code_ = keycode;
         keycodes_[kev_raw.code_] = keycode;  // remember
-        LOG_DEBUG("Pressed: %c", kev_out.code_);
+        LOG_DEBUG("Pressed: 0x%04x (raw %d)", kev_out.code_, kev_raw.code_);
       } else {
         // released
         kev_out.code_ = keycodes_[kev_raw.code_];  // recall
         keycodes_[kev_raw.code_] = KC_NO;          // forget
-        LOG_DEBUG("Released: %c", kev_out.code_);
+        LOG_DEBUG("Released: 0x%04x (raw %d)", kev_out.code_, kev_raw.code_);
       }
-      kevb_out.push_back(kev_out);
+      // kevb_out.push_back(kev_out);
     }
     return true;
   }
