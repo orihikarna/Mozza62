@@ -29,7 +29,7 @@ class KeyScanner {
   void mcp_set_row(uint8_t row);
 
  private:
-  static constexpr uint8_t mcp_enabled_mask_ = 0x02;
+  const uint8_t mcp_enabled_mask_ = 0x03;
   uint8_t scan_row_ = 0;
   std::array<uint8_t, EKeySW::NumSWs> key_state_;
   std::array<uint8_t, kNumSides> rot_state_;

@@ -13,24 +13,14 @@
 #ifdef BOARD_XIAO_BLE
 #include <Adafruit_TinyUSB.h>  // for Serial
 constexpr std::array<int, 3> leds = {LED_RED, LED_BLUE, LED_GREEN};
-// #define LED_PIN_LEFT D0
-// #define LED_PIN_RIGHT D1
 #endif
 
 #ifdef BOARD_M5ATOM
 // #include <M5Atom.h>
 #define LED_PIN_MATRIX 27
-// #define LED_PIN_LEFT 19
-// #define LED_PIN_RIGHT 22
 constexpr uint16_t NUM_MATRIX_LEDS = 25;
 Adafruit_NeoPixel matrix_strip(NUM_MATRIX_LEDS, LED_PIN_MATRIX, NEO_GRB + NEO_KHZ800);
 #endif
-
-// constexpr uint16_t NUM_LEDS = 30;
-// std::array<Adafruit_NeoPixel, 2> strips = {
-//     Adafruit_NeoPixel(NUM_LEDS, LED_PIN_LEFT, NEO_GRB + NEO_KHZ800),
-//     Adafruit_NeoPixel(NUM_LEDS, LED_PIN_RIGHT, NEO_GRB + NEO_KHZ800),
-// };
 
 void scan_I2C() {
   Adafruit_MCP23X17 mcp;
@@ -184,18 +174,5 @@ void loop() {
   // _set_kevb( kevb_unmod ); while (proc_unmod.process( *pkevb_in, *pkevb_out )) {}
 #undef _set_kevb
   // clang-format on
-
-  if (true) {  // full color LED
-    // for (uint16_t n = 0; n < NUM_LEDS; ++n) {
-    //   const uint16_t hue = ((cnt * 1 + n * 4) & 255) << 8;
-    //   for (auto &strip : strips) {
-    //     const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 10);
-    //     strip.setPixelColor(n, clr);
-    //   }
-    // }
-    // for (auto &strip : strips) {
-    //   strip.show();
-    // }
-  }
   delay(1);
 }

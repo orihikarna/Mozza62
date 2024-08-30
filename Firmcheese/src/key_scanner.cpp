@@ -1,5 +1,3 @@
-// #define LOG_LEVEL LL_DEBUG
-// #include "main.h"
 #include "key_scanner.hpp"
 
 #include "log.h"
@@ -72,8 +70,13 @@ constexpr uint8_t rot_keys[kNumSides][kNumRots] = {
     {RRA, RRB},
 };
 
-inline uint8_t get_col_bit(uint8_t side, uint16_t val, int8_t col) { return (val >> mcp_col_bits[side][col]) & 1; }
-inline uint8_t get_rot_bit(uint8_t side, uint16_t val, int8_t rot) { return (val >> mcp_rot_bits[side][rot]) & 1; }
+inline uint8_t get_col_bit(uint8_t side, uint16_t val, int8_t col) {
+  return (val >> mcp_col_bits[side][col]) & 1;
+}
+
+inline uint8_t get_rot_bit(uint8_t side, uint16_t val, int8_t rot) {
+  return (val >> mcp_rot_bits[side][rot]) & 1;
+}
 
 }  // namespace
 

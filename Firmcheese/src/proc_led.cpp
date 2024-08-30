@@ -14,6 +14,7 @@
 #include "key_layer.hpp"
 #include "key_scanner.hpp"
 #include "proc_led.hpp"
+#include "util.hpp"
 
 struct KeyGeometry {
   KeyGeometry(float x, float y, float angle, float w, float h, int idx, const char* name)
@@ -261,7 +262,7 @@ void ProcLed::update_color(uint8_t side) {
 }
 
 void ProcLed::process(const uint8_t* sw_state) {
-  // ElapsedTimer et;
+  ElapsedTimer et;
   switch (stage_) {
     case ES_UpdateLed:
       update_led(sw_state);
@@ -279,8 +280,13 @@ void ProcLed::process(const uint8_t* sw_state) {
       npx_[1].show();
       break;
   }
-  if (stage_ == ES_UpdateLed) {
-    // LOG_DEBUG("stage_ = %d, elapsed = %ld us", stage_, 0 /*et.getElapsedMicroSec()*/);
+  if (stage_ == ES_UpdateLed || stage_ == ES_UpdateColorLeft || stage_ == ES_UpdateColorRight) {
+    static uint32_t max_elapsed_us = 0;
+    const uint32_t elapsed_us = et.getElapsedMicroSec();
+    if (max_elapsed_us < elapsed_us) {
+      max_elapsed_us = elapsed_us;
+      LOG_DEBUG("stage_ = %d, elapsed = %ld us", stage_, max_elapsed_us);
+    }
   }
   // update stage
   stage_ += 1;

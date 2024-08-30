@@ -34,7 +34,7 @@ bool KeyProcLayer::process(KeyEventBuffer& kevb_in, KeyEventBuffer& kevb_out) {
   if (keycode == KC_TRNS) {
     keycode = keymaps[0][kev_raw.code_];  // default layer
   }
-  LOG_DEBUG("keycode = %d, event = %d", keycode, kev_raw.m_event);
+  LOG_DEBUG("keycode = %d, event = %d", keycode, kev_raw.event_);
   if (keycode == SC_REST) {
     // NVIC_SystemReset();
   }
