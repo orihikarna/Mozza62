@@ -4,27 +4,26 @@
 #include "key_layer.hpp"
 #include "qmk/keycode_jp.h"
 
-// std::array<uint8_t, NumConfigAddrs> g_config_data;
+std::array<uint8_t, NumConfigAddrs> g_config_data;
 
-// namespace {
-// void init_config_data() {
-//   g_config_data.fill(0);
-//   // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_OFF;
-//   // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_SNAKE;
-//   // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_FALL;
-//   // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_KNIGHT;
-//   CONFIG_DATA(CFG_RGB_TYPE) = RGB_WINDMILL;
-//   // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_CIRCLE;
-//   CONFIG_DATA(CFG_CLR_TYPE) = CLR_RAINBOW;
-//   // CONFIG_DATA( CFG_CLR_TYPE ) = CLR_RED;
-// }
-// }  // namespace
+void init_config_data() {
+  g_config_data.fill(0);
+  CONFIG_DATA(CFG_RGB_TYPE) = ERGB::KeyDown;
+  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_OFF;
+  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_SNAKE;
+  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_FALL;
+  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_KNIGHT;
+  // CONFIG_DATA(CFG_RGB_TYPE) = RGB_WINDMILL;
+  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_CIRCLE;
+  CONFIG_DATA(CFG_CLR_TYPE) = ECLR::White;
+  // CONFIG_DATA(CFG_CLR_TYPE) = CLR_RAINBOW;
+  // CONFIG_DATA( CFG_CLR_TYPE ) = CLR_RED;
+}
 
 void KeyProcLayer::init() {
   layer_ = EKeyLayer::Default;
   layer_key_counts_.fill(0);
   keycodes_.fill(KC_NO);
-  //   init_config_data();
 }
 
 bool KeyProcLayer::process(KeyEventBuffer& kevb_in, KeyEventBuffer& kevb_out) {

@@ -4,8 +4,6 @@
 
 #include "key_switch.hpp"
 
-// #include "keyscanner.hpp"
-
 constexpr uint8_t kNumPixelBytes = 3;
 
 class ProcLed {
@@ -32,6 +30,5 @@ class ProcLed {
   uint8_t stage_;
   uint16_t counter_;
   std::array<Adafruit_NeoPixel, 2> npx_;
-
   std::array<uint8_t, kNumLeds * 2> data_;  // both hands
 };

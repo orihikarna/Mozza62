@@ -45,7 +45,7 @@ void scan_I2C() {
     if (address % 16 == 0) {
       Serial.print("\n");
     }
-    delay(2);
+    delay(20);
   }
   Serial.print("end\n\n");
 }
@@ -126,6 +126,7 @@ void setup() {
     matrix_strip.begin();
 #endif
   }
+  init_config_data();
   scanner.init();
   // NScanTest::scan_test_setup();
 }
@@ -170,7 +171,7 @@ void loop() {
   if (true) {  // key scan
     // NScanTest::scan_test_loop();
     scanner.scan(&kevb_input);
-    // proc_led.process(scanner.getSwitchStateData());
+    proc_led.process(scanner.getSwitchStateData());
   }
 
   KeyEventBuffer *ptr_kevb_in = nullptr;

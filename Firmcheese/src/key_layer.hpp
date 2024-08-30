@@ -67,5 +67,18 @@ enum custom_keycodes {
 
 #define CONFIG_DATA(ADDR) g_config_data[CFG_ADDR(ADDR)]
 
+class ConfigData {
+ private:
+  std::array<uint8_t, NumConfigAddrs> config_data_;
+
+ public:
+  void init();
+  uint8_t& operator[](uint16_t kc) { return config_data_[CFG_ADDR(kc)]; }
+};
+
 extern std::array<uint8_t, NumConfigAddrs> g_config_data;
+// extern ConfigData g_config_data;
+
+void init_config_data();
+
 extern const keycode_t keymaps[EKeyLayer::NumLayers][EKeySW::NumSWs];

@@ -68,6 +68,22 @@ namespace NImpl {  // RGB effect patterns
 
 constexpr int16_t maxv = 255;
 
+void effect_keydown(uint8_t* data, uint16_t counter, const uint8_t* sw_state) {
+  for (uint8_t n = 0; n < EKeySW::NumSWs; ++n) {
+    const uint8_t idx = g_sw2led_index[n];
+    if (idx == 255) continue;
+    if (sw_state[n] & ESwitchState::IsPressed) {
+      data[idx] = 127;
+    } else if ((counter & 3) == 0) {  // fade
+      uint8_t v = data[idx];
+      if (v > 0) {
+        v -= 1;
+      }
+      data[idx] = v;
+    }
+  }
+}
+
 // [0, kNumLeds) --> [0, 256)
 // void effect_snake(uint8_t* dat, uint16_t cnt) {
 //   constexpr int16_t N = 1024;  // period
@@ -188,19 +204,7 @@ void ProcLed::init() {
 void ProcLed::update_led(const uint8_t* sw_state) {
   switch (uint8_t(CONFIG_DATA(CFG_RGB_TYPE))) {
     case ERGB::KeyDown:
-      for (uint8_t n = 0; n < EKeySW::NumSWs; ++n) {
-        const uint8_t idx = g_sw2led_index[n];
-        if (idx == 255) continue;
-        if (sw_state[n] & ESwitchState::IsPressed) {
-          data_[idx] = 127;
-        } else if ((counter_ & 3) == 0) {  // fade
-          uint8_t v = data_[idx];
-          if (v > 0) {
-            v -= 1;
-          }
-          data_[idx] = v;
-        }
-      }
+      NImpl::effect_keydown(data_.data(), counter_, sw_state);
       break;
 
     case ERGB::Snake:

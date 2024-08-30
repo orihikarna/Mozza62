@@ -37,12 +37,10 @@ class KeyScanner {
  public:
   void init();
   void scan(KeyEventBuffer *evbuf);
-#if 0
   inline bool is_pressed(uint8_t swidx) const {
     return key_state_[swidx] & static_cast<int>(ESwitchState::IsPressed);
   }
   inline uint8_t *getSwitchStateData() { return key_state_.data(); }
-#endif
 
  private:
   void update_key_state(KeyEventBuffer *fifo, uint8_t key, uint8_t val);
