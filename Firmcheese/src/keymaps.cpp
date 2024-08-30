@@ -6,15 +6,16 @@ ConfigData g_config_data;
 
 void ConfigData::init() {
   config_data_.fill(0);
-  (*this)[CFG_RGB_TYPE] = ERGB::KeyDown;
+  // (*this)[CFG_RGB_TYPE] = ERGB::KeyDown;
+  (*this)[CFG_RGB_TYPE] = ERGB::Windmill;
   // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_OFF;
   // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_SNAKE;
   // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_FALL;
   // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_KNIGHT;
-  // CONFIG_DATA(CFG_RGB_TYPE) = RGB_WINDMILL;
   // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_CIRCLE;
-  (*this)[CFG_CLR_TYPE] = ECLR::White;
-  // CONFIG_DATA(CFG_CLR_TYPE) = CLR_RAINBOW;
+
+  // (*this)[CFG_CLR_TYPE] = ECLR::White;
+  (*this)[CFG_CLR_TYPE] = ECLR::Rainbow;
   // CONFIG_DATA( CFG_CLR_TYPE ) = CLR_RED;
 }
 
