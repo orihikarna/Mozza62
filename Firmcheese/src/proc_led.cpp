@@ -18,9 +18,13 @@
 
 struct KeyGeometry {
   KeyGeometry(float x, float y, float angle)
-      : x(round(x)), y(round(y)), angle(round(std::atan2(y, x) * (180 / M_PI) + 0.5f)) {}
+      : x(round(x)),
+        y(round(y)),
+        r(round(std::sqrt(x * x + y * y))),
+        angle(round(std::atan2(y, x) * (180 / M_PI) + 0.5f)) {}
   int8_t x;
   int8_t y;
+  int8_t r;
   int8_t angle;
 };
 
@@ -61,65 +65,32 @@ static const KeyGeometry s_sw_geos[] = {
     {30.440, -10.126, -256.000},  // Shift
     {49.871, -9.102, -268.000},   // Space
 };
-namespace NImpl {  // RGB effect patterns
+namespace NPattern {
+constexpr int8_t speed_sh = 4;
 
-constexpr int16_t maxv = 255;
-
-void effect_keydown(uint8_t* data, uint16_t counter, const uint8_t* sw_state) {
-  for (uint8_t n = 0; n < EKeySW::NumSWs; ++n) {
-    const uint8_t idx = g_sw2led_index[n];
-    if (idx == 255) continue;
-    if (sw_state[n] & ESwitchState::IsPressed) {
-      data[idx] = 127;
-    } else if ((counter & 3) == 0) {  // fade
-      uint8_t v = data[idx];
-      if (v > 0) {
-        v -= 1;
-      }
-      data[idx] = v;
-    }
+void effect_linear(uint8_t* dat, uint16_t cnt) {
+  const int8_t ctr = cnt >> speed_sh;
+  uint8_t* dat_L = &dat[0];
+  uint8_t* dat_R = &dat[kNumLeds];
+  for (int16_t n = 0; n < kNumLeds; ++n) {
+    dat_L[n] = ctr;
+    dat_R[n] = ctr;
   }
 }
 
-// [0, kNumLeds) --> [0, 256)
-// void effect_snake(uint8_t* dat, uint16_t cnt) {
-//   constexpr int16_t N = 1024;  // period
-//   constexpr int16_t scale = int16_t(256.0f * 256 / kNumLeds + 0.5f);
-//   const uint16_t ctr = cnt & (N - 1);
-//   for (int16_t n = 0; n < kNumLeds; ++n) {
-//     dat[n] = ((ctr + 2) >> 2) + ((scale * n + 128) >> 8);
-//   }
-// }
-
-// void effect_fall(uint8_t* dat, uint16_t cnt) {
-//   const uint8_t ctr = cnt >> 2;
-//   uint8_t* dat_L = &dat[0];
-//   uint8_t* dat_R = &dat[kNumLeds];
-//   for (uint8_t n = 0; n < kNumLeds; ++n) {
-//     const uint8_t v = ctr - (s_sw_geos[n].y >> 1);
-//     dat_L[n] = v;
-//     dat_R[n] = v;
-//   }
-// }
-
-// void effect_knight(uint8_t* dat, uint16_t cnt) {
-//   constexpr int16_t N = 1024;  // period
-//   int16_t ctr = cnt & (N - 1);
-//   ctr = ((ctr >= N / 2) ? (N - ctr) : ctr) - N / 4;  // +/- 256
-
-//   uint8_t* dat_L = &dat[0];
-//   uint8_t* dat_R = &dat[kNumLeds];
-//   for (int8_t n = 0; n < kNumLeds; ++n) {
-//     const int16_t x = int16_t(s_sw_geo[n][0]) - 127;  // [-254, 0]
-//     const int16_t dL = (ctr - x) >> 2;  // [-256, +510] /2 --> [-128, 255] /2 --> [-64, 127]
-//     const int16_t dR = (ctr + x) >> 2;  // [-510, +256] /2 --> [-255, 128] /2 --> [-128, 64]
-//     dat_L[n] = 128 + dL;
-//     dat_R[n] = 128 + dR;
-//   }
-// }
+void effect_fall(uint8_t* dat, uint16_t cnt) {
+  const uint8_t ctr = cnt >> speed_sh;
+  uint8_t* dat_L = &dat[0];
+  uint8_t* dat_R = &dat[kNumLeds];
+  for (uint8_t n = 0; n < kNumLeds; ++n) {
+    const uint8_t v = ctr - (s_sw_geos[n].y >> 1);
+    dat_L[n] = v;
+    dat_R[n] = v;
+  }
+}
 
 void effect_windmill(uint8_t* dat, uint16_t cnt) {
-  const int8_t ctr = cnt >> 2;
+  const int8_t ctr = cnt >> speed_sh;
   uint8_t* dat_L = &dat[0];
   uint8_t* dat_R = &dat[kNumLeds];
   for (int16_t n = 0; n < kNumLeds; ++n) {
@@ -129,46 +100,68 @@ void effect_windmill(uint8_t* dat, uint16_t cnt) {
   }
 }
 
-// void effect_circle(uint8_t* dat, uint16_t cnt) {
-//   const int8_t ctr = cnt >> 1;
-//   uint8_t* dat_L = &dat[0];
-//   uint8_t* dat_R = &dat[kNumLeds];
-//   for (int16_t n = 0; n < kNumLeds; ++n) {
-//     const uint8_t d = ctr - (s_sw_geos[n][2] << 1);
-//     dat_L[n] = d;
-//     dat_R[n] = d;
-//   }
-// }
-}  // namespace NImpl
-namespace {  // color conversion
+void effect_circle(uint8_t* dat, uint16_t cnt) {
+  const int8_t ctr = cnt >> speed_sh;
+  uint8_t* dat_L = &dat[0];
+  uint8_t* dat_R = &dat[kNumLeds];
+  for (int16_t n = 0; n < kNumLeds; ++n) {
+    const uint8_t d = ctr - (s_sw_geos[n].r >> 1);
+    dat_L[n] = d;
+    dat_R[n] = d;
+  }
+}
+}  // namespace NPattern
+namespace NColor {  // color conversion
 
-void set_hue(Adafruit_NeoPixel& nxp, const uint8_t* dat, uint8_t sat = 255, uint8_t vis = 12) {
+void set_hue(uint32_t* rgb, const uint8_t* dat, uint8_t sat = 255, uint8_t vis = 20) {
   for (uint8_t n = 0; n < kNumLeds; ++n) {
-    const uint32_t clr = Adafruit_NeoPixel::ColorHSV(dat[n] << 8, sat, vis);
-    nxp.setPixelColor(n, clr);
+    rgb[n] = Adafruit_NeoPixel::ColorHSV(dat[n] << 8, sat, vis);
   }
 }
 
-void set_sat(Adafruit_NeoPixel& nxp, const uint8_t* dat, uint8_t hue, uint8_t vis = 12) {
+void set_sat(uint32_t* rgb, const uint8_t* dat, uint8_t hue, uint8_t vis = 20) {
   for (uint8_t n = 0; n < kNumLeds; ++n) {
-    int16_t val = (int8_t)dat[n];
+    int16_t val = static_cast<int8_t>(dat[n]);
     val = std::abs(val);
     val = std::min<int16_t>(std::max<int16_t>((val << 2) - 256, 0), 255);
-    const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue << 8, val, vis);
-    nxp.setPixelColor(n, clr);
+    rgb[n] = Adafruit_NeoPixel::ColorHSV(hue << 8, val, vis);
   }
 }
 
-void set_rgb(Adafruit_NeoPixel& nxp, const uint8_t* dat, bool red, bool green, bool blue) {
+void set_rgb(uint32_t* rgb, const uint8_t* dat, bool red, bool green, bool blue) {
   const uint8_t r_mask = (red) ? 0xff : 0;
   const uint8_t g_mask = (green) ? 0xff : 0;
   const uint8_t b_mask = (blue) ? 0xff : 0;
   for (uint8_t n = 0; n < kNumLeds; ++n) {
-    int8_t val = (int8_t)dat[n];
+    int8_t val = static_cast<int8_t>(dat[n]);
     val = std::abs(val) - 96;
     val = std::max<int8_t>(val, 0);
-    nxp.setPixelColor(n, r_mask & val, g_mask & val, b_mask & val);
+    rgb[n] = Adafruit_NeoPixel::Color(r_mask & val, g_mask & val, b_mask & val);
   }
+}
+}  // namespace NColor
+namespace {
+void effect_keydown(uint8_t* data, uint16_t counter, const uint8_t* sw_state) {
+  for (uint8_t n = 0; n < EKeySW::NumSWs; ++n) {
+    const uint8_t idx = g_sw2led_index[n];
+    if (idx == 255) continue;
+    if (sw_state[n] & ESwitchState::IsPressed) {
+      data[idx] = 128;
+    } else if ((counter & 3) == 0) {  // fade
+      uint8_t v = data[idx];
+      if (v > 0) {
+        v -= 2;
+      }
+      data[idx] = v;
+    }
+  }
+}
+
+inline uint32_t color_max(uint32_t rgb1, uint32_t rgb2) {
+  const uint32_t r = std::max(rgb1 & 0xff0000, rgb2 & 0xff0000);
+  const uint32_t g = std::max(rgb1 & 0x00ff00, rgb2 & 0x00ff00);
+  const uint32_t b = std::max(rgb1 & 0x0000ff, rgb2 & 0x0000ff);
+  return r | g | b;
 }
 }  // namespace
 
@@ -183,100 +176,103 @@ void ProcLed::init() {
     npx_[side].begin();
   }
 
-  stage_ = ES_UpdateLed;
+  stage_ = ES_UpdateLedColor;
   counter_ = 0;
+  overlay_.fill(0);
 
 #if 0
   for (uint8_t n = 0; n < EKeySW::NumSWs; ++n) {
     s_sw2led_index[s_led2sw_index[n]] = n;
   }
   for (uint8_t n = 0; n < EKeySW::NumSWs; ++n) {
-    printf( "%d, ", s_sw2led_index[n] );
+    printf("%d, ", s_sw2led_index[n]);
   }
-  printf( "\n" );
+  printf("\n");
 #endif
 }
 
 // output [0, 128)
-void ProcLed::update_led(const uint8_t* sw_state) {
-  switch (static_cast<ERGB>(g_config_data[CFG_RGB_TYPE])) {
-    case ERGB::KeyDown:
-      NImpl::effect_keydown(data_.data(), counter_, sw_state);
+void ProcLed::update_pattern(const uint8_t* sw_state) {
+  effect_keydown(overlay_.data(), counter_, sw_state);
+  switch (static_cast<EPattern>(g_config_data[CFG_PAT_TYPE])) {
+    case EPattern::Linear:
+      NPattern::effect_linear(data_.data(), counter_);
       break;
-    case ERGB::Snake:
-      //   effect_snake(data_.data(), counter_);
+    case EPattern::Fall:
+      NPattern::effect_fall(data_.data(), counter_);
       break;
-    case ERGB::Fall:
-      //   effect_fall(data_.data(), counter_);
+    case EPattern::Windmill:
+      NPattern::effect_windmill(data_.data(), counter_);
       break;
-    case ERGB::Knight:
-      //   effect_knight(data_.data(), counter_);
-      break;
-    case ERGB::Windmill:
-      NImpl::effect_windmill(data_.data(), counter_);
-      break;
-    case ERGB::Circle:
-      //   effect_circle(data_.data(), counter_);
+    case EPattern::Circle:
+      NPattern::effect_circle(data_.data(), counter_);
       break;
   }
   counter_ += 1;
 }
 
-void ProcLed::update_color(uint8_t side) {
-  if (g_config_data[CFG_RGB_TYPE] == ERGB::Off) {
-    npx_[side].clear();
-    return;
-  }
-  Adafruit_NeoPixel& npx = npx_[side];
-  const uint8_t* src = &data_[(side == 0) ? 0 : kNumLeds];
-  switch (static_cast<ECLR>(g_config_data[CFG_CLR_TYPE])) {
-    case ECLR::Rainbow:
-      set_hue(npx, src);
-      break;
-    case ECLR::Red:
-      set_rgb(npx, src, true, false, false);
-      break;
-    case ECLR::Green:
-      set_rgb(npx, src, false, true, false);
-      break;
-    case ECLR::Blue:
-      set_rgb(npx, src, false, false, true);
-      break;
-    case ECLR::White:
-      set_rgb(npx, src, true, true, true);
-      break;
-    case ECLR::RedSat:
-      set_sat(npx, src, 0);
-      break;
-    case ECLR::GreenSat:
-      set_sat(npx, src, 43);
-      break;
-    case ECLR::BlueSat:
-      set_sat(npx, src, 85);
-      break;
+void ProcLed::update_color() {
+  std::array<uint32_t, kNumLeds> _rgb;
+  uint32_t* rgb = _rgb.data();
+  for (uint8_t side = 0; side < kNumSides; ++side) {
+    const uint8_t* dat = &data_[(side == 0) ? 0 : kNumLeds];
+    const uint8_t* overlay = &overlay_[(side == 0) ? 0 : kNumLeds];
+    switch (static_cast<EColor>(g_config_data[CFG_CLR_TYPE])) {
+      case EColor::Off:
+        _rgb.fill(0);
+        break;
+      case EColor::Rainbow:
+        NColor::set_hue(rgb, dat);
+        break;
+      case EColor::Red:
+        NColor::set_rgb(rgb, dat, true, false, false);
+        break;
+      case EColor::Green:
+        NColor::set_rgb(rgb, dat, false, true, false);
+        break;
+      case EColor::Blue:
+        NColor::set_rgb(rgb, dat, false, false, true);
+        break;
+      case EColor::White:
+        NColor::set_rgb(rgb, dat, true, true, true);
+        break;
+      case EColor::RedSat:
+        NColor::set_sat(rgb, dat, 0);
+        break;
+      case EColor::GreenSat:
+        NColor::set_sat(rgb, dat, 43);
+        break;
+      case EColor::BlueSat:
+        NColor::set_sat(rgb, dat, 85);
+        break;
+    }
+    {  // set color
+      Adafruit_NeoPixel& npx = npx_[side];
+      for (uint8_t n = 0; n < kNumLeds; ++n) {
+        const uint32_t ovl = overlay[n];
+        const uint32_t clr = color_max(rgb[n], (ovl << 16) | (ovl << 8) | ovl);
+        npx.setPixelColor(n, clr);
+      }
+    }
   }
 }
 
 void ProcLed::process(const uint8_t* sw_state) {
   ElapsedTimer et;
   switch (stage_) {
-    case ES_UpdateLed:
-      update_led(sw_state);
-      break;
-    case ES_UpdateColorLeft:
-      update_color(0);
+    case ES_UpdateLedColor:
+      update_pattern(sw_state);
+      update_color();
       break;
     case ES_SendLeft:
       npx_[0].show();
-      break;
-    case ES_UpdateColorRight:
-      update_color(1);
       break;
     case ES_SendRight:
       npx_[1].show();
       break;
   }
-  if (stage_ == ES_UpdateLed || stage_ == ES_UpdateColorLeft || stage_ == ES_UpdateColorRight) {
+  // if (stage_ == ES_UpdateLed || stage_ == ES_UpdateColor) {
+  if (stage_ == ES_SendLeft || stage_ == ES_SendRight) {
     static uint32_t max_elapsed_us = 0;
     const uint32_t elapsed_us = et.getElapsedMicroSec();
     if (max_elapsed_us < elapsed_us) {
@@ -287,6 +283,6 @@ void ProcLed::process(const uint8_t* sw_state) {
   // update stage
   stage_ += 1;
   if (stage_ == ES_Num) {
-    stage_ = ES_UpdateLed;
+    stage_ = ES_UpdateLedColor;
   }
 }

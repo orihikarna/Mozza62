@@ -6,17 +6,10 @@ ConfigData g_config_data;
 
 void ConfigData::init() {
   config_data_.fill(0);
-  // (*this)[CFG_RGB_TYPE] = ERGB::KeyDown;
-  (*this)[CFG_RGB_TYPE] = ERGB::Windmill;
-  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_OFF;
-  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_SNAKE;
-  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_FALL;
-  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_KNIGHT;
-  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_CIRCLE;
+  (*this)[CFG_PAT_TYPE] = EPattern::Windmill;
 
-  // (*this)[CFG_CLR_TYPE] = ECLR::White;
-  (*this)[CFG_CLR_TYPE] = ECLR::Rainbow;
-  // CONFIG_DATA( CFG_CLR_TYPE ) = CLR_RED;
+  // (*this)[CFG_CLR_TYPE] = EColor::White;
+  (*this)[CFG_CLR_TYPE] = EColor::Rainbow;
 }
 
 // clang-format off
@@ -36,9 +29,9 @@ const keycode_t keymaps[EKeyLayer::NumLayers][EKeySW::NumSWs] = {
                                _______, _______, _______, _______, _______,    _______, _______, _______, _______, _______, _______,
   },
   [EKeyLayer::Misc] = {
-             _______, CF_LOFF, CF_LKEY, CF_LSNK, CF_LFAL, CF_LKNT,                      CF_LWML, CF_LCRL, _______, _______, _______, _______,
-    _______, _______, CF_CRBW, CF_CRED, CF_CGRN, CF_CBLU, CF_CWHT,                      CF_CRDS, CF_CGRS, CF_CBLS, _______, _______, _______, _______,
-    _______, _______, _______, _______, _______, _______, _______, _______,    _______, _______, _______, _______, _______, _______, _______, _______,
+             _______, CF_COFF, CF_LLNR, CF_LFAL, CF_LWML, CF_LCRL,                      _______, _______, _______, _______, _______, _______,
+    _______, _______, CF_CRBW, CF_CRED, CF_CGRN, CF_CBLU, _______,                      _______, _______, _______, _______, _______, _______, _______,
+    _______, _______, CF_CWHT, CF_CRDS, CF_CGRS, CF_CBLS, _______, _______,    _______, _______, _______, _______, _______, _______, _______, _______,
     _______,          _______, _______, _______, _______, _______, _______,    SC_REST, _______, _______, _______, _______, _______,          _______,
                                _______, _______, _______, _______, _______,    _______, _______, _______, _______, _______, _______,
   },

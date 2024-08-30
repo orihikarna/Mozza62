@@ -19,7 +19,7 @@
 #endif
 
 #define _LOG_PRINTF(fmt, level, ...) \
-  printf("%s[%s:%s(%d)] " fmt "\n", level, __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+  printf("[%s][%s:%s(%d)] " fmt "\n", level, __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
 #if defined(LOG_GLOBAL_ENABLE) && LOG_LEVEL <= LL_DEBUG
 #define LOG_DEBUG(fmt, ...) _LOG_PRINTF(fmt, "Debug", ##__VA_ARGS__)

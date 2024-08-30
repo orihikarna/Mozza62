@@ -7,18 +7,16 @@
 
 enum EKeyLayer { Default = 0, Lower, Misc, NumLayers };
 
-enum ERGB {
-  Off = 0,
-  KeyDown,
-  Snake,
+enum EPattern {
+  Linear = 0,
   Fall,
-  Knight,
   Windmill,
   Circle,
 };
 
-enum ECLR {
-  Rainbow = 0,
+enum EColor {
+  Off = 0,
+  Rainbow,
   Red,
   Green,
   Blue,
@@ -41,27 +39,25 @@ enum custom_keycodes {
   NumLayerKeys = LayerEnd - LayerStart,
   // config memories
   ConfigStart = 0x9000,
-  CFG_RGB_TYPE = 0x9000,
+  CFG_PAT_TYPE = 0x9000,
   CFG_CLR_TYPE = 0x9010,
   ConfigEnd = 0x9020,
   NumConfigAddrs = CFG_ADDR(ConfigEnd),
-  // RGB_TYPE
-  CF_LOFF = CFG_SET_VAL(CFG_RGB_TYPE, ERGB::Off),
-  CF_LKEY = CFG_SET_VAL(CFG_RGB_TYPE, ERGB::KeyDown),
-  CF_LSNK = CFG_SET_VAL(CFG_RGB_TYPE, ERGB::Snake),
-  CF_LFAL = CFG_SET_VAL(CFG_RGB_TYPE, ERGB::Fall),
-  CF_LKNT = CFG_SET_VAL(CFG_RGB_TYPE, ERGB::Knight),
-  CF_LWML = CFG_SET_VAL(CFG_RGB_TYPE, ERGB::Windmill),
-  CF_LCRL = CFG_SET_VAL(CFG_RGB_TYPE, ERGB::Circle),
+  // PAT_TYPE
+  CF_LLNR = CFG_SET_VAL(CFG_PAT_TYPE, EPattern::Linear),
+  CF_LFAL = CFG_SET_VAL(CFG_PAT_TYPE, EPattern::Fall),
+  CF_LWML = CFG_SET_VAL(CFG_PAT_TYPE, EPattern::Windmill),
+  CF_LCRL = CFG_SET_VAL(CFG_PAT_TYPE, EPattern::Circle),
   // CLR_TYPE
-  CF_CRBW = CFG_SET_VAL(CFG_CLR_TYPE, ECLR::Rainbow),
-  CF_CRED = CFG_SET_VAL(CFG_CLR_TYPE, ECLR::Red),
-  CF_CGRN = CFG_SET_VAL(CFG_CLR_TYPE, ECLR::Green),
-  CF_CBLU = CFG_SET_VAL(CFG_CLR_TYPE, ECLR::Blue),
-  CF_CWHT = CFG_SET_VAL(CFG_CLR_TYPE, ECLR::White),
-  CF_CRDS = CFG_SET_VAL(CFG_CLR_TYPE, ECLR::RedSat),
-  CF_CGRS = CFG_SET_VAL(CFG_CLR_TYPE, ECLR::GreenSat),
-  CF_CBLS = CFG_SET_VAL(CFG_CLR_TYPE, ECLR::BlueSat),
+  CF_COFF = CFG_SET_VAL(CFG_CLR_TYPE, EColor::Off),
+  CF_CRBW = CFG_SET_VAL(CFG_CLR_TYPE, EColor::Rainbow),
+  CF_CRED = CFG_SET_VAL(CFG_CLR_TYPE, EColor::Red),
+  CF_CGRN = CFG_SET_VAL(CFG_CLR_TYPE, EColor::Green),
+  CF_CBLU = CFG_SET_VAL(CFG_CLR_TYPE, EColor::Blue),
+  CF_CWHT = CFG_SET_VAL(CFG_CLR_TYPE, EColor::White),
+  CF_CRDS = CFG_SET_VAL(CFG_CLR_TYPE, EColor::RedSat),
+  CF_CGRS = CFG_SET_VAL(CFG_CLR_TYPE, EColor::GreenSat),
+  CF_CBLS = CFG_SET_VAL(CFG_CLR_TYPE, EColor::BlueSat),
   // RESET
   SC_REST = 0xa000,
 };

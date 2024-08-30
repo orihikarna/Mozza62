@@ -28,7 +28,7 @@ class KeyProcLayer {
     if (keycode == KC_TRNS) {
       keycode = keymaps[0][kev_raw.code_];  // default layer
     }
-    LOG_DEBUG("keycode = %d, event = %d", keycode, kev_raw.event_);
+    LOG_DEBUG("keycode = 0x%04x, event = %d", keycode, kev_raw.event_);
     if (keycode == SC_REST) {
       // NVIC_SystemReset();
     }
