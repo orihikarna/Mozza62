@@ -95,6 +95,14 @@ void scan_test_loop() {
 
 KeyScanner scanner;
 
+ProcLed proc_led;
+KeyProcLayer proc_layer;
+// KeyEmacsProc proc_emacs;
+// KeyUnmodProc proc_unmod;
+// KeyNkroProc proc_nkro;
+
+// USBHIDKeyboard keyboard;
+
 void setup() {
   // Serial.begin(9600);
   Serial.begin(115200);
@@ -118,6 +126,8 @@ void setup() {
   }
   g_config_data.init();
   scanner.init();
+  proc_led.init();
+  proc_layer.init();
   // NScanTest::scan_test_setup();
 }
 
@@ -130,14 +140,6 @@ KeyEventBuffer kevb_input(keva_input.data(), keva_input.size());
 KeyEventBuffer kevb_layer(keva_layer.data(), keva_layer.size());
 KeyEventBuffer kevb_emacs(keva_emacs.data(), keva_emacs.size());
 KeyEventBuffer kevb_unmod(keva_unmod.data(), keva_unmod.size());
-
-ProcLed proc_led;
-KeyProcLayer proc_layer;
-// KeyEmacsProc proc_emacs;
-// KeyUnmodProc proc_unmod;
-// KeyNkroProc proc_nkro;
-
-// USBHIDKeyboard keyboard;
 
 void loop() {
   // return;

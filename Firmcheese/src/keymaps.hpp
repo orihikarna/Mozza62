@@ -29,8 +29,8 @@ enum ECLR {
 };
 
 #define CFG_SET_VAL(addr, x) ((addr) | (x))
-#define CFG_GET_VAL(kc) ((kc) & 0x0f)
 #define CFG_ADDR(kc) (((kc) - ConfigStart) >> 4)
+#define CFG_VALUE(kc) ((kc) & 0x0f)
 
 enum custom_keycodes {
   // layers
@@ -66,14 +66,13 @@ enum custom_keycodes {
   SC_REST = 0xa000,
 };
 
-// #define CONFIG_DATA(ADDR) g_config_data[CFG_ADDR(ADDR)]
-
 class ConfigData {
  private:
   std::array<uint8_t, NumConfigAddrs> config_data_;
 
  public:
   void init();
+  void apply(uint16_t kc) { config_data_[CFG_ADDR(kc)] = CFG_VALUE(kc); }
   uint8_t& operator[](uint16_t kc) { return config_data_[CFG_ADDR(kc)]; }
 };
 
