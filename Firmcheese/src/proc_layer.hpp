@@ -1,9 +1,10 @@
 #pragma once
+
 #include <array>
 
 #include "key_event.hpp"
-#include "key_layer.hpp"
 #include "key_switch.hpp"
+#include "keymaps.hpp"
 
 class KeyProcLayer {
  public:

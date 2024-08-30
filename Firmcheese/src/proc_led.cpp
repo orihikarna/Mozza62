@@ -11,8 +11,8 @@
 #define LED_PIN_RIGHT 22
 #endif
 
-#include "key_layer.hpp"
 #include "key_scanner.hpp"
+#include "keymaps.hpp"
 #include "proc_led.hpp"
 #include "util.hpp"
 
@@ -203,7 +203,7 @@ void ProcLed::init() {
 
 // output [0, 128)
 void ProcLed::update_led(const uint8_t* sw_state) {
-  switch (uint8_t(CONFIG_DATA(CFG_RGB_TYPE))) {
+  switch (static_cast<ERGB>(g_config_data[CFG_RGB_TYPE])) {
     case ERGB::KeyDown:
       NImpl::effect_keydown(data_.data(), counter_, sw_state);
       break;
@@ -228,35 +228,36 @@ void ProcLed::update_led(const uint8_t* sw_state) {
 }
 
 void ProcLed::update_color(uint8_t side) {
-  if (CONFIG_DATA(CFG_RGB_TYPE) == ERGB::Off) {
+  if (g_config_data[CFG_RGB_TYPE] == ERGB::Off) {
     npx_[side].clear();
     return;
   }
+  Adafruit_NeoPixel& npx = npx_[side];
   const uint8_t* src = &data_[(side == 0) ? 0 : kNumLeds];
-  switch (uint8_t(CONFIG_DATA(CFG_CLR_TYPE))) {
+  switch (static_cast<ECLR>(g_config_data[CFG_CLR_TYPE])) {
     case ECLR::Rainbow:
-      set_hue(npx_[side], src);
+      set_hue(npx, src);
       break;
     case ECLR::Red:
-      set_rgb(npx_[side], src, true, false, false);
+      set_rgb(npx, src, true, false, false);
       break;
     case ECLR::Green:
-      set_rgb(npx_[side], src, false, true, false);
+      set_rgb(npx, src, false, true, false);
       break;
     case ECLR::Blue:
-      set_rgb(npx_[side], src, false, false, true);
+      set_rgb(npx, src, false, false, true);
       break;
     case ECLR::White:
-      set_rgb(npx_[side], src, true, true, true);
+      set_rgb(npx, src, true, true, true);
       break;
     case ECLR::RedSat:
-      set_sat(npx_[side], src, 0);
+      set_sat(npx, src, 0);
       break;
     case ECLR::GreenSat:
-      set_sat(npx_[side], src, 43);
+      set_sat(npx, src, 43);
       break;
     case ECLR::BlueSat:
-      set_sat(npx_[side], src, 85);
+      set_sat(npx, src, 85);
       break;
   }
 }

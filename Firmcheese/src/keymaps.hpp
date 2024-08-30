@@ -1,4 +1,5 @@
 #pragma once
+
 #include <array>
 
 #include "key_event.hpp"
@@ -65,7 +66,7 @@ enum custom_keycodes {
   SC_REST = 0xa000,
 };
 
-#define CONFIG_DATA(ADDR) g_config_data[CFG_ADDR(ADDR)]
+// #define CONFIG_DATA(ADDR) g_config_data[CFG_ADDR(ADDR)]
 
 class ConfigData {
  private:
@@ -76,9 +77,6 @@ class ConfigData {
   uint8_t& operator[](uint16_t kc) { return config_data_[CFG_ADDR(kc)]; }
 };
 
-extern std::array<uint8_t, NumConfigAddrs> g_config_data;
-// extern ConfigData g_config_data;
-
-void init_config_data();
+extern ConfigData g_config_data;
 
 extern const keycode_t keymaps[EKeyLayer::NumLayers][EKeySW::NumSWs];

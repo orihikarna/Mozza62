@@ -116,7 +116,7 @@ void setup() {
     matrix_strip.begin();
 #endif
   }
-  init_config_data();
+  g_config_data.init();
   scanner.init();
   // NScanTest::scan_test_setup();
 }

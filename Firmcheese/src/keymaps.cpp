@@ -1,6 +1,24 @@
-#include <qmk/keycode_jp.h>
-#include "key_layer.hpp"
+#include "keymaps.hpp"
 
+#include <qmk/keycode_jp.h>
+
+ConfigData g_config_data;
+
+void ConfigData::init() {
+  config_data_.fill(0);
+  (*this)[CFG_RGB_TYPE] = ERGB::KeyDown;
+  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_OFF;
+  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_SNAKE;
+  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_FALL;
+  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_KNIGHT;
+  // CONFIG_DATA(CFG_RGB_TYPE) = RGB_WINDMILL;
+  // CONFIG_DATA( CFG_RGB_TYPE ) = RGB_CIRCLE;
+  (*this)[CFG_CLR_TYPE] = ECLR::White;
+  // CONFIG_DATA(CFG_CLR_TYPE) = CLR_RAINBOW;
+  // CONFIG_DATA( CFG_CLR_TYPE ) = CLR_RED;
+}
+
+// clang-format off
 const keycode_t keymaps[EKeyLayer::NumLayers][EKeySW::NumSWs] = {
   [EKeyLayer::Default] = {
              KC_ESC,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,         KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    JP_MINS,
@@ -27,3 +45,4 @@ const keycode_t keymaps[EKeyLayer::NumLayers][EKeySW::NumSWs] = {
                                         _______, _______, _______,      _______, _______, _______,
   },
 };
+// clang-format on
