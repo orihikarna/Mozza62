@@ -8,6 +8,8 @@
 #include "key_scanner.hpp"
 #include "proc_layer.hpp"
 #include "proc_led.hpp"
+#include "proc_nkro.hpp"
+#include "proc_unmod.hpp"
 #include "ringbuf.hpp"
 
 #ifdef BOARD_XIAO_BLE
@@ -98,8 +100,8 @@ KeyScanner scanner;
 ProcLed proc_led;
 KeyProcLayer proc_layer;
 // KeyEmacsProc proc_emacs;
-// KeyUnmodProc proc_unmod;
-// KeyNkroProc proc_nkro;
+KeyProcUnmod proc_unmod;
+KeyProcNkro proc_nkro;
 
 // USBHIDKeyboard keyboard;
 
@@ -128,6 +130,8 @@ void setup() {
   scanner.init();
   proc_led.init();
   proc_layer.init();
+  proc_unmod.init();
+  proc_nkro.init();
   // NScanTest::scan_test_setup();
 }
 
@@ -173,8 +177,19 @@ void loop() {
 #define _set_kevb(kevb)  ptr_kevb_in = ptr_kevb_out;  ptr_kevb_out = &(kevb)
   _set_kevb(kevb_layer); while (proc_layer.process(*ptr_kevb_in, *ptr_kevb_out));
   // _set_kevb( kevb_emacs ); while (proc_emacs.process( *pkevb_in, *pkevb_out )) {}
-  // _set_kevb( kevb_unmod ); while (proc_unmod.process( *pkevb_in, *pkevb_out )) {}
+  _set_kevb(kevb_unmod); while (proc_unmod.process(*ptr_kevb_in, *ptr_kevb_out));
 #undef _set_kevb
   // clang-format on
+
+  // send one event every 8ms
+  // if ((cnt & 0x07) == 0) {
+  if (ptr_kevb_out->can_pop()) {
+    const auto kev = ptr_kevb_out->pop_front();
+    if (kev.event_ == EKeyEvent::Pressed) {
+      LOG_DEBUG("%d, %d, %d", kev.code_, kev.event_, kev.tick_ms_);
+    }
+    proc_nkro.send_key(kev);
+  }
+  // }
   delay(1);
 }

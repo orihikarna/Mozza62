@@ -287,6 +287,7 @@ void ProcLed::process(const uint8_t* sw_state) {
       max_elapsed_us = elapsed_us;
       LOG_DEBUG("stage_ = %d, elapsed = %ld us", stage_, max_elapsed_us);
     }
+    // max_elapsed_us -= 1;
   }
   // update stage
   stage_ += 1;

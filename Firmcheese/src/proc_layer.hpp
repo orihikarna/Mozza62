@@ -68,7 +68,7 @@ class KeyProcLayer {
         keycodes_[kev_raw.code_] = KC_NO;          // forget
         LOG_DEBUG("Released: 0x%04x (raw %d)", kev_out.code_, kev_raw.code_);
       }
-      // kevb_out.push_back(kev_out);
+      kevb_out.push_back(kev_out);
     }
     return true;
   }
