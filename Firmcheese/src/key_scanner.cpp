@@ -170,7 +170,7 @@ void KeyScanner::scan(KeyEventBuffer *fifo) {
 
   {  // read col lines
     for (uint8_t side = 0; side < kNumSides; ++side) {
-      const uint8_t *key_row = key_matrices[side][curr_row].data();
+      const auto &key_row = key_matrices[side][curr_row];
       for (uint8_t col = 0; col < kNumCols; ++col) {
         update_key_state(fifo, key_row[col], get_col_bit(side, bits[side], col));
       }
