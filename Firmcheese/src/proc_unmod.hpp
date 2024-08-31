@@ -16,8 +16,8 @@ class KeyProcUnmod {
     auto kev_key = kev;
     kev_key.code_ &= 0xff;
     if (kev.event_ == EKeyEvent::Pressed) {
-      LOG_DEBUG("pressed: kc = %x", kc);
       if (mod) {
+        LOG_DEBUG("pressed: kc = %x, mod = %04x", kc, mod);
         // clang-format off
         if (mod & (QK_LCTL >> 8)) { kev_mod.code_ = KC_LCTL; kevb_out.push_back( kev_mod ); }
         if (mod & (QK_LSFT >> 8)) { kev_mod.code_ = KC_LSFT; kevb_out.push_back( kev_mod ); }
@@ -27,9 +27,9 @@ class KeyProcUnmod {
       }
       kevb_out.push_back(kev_key);
     } else {
-      LOG_DEBUG("released: kc = %x", kc);
       kevb_out.push_back(kev_key);
       if (mod) {
+        LOG_DEBUG("released: kc = %x, mod = %04x", kc, mod);
         // clang-format off
         if (mod & (QK_LGUI >> 8)) { kev_mod.code_ = KC_LGUI; kevb_out.push_back( kev_mod ); }
         if (mod & (QK_LALT >> 8)) { kev_mod.code_ = KC_LALT; kevb_out.push_back( kev_mod ); }

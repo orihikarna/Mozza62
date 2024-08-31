@@ -49,64 +49,32 @@ class KeyProcNkro {
         mods_ &= ~mod_mask;
       }
     } else {  // usual keys
-      bool push_back = false;
-      if (kev.event_ == EKeyEvent::Pressed) {  // pressed
-#if 0
+      if (kev.event_ == EKeyEvent::Pressed) {
+        // if no avail, discard the front (the oldest)
         if (std::find(codes_.begin(), codes_.end(), KC_NO) == codes_.end()) {
-#else
-        bool avail = false;
-        for (int8_t i = 0; i < kNkroSize; ++i) {
-          if (codes_[i] == KC_NO) {
-            avail = true;
-          }
+          codes_[0] = KC_NO;
         }
-        if (avail == false) {
-#endif
-          codes_[0] = KC_NO;  // discard the front
-        }
-        push_back = true;
       } else {  // released
-        for (int8_t i = 0; i < kNkroSize; ++i) {
+        for (uint8_t i = 0; i < kNkroSize; ++i) {
           if (codes_[i] == kev.code_) {
             codes_[i] = KC_NO;
           }
         }
       }
-      int8_t no_idx = 0;  // KC_NO index
-#if 0
-      int8_t kc_idx = 0;  // !KC_NO index
-      do {                // bring !KC_NO keys to the front
-        for (; no_idx < kNkroSize; ++no_idx) {
-          if (codes_[no_idx] == KC_NO) {
-            kc_idx = no_idx + 1;
-            break;
-          }
-        }
-        for (; kc_idx < kNkroSize; ++kc_idx) {
-          if (codes_[kc_idx] != KC_NO) {
-            codes_[no_idx] = codes_[kc_idx];
-            codes_[kc_idx] = KC_NO;
-            no_idx += 1;
-          }
-        }
-      } while (kc_idx < kNkroSize);
-#else
       {  // bring !KC_NO keys to the front
-        int8_t idx = 0;
+        uint8_t idx = 0;
         const auto codes = codes_;
         for (auto code : codes) {
           if (code != KC_NO) {
             codes_[idx++] = code;
           }
         }
-        no_idx = idx;
+        if (kev.event_ == EKeyEvent::Pressed) {  // pressed
+          codes_[idx++] = kev.code_;
+        }
         while (idx < kNkroSize) {
           codes_[idx++] = KC_NO;
         }
-      }
-#endif
-      if (push_back /*&& avail < SIZE_HID_KEYS*/) {
-        codes_[no_idx] = kev.code_;
       }
     }
     {  // send

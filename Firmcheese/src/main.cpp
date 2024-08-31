@@ -186,7 +186,7 @@ void loop() {
   if (ptr_kevb_out->can_pop()) {
     const auto kev = ptr_kevb_out->pop_front();
     if (kev.event_ == EKeyEvent::Pressed) {
-      LOG_DEBUG("%d, %d, %d", kev.code_, kev.event_, kev.tick_ms_);
+      LOG_DEBUG("%d, %d, %u", kev.code_, kev.event_, kev.tick_ms_);
     }
     proc_nkro.send_key(kev);
   }
