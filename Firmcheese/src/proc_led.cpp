@@ -163,6 +163,13 @@ inline uint32_t color_max(uint32_t rgb1, uint32_t rgb2) {
   const uint32_t b = std::max(rgb1 & 0x0000ff, rgb2 & 0x0000ff);
   return r | g | b;
 }
+
+inline uint32_t color_overlay_white(uint32_t rgb, uint8_t mag) {
+  const uint32_t r = std::max(static_cast<uint8_t>(rgb >> 16), mag);
+  const uint32_t g = std::max(static_cast<uint8_t>(rgb >> 8), mag);
+  const uint32_t b = std::max(static_cast<uint8_t>(rgb), mag);
+  return (r << 16) | (g << 8) | b;
+}
 }  // namespace
 
 ProcLed::ProcLed()
@@ -250,7 +257,8 @@ void ProcLed::update_color() {
       Adafruit_NeoPixel& npx = npx_[side];
       for (uint8_t n = 0; n < kNumLeds; ++n) {
         const uint32_t ovl = overlay[n];
-        const uint32_t clr = color_max(rgb[n], (ovl << 16) | (ovl << 8) | ovl);
+        // const uint32_t clr = color_max(rgb[n], (ovl << 16) | (ovl << 8) | ovl);
+        const uint32_t clr = color_overlay_white(rgb[n], ovl);
         npx.setPixelColor(n, clr);
       }
     }
