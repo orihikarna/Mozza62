@@ -83,7 +83,7 @@ void effect_fall(uint8_t* dat, uint16_t cnt) {
   uint8_t* dat_L = &dat[0];
   uint8_t* dat_R = &dat[kNumLeds];
   for (uint8_t n = 0; n < kNumLeds; ++n) {
-    const uint8_t v = ctr - (s_sw_geos[n].y >> 1);
+    const uint8_t v = ctr - (s_sw_geos[n].y);
     dat_L[n] = v;
     dat_R[n] = v;
   }
@@ -105,7 +105,7 @@ void effect_circle(uint8_t* dat, uint16_t cnt) {
   uint8_t* dat_L = &dat[0];
   uint8_t* dat_R = &dat[kNumLeds];
   for (int16_t n = 0; n < kNumLeds; ++n) {
-    const uint8_t d = ctr - (s_sw_geos[n].r >> 1);
+    const uint8_t d = ctr - (s_sw_geos[n].r >> 2);
     dat_L[n] = d;
     dat_R[n] = d;
   }
@@ -113,13 +113,13 @@ void effect_circle(uint8_t* dat, uint16_t cnt) {
 }  // namespace NPattern
 namespace NColor {  // color conversion
 
-void set_hue(uint32_t* rgb, const uint8_t* dat, uint8_t sat = 255, uint8_t vis = 20) {
+void set_hue(uint32_t* rgb, const uint8_t* dat, uint8_t sat = 255, uint8_t vis = 24) {
   for (uint8_t n = 0; n < kNumLeds; ++n) {
     rgb[n] = Adafruit_NeoPixel::ColorHSV(dat[n] << 8, sat, vis);
   }
 }
 
-void set_sat(uint32_t* rgb, const uint8_t* dat, uint8_t hue, uint8_t vis = 20) {
+void set_sat(uint32_t* rgb, const uint8_t* dat, uint8_t hue, uint8_t vis = 24) {
   for (uint8_t n = 0; n < kNumLeds; ++n) {
     int16_t val = static_cast<int8_t>(dat[n]);
     val = std::abs(val);
@@ -146,7 +146,7 @@ void effect_keydown(uint8_t* data, uint16_t counter, const uint8_t* sw_state) {
     const uint8_t idx = g_sw2led_index[n];
     if (idx == 255) continue;
     if (sw_state[n] & ESwitchState::IsPressed) {
-      data[idx] = 128;
+      data[idx] = 96;
     } else if ((counter & 3) == 0) {  // fade
       uint8_t v = data[idx];
       if (v > 0) {
