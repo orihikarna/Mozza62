@@ -1,5 +1,6 @@
 #pragma once
 
+#include <BleKeyboard.h>
 #include <qmk/keycode.h>
 
 #include <algorithm>
@@ -14,7 +15,7 @@ class KeyProcNkro {
   static constexpr uint8_t kNkroSize = 6;
   uint8_t mods_;
   std::array<keycode_t, kNkroSize> codes_;
-  // KeyboardHID kbrd_;
+
   // MouseHID mouse_;
 
  public:
@@ -22,14 +23,6 @@ class KeyProcNkro {
     mods_ = 0;
     codes_.fill(KC_NO);
 
-    /*
-    //kbrd_.m_report_id = 1;
-    kbrd_.m_modifiers = 0;
-    kbrd_.m_reserved = 0;
-    for (int i = 0; i < SIZE_HID_KEYS; ++i) {
-      kbrd_.m_keys[i] = 0;
-    }
-    */
     /*
     mouse_.m_report_id = 2;
     mouse_.m_buttons = 0;
@@ -39,7 +32,7 @@ class KeyProcNkro {
     */
   }
 
-  void send_key(const KeyEvent& kev) {
+  KeyReport send_key(const KeyEvent& kev) {
     LOG_DEBUG("kev.code_: %04x, event = %d", kev.code_, kev.event_);
     if (is_modifier(kev.code_)) {                   // modifier keys
       const uint8_t mod_mask = MOD_BIT(kev.code_);  // 1 << (kev.code_ - KC_LCTRL);
@@ -61,33 +54,35 @@ class KeyProcNkro {
           }
         }
       }
-      {  // bring !KC_NO keys to the front
+      {  // reorganize codes_
         uint8_t idx = 0;
+        // bring !KC_NO keys to the front
         const auto codes = codes_;
         for (auto code : codes) {
           if (code != KC_NO) {
             codes_[idx++] = code;
           }
         }
-        if (kev.event_ == EKeyEvent::Pressed) {  // pressed
+        // push pressed
+        if (kev.event_ == EKeyEvent::Pressed) {
           codes_[idx++] = kev.code_;
         }
+        // fill the blanks
         while (idx < kNkroSize) {
           codes_[idx++] = KC_NO;
         }
       }
     }
-    {  // send
-       // KeyboardHID kbrd;
-       // // kbrd.m_report_id = 1;
-       // kbrd.m_reserved = 0;
-       // kbrd.m_modifiers = mods_;
-       // for (int i = 0; i < SIZE_HID_KEYS; ++i) {
-       //   kbrd.m_modifiers |= codes_[i] >> 8;
-       //   kbrd.m_keys[i] = codes_[i] & 0xff;
-       // }
-       // set_keyboard_report(&kbrd);
+    KeyReport kbrd;
+    {
+      kbrd.reserved = 0;
+      kbrd.modifiers = mods_;
+      for (int i = 0; i < kNkroSize; ++i) {
+        kbrd.modifiers |= codes_[i] >> 8;
+        kbrd.keys[i] = codes_[i] & 0xff;
+      }
     }
+    return kbrd;
   }
 
  private:

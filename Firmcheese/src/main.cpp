@@ -1,6 +1,7 @@
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_NeoPixel.h>
 #include <Arduino.h>
+#include <BleKeyboard.h>
 
 #include <array>
 
@@ -103,7 +104,7 @@ KeyProcLayer proc_layer;
 KeyProcUnmod proc_unmod;
 KeyProcNkro proc_nkro;
 
-// USBHIDKeyboard keyboard;
+BleKeyboard ble_kbrd("Mozza62 keyb");
 
 void setup() {
   // Serial.begin(9600);
@@ -133,6 +134,8 @@ void setup() {
   proc_unmod.init();
   proc_nkro.init();
   // NScanTest::scan_test_setup();
+
+  ble_kbrd.begin();
 }
 
 std::array<KeyEvent, 12> keva_input;  // 1 rows + extra
@@ -144,6 +147,9 @@ KeyEventBuffer kevb_input(keva_input.data(), keva_input.size());
 KeyEventBuffer kevb_layer(keva_layer.data(), keva_layer.size());
 KeyEventBuffer kevb_emacs(keva_emacs.data(), keva_emacs.size());
 KeyEventBuffer kevb_unmod(keva_unmod.data(), keva_unmod.size());
+
+int8_t ble_conn = -1;
+KeyReport key_report = {0};
 
 void loop() {
   // return;
@@ -161,6 +167,7 @@ void loop() {
       const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
       const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 20);
       matrix_strip.setPixelColor(n, clr);
+      // matrix_strip.show();
     }
 #endif
   }
@@ -183,13 +190,28 @@ void loop() {
 
   // send one event every 8ms
   // if ((cnt & 0x07) == 0) {
+
   if (ptr_kevb_out->can_pop()) {
     const auto kev = ptr_kevb_out->pop_front();
     if (kev.event_ == EKeyEvent::Pressed) {
       LOG_DEBUG("%d, %d, %u", kev.code_, kev.event_, kev.tick_ms_);
     }
-    proc_nkro.send_key(kev);
+    key_report = proc_nkro.send_key(kev);
   }
+  if (ble_kbrd.isConnected()) {
+    if (ble_conn != 1) {
+      ble_conn = 1;
+      printf("BLE: Connected\n");
+    }
+    ble_kbrd.sendReport(&key_report);
+    // if ((cnt & 0xff) == 0) ble_kbrd.print("a");
+  } else {
+    if (ble_conn != 0) {
+      ble_conn = 0;
+      printf("BLE: Disconnected\n");
+    }
+  }
+
   // }
-  delay(1);
+  delay(2);
 }
