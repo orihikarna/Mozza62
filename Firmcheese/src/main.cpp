@@ -19,7 +19,6 @@ constexpr std::array<int, 3> leds = {LED_RED, LED_BLUE, LED_GREEN};
 #endif
 
 #ifdef BOARD_M5ATOM
-// #include <M5Atom.h>
 #define LED_PIN_MATRIX 27
 constexpr uint16_t NUM_MATRIX_LEDS = 25;
 Adafruit_NeoPixel matrix_strip(NUM_MATRIX_LEDS, LED_PIN_MATRIX, NEO_GRB + NEO_KHZ800);
@@ -38,7 +37,7 @@ void scan_I2C() {
     if (address % 16 == 0) {
       Serial.print("\n");
     }
-    delay(20);
+    delay(10);
   }
   Serial.print("end\n\n");
 }
@@ -138,10 +137,10 @@ void setup() {
   ble_kbrd.begin();
 }
 
-std::array<KeyEvent, 12> keva_input;  // 1 rows + extra
-std::array<KeyEvent, 12> keva_layer;
-std::array<KeyEvent, 12> keva_emacs;
-std::array<KeyEvent, 6> keva_unmod;
+std::array<KeyEvent, 12 * 2> keva_input;
+std::array<KeyEvent, 12 * 2> keva_layer;
+std::array<KeyEvent, 12 * 2> keva_emacs;
+std::array<KeyEvent, 6 * 2> keva_unmod;
 
 KeyEventBuffer kevb_input(keva_input.data(), keva_input.size());
 KeyEventBuffer kevb_layer(keva_layer.data(), keva_layer.size());
@@ -189,29 +188,26 @@ void loop() {
   // clang-format on
 
   // send one event every 8ms
-  // if ((cnt & 0x07) == 0) {
-
   if (ptr_kevb_out->can_pop()) {
     const auto kev = ptr_kevb_out->pop_front();
     if (kev.event_ == EKeyEvent::Pressed) {
-      LOG_DEBUG("%d, %d, %u", kev.code_, kev.event_, kev.tick_ms_);
+      LOG_DUMP("%d, %d, %u", kev.code_, kev.event_, kev.tick_ms_);
     }
     key_report = proc_nkro.send_key(kev);
-  }
-  if (ble_kbrd.isConnected()) {
-    if (ble_conn != 1) {
-      ble_conn = 1;
-      printf("BLE: Connected\n");
-    }
-    ble_kbrd.sendReport(&key_report);
-    // if ((cnt & 0xff) == 0) ble_kbrd.print("a");
-  } else {
-    if (ble_conn != 0) {
-      ble_conn = 0;
-      printf("BLE: Disconnected\n");
-    }
-  }
 
-  // }
-  delay(2);
+    if (ble_kbrd.isConnected()) {
+      if (ble_conn != 1) {
+        ble_conn = 1;
+        LOG_INFO("BLE: Connected");
+      }
+      ble_kbrd.sendReport(&key_report);
+      // if ((cnt & 0xff) == 0) ble_kbrd.print("a");
+    } else {
+      if (ble_conn != 0) {
+        ble_conn = 0;
+        LOG_INFO("BLE: Disconnecteds");
+      }
+    }
+  }
+  delay(1);
 }

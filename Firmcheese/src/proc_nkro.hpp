@@ -33,7 +33,7 @@ class KeyProcNkro {
   }
 
   KeyReport send_key(const KeyEvent& kev) {
-    LOG_DEBUG("kev.code_: %04x, event = %d", kev.code_, kev.event_);
+    LOG_DUMP("kev.code_: %04x, event = %d", kev.code_, kev.event_);
     if (is_modifier(kev.code_)) {                   // modifier keys
       const uint8_t mod_mask = MOD_BIT(kev.code_);  // 1 << (kev.code_ - KC_LCTRL);
       if (kev.event_ == EKeyEvent::Pressed) {

@@ -203,8 +203,8 @@ void KeyScanner::scan(KeyEventBuffer *fifo) {
           dir = rot_state_[side];
         }
       }
-      update_key_state(fifo, rot_keys[side][0], (dir == 1) ? 1 : 0);
-      update_key_state(fifo, rot_keys[side][1], (dir == 2) ? 1 : 0);
+      update_key_state(fifo, rot_keys[side][0], (dir == 2) ? 1 : 0);
+      update_key_state(fifo, rot_keys[side][1], (dir == 1) ? 1 : 0);
     }
   }
   // LOG_DEBUG("elapsed = %ld us", et.getElapsedMicroSec());
@@ -222,10 +222,10 @@ void KeyScanner::update_key_state(KeyEventBuffer *evbuf, uint8_t key, uint8_t va
 
   // push to fifo
   if ((~old_state & new_state) & ESwitchState::IsPressed) {
-    // LOG_DEBUG("Pressed: key = %02x", key);
+    LOG_DUMP("Pressed: key = %02x", key);
     evbuf->push_back(KeyEvent(key, EKeyEvent::Pressed, millis()));
   } else if ((old_state & ~new_state) & ESwitchState::IsPressed) {
-    // LOG_DEBUG("Released: key = %02x", key);
+    LOG_DUMP("Released: key = %02x", key);
     evbuf->push_back(KeyEvent(key, EKeyEvent::Released, millis()));
   }
 }

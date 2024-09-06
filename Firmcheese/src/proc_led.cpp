@@ -66,7 +66,7 @@ static const KeyGeometry s_sw_geos[] = {
     {49.871, -9.102, -268.000},   // Space
 };
 namespace NPattern {
-constexpr int8_t speed_sh = 4;
+constexpr int8_t speed_sh = 2;
 
 void effect_linear(uint8_t* dat, uint16_t cnt) {
   const int8_t ctr = cnt >> speed_sh;

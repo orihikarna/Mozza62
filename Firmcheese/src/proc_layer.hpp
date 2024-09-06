@@ -28,7 +28,7 @@ class KeyProcLayer {
     if (keycode == KC_TRNS) {
       keycode = keymaps[0][kev_raw.code_];  // default layer
     }
-    LOG_DEBUG("keycode = 0x%04x, event = %d", keycode, kev_raw.event_);
+    LOG_DUMP("keycode = 0x%04x, event = %d", keycode, kev_raw.event_);
     if (keycode == SC_REST) {
       // NVIC_SystemReset();
     }
@@ -54,19 +54,19 @@ class KeyProcLayer {
           layer_ = EKeyLayer::Default;
         }
       }
-      LOG_DEBUG("layer = %d", layer_);
+      LOG_DUMP("layer = %d", layer_);
     } else {
       auto kev_out = kev_raw;
       if (kev_raw.isPressed()) {
         // pressed
         kev_out.code_ = keycode;
         keycodes_[kev_raw.code_] = keycode;  // remember
-        LOG_DEBUG("Pressed: 0x%04x (raw %d)", kev_out.code_, kev_raw.code_);
+        LOG_DUMP("Pressed: 0x%04x (raw %d)", kev_out.code_, kev_raw.code_);
       } else {
         // released
         kev_out.code_ = keycodes_[kev_raw.code_];  // recall
         keycodes_[kev_raw.code_] = KC_NO;          // forget
-        LOG_DEBUG("Released: 0x%04x (raw %d)", kev_out.code_, kev_raw.code_);
+        LOG_DUMP("Released: 0x%04x (raw %d)", kev_out.code_, kev_raw.code_);
       }
       kevb_out.push_back(kev_out);
     }
