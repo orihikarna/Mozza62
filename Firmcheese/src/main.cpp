@@ -7,6 +7,7 @@
 
 #include "key_event.hpp"
 #include "key_scanner.hpp"
+#include "proc_emacs.hpp"
 #include "proc_layer.hpp"
 #include "proc_led.hpp"
 #include "proc_nkro.hpp"
@@ -99,7 +100,7 @@ KeyScanner scanner;
 
 ProcLed proc_led;
 KeyProcLayer proc_layer;
-// KeyEmacsProc proc_emacs;
+KeyProcEmacs proc_emacs;
 KeyProcUnmod proc_unmod;
 KeyProcNkro proc_nkro;
 
@@ -130,6 +131,7 @@ void setup() {
   scanner.init();
   proc_led.init();
   proc_layer.init();
+  proc_emacs.init();
   proc_unmod.init();
   proc_nkro.init();
   // NScanTest::scan_test_setup();
@@ -182,7 +184,7 @@ void loop() {
   // clang-format off
 #define _set_kevb(kevb)  ptr_kevb_in = ptr_kevb_out;  ptr_kevb_out = &(kevb)
   _set_kevb(kevb_layer); while (proc_layer.process(*ptr_kevb_in, *ptr_kevb_out));
-  // _set_kevb( kevb_emacs ); while (proc_emacs.process( *pkevb_in, *pkevb_out )) {}
+  _set_kevb(kevb_emacs); while (proc_emacs.process(*ptr_kevb_in, *ptr_kevb_out));
   _set_kevb(kevb_unmod); while (proc_unmod.process(*ptr_kevb_in, *ptr_kevb_out));
 #undef _set_kevb
   // clang-format on
