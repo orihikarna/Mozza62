@@ -7,6 +7,7 @@
 
 #include "key_event.hpp"
 #include "key_scanner.hpp"
+#include "keyb_status.hpp"
 #include "proc_emacs.hpp"
 #include "proc_layer.hpp"
 #include "proc_led.hpp"
@@ -24,6 +25,11 @@ constexpr std::array<int, 3> leds = {LED_RED, LED_BLUE, LED_GREEN};
 constexpr uint16_t NUM_MATRIX_LEDS = 25;
 Adafruit_NeoPixel matrix_strip(NUM_MATRIX_LEDS, LED_PIN_MATRIX, NEO_GRB + NEO_KHZ800);
 #endif
+
+KeybStatus &GetKeybStatus() {
+  static KeybStatus keyb_status;
+  return keyb_status;
+}
 
 void scan_I2C() {
   Adafruit_MCP23X17 mcp;
@@ -96,6 +102,7 @@ void scan_test_loop() {
 }
 }  // namespace NKeyScanTest
 
+KeybStatus g_keyb_status;
 KeyScanner scanner;
 
 ProcLed proc_led;
@@ -149,7 +156,6 @@ KeyEventBuffer kevb_layer(keva_layer.data(), keva_layer.size());
 KeyEventBuffer kevb_emacs(keva_emacs.data(), keva_emacs.size());
 KeyEventBuffer kevb_unmod(keva_unmod.data(), keva_unmod.size());
 
-int8_t ble_conn = -1;
 KeyReport key_report = {0};
 
 void loop() {
@@ -157,20 +163,29 @@ void loop() {
   static int cnt = 0;
   cnt += 1;
   if (true) {  // board LED
+    static status_t last_status = -1;
+    const KeybStatus curr_status = GetKeybStatus();
+    if (last_status != curr_status.GetAllStatus()) {
+      last_status = curr_status.GetAllStatus();
 #ifdef BOARD_XIAO_BLE
-    for (auto led : leds) {
-      digitalWrite(led, HIGH);
-    }
-    digitalWrite(leds[cnt % leds.size()], LOW);
+      for (auto led : leds) {
+        digitalWrite(led, HIGH);
+      }
+      digitalWrite(leds[cnt % leds.size()], LOW);
 #endif
 #ifdef BOARD_M5ATOM
-    for (uint16_t n = 0; n < NUM_MATRIX_LEDS; ++n) {
-      const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
-      const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 20);
-      matrix_strip.setPixelColor(n, clr);
-      // matrix_strip.show();
-    }
+      for (uint16_t n = 0; n < NUM_MATRIX_LEDS; ++n) {
+        // const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
+        // const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 20);
+        // matrix_strip.setPixelColor(n, clr);
+        matrix_strip.setPixelColor(n, 0);
+      }
+      matrix_strip.setPixelColor(0, 0, 0, (curr_status.GetStatus(EKeybStatusBit::Ble)) ? 255 : 0);
+      const bool is_emacs = curr_status.GetStatus(EKeybStatusBit::Emacs);
+      matrix_strip.setPixelColor(1, (is_emacs) ? 0 : 255, (is_emacs) ? 255 : 0, 0);
+      matrix_strip.show();
 #endif
+    }
   }
   if (true) {  // key scan
     // NScanTest::scan_test_loop();
@@ -197,16 +212,17 @@ void loop() {
     }
     key_report = proc_nkro.send_key(kev);
 
+    const bool ble_conn = GetKeybStatus().GetStatus(EKeybStatusBit::Ble);
     if (ble_kbrd.isConnected()) {
-      if (ble_conn != 1) {
-        ble_conn = 1;
+      if (ble_conn == false) {
+        GetKeybStatus().SetStatus(EKeybStatusBit::Ble, true);
         LOG_INFO("BLE: Connected");
       }
       ble_kbrd.sendReport(&key_report);
       // if ((cnt & 0xff) == 0) ble_kbrd.print("a");
     } else {
-      if (ble_conn != 0) {
-        ble_conn = 0;
+      if (ble_conn) {
+        GetKeybStatus().SetStatus(EKeybStatusBit::Ble, false);
         LOG_INFO("BLE: Disconnecteds");
       }
     }

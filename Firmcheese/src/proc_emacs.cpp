@@ -2,6 +2,7 @@
 
 #include <qmk/keycode_jp.h>
 
+#include "keyb_status.hpp"
 #include "log.h"
 
 #define USE_JP
@@ -276,17 +277,17 @@ KeyProcEmacs::KeyProcEmacs()
   assert(mod_taps_.size() == 4);
 }
 
-void KeyProcEmacs::init() {}
+void KeyProcEmacs::init() { GetKeybStatus().SetStatus(EKeybStatusBit::Emacs, true); }
 
 void KeyProcEmacs::on_enter_map_table(uint8_t table_index) {
   switch (table_index) {
     case EMTI_None:
       swap_mods(pressed_mods_, registered_mods_);
       registered_mods_ = pressed_mods_;
-      // set_led_state(LED_RIGHT, 1);
+      GetKeybStatus().SetStatus(EKeybStatusBit::Emacs, false);
       break;
     case EMTI_Default:
-      // set_led_state(LED_RIGHT, 0);
+      GetKeybStatus().SetStatus(EKeybStatusBit::Emacs, true);
       break;
     case EMTI_CxPrefix:
       break;
