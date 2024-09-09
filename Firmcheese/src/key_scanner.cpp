@@ -1,6 +1,7 @@
 #include "key_scanner.hpp"
 
 #include "log.h"
+#include "util.hpp"
 
 namespace {
 
@@ -81,15 +82,12 @@ inline uint8_t get_rot_bit(uint8_t side, uint16_t val, int8_t rot) {
 }  // namespace
 
 void KeyScanner::mcp_init() {
+  // Wire.setClock(400000);
   for (uint8_t side = 0; side < kNumSides; ++side) {
-    if ((mcp_enabled_mask_ & (1 << side)) == 0) {
-      continue;
-    }
-    if (mcp_inited_[side]) {
-      continue;
-    }
+    if ((mcp_enabled_mask_ & (1 << side)) == 0) continue;
+    if (mcp_inited_[side]) continue;
     // mcp_[side].disable();
-    delay(1);
+    // delay(1);
     // mcp_[side].enable();
     delay(1);
 
@@ -111,9 +109,10 @@ uint16_t KeyScanner::mcp_get_col(uint8_t side) {
   } else {  // enabled
     if (mcp_inited_[side]) {
       col = mcp_[side].readGPIOAB();
-      // LOG_DEBUG("col = 0x%04x\n", col);
       if (col == 0xffff) {
+        LOG_DEBUG("col = 0x%04x", col);
         mcp_inited_[side] = false;
+        col = 0;
       }
     }
   }
@@ -145,10 +144,12 @@ void KeyScanner::init() {
 }
 
 void KeyScanner::scan(KeyEventBuffer *fifo) {
-  // if (fifo->can_push() < kNumCols) {
-  //   return;
-  // }  // buffer vacancy is not enough
-  // ElapsedTimer et;
+  const uint8_t num_vacant = fifo->can_push();
+  if (num_vacant < kNumCols) {
+    LOG_ERROR("buffer vacancy is not enough: num_vacant = %d", num_vacant);
+    return;
+  }
+  ElapsedTimer et;
 
   mcp_init();  // init mcp if timed out last time
 
@@ -168,16 +169,14 @@ void KeyScanner::scan(KeyEventBuffer *fifo) {
   };
   mcp_set_row(next_row);
 
-  {  // read col lines
-    for (uint8_t side = 0; side < kNumSides; ++side) {
+  for (uint8_t side = 0; side < kNumSides; ++side) {
+    {  // read col lines
       const auto &key_row = key_matrices[side][curr_row];
       for (uint8_t col = 0; col < kNumCols; ++col) {
         update_key_state(fifo, key_row[col], get_col_bit(side, bits[side], col));
       }
     }
-  }
-  {  // read rot values
-    for (uint8_t side = 0; side < kNumSides; ++side) {
+    {  // read rot values
       // extract rotary encoder bits
       uint8_t rot_bits = 0;
       for (uint8_t rot = 0; rot < kNumRots; ++rot) {
@@ -207,7 +206,15 @@ void KeyScanner::scan(KeyEventBuffer *fifo) {
       update_key_state(fifo, rot_keys[side][1], (dir == 1) ? 1 : 0);
     }
   }
-  // LOG_DEBUG("elapsed = %ld us", et.getElapsedMicroSec());
+  {
+    static uint32_t max_elapsed = 0;
+    const uint32_t elapsed = et.getElapsedMicroSec();
+    if (max_elapsed < elapsed) {
+      max_elapsed = elapsed;
+      LOG_DEBUG("elapsed = %ld us", max_elapsed);
+    }
+    max_elapsed -= 1;
+  }
 }
 
 void KeyScanner::update_key_state(KeyEventBuffer *evbuf, uint8_t key, uint8_t val) {
