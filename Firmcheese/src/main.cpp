@@ -156,12 +156,13 @@ KeyEventBuffer kevb_layer(keva_layer.data(), keva_layer.size());
 KeyEventBuffer kevb_emacs(keva_emacs.data(), keva_emacs.size());
 KeyEventBuffer kevb_unmod(keva_unmod.data(), keva_unmod.size());
 
-const uint32_t clr_ble_ok = Adafruit_NeoPixel::Color(0, 0, 255);
-const uint32_t clr_ble_ng = Adafruit_NeoPixel::Color(255, 0, 255);
-const uint32_t clr_side_ok = Adafruit_NeoPixel::Color(0, 0, 255);
-const uint32_t clr_side_ng = Adafruit_NeoPixel::Color(0, 255, 255);
-const uint32_t clr_emacs_on = Adafruit_NeoPixel::Color(0, 0, 255);
-const uint32_t clr_emacs_off = Adafruit_NeoPixel::Color(0, 255, 255);
+constexpr uint8_t val = 128;
+const uint32_t clr_ble_ok = Adafruit_NeoPixel::ColorHSV(65535 * 4 / 6, 255, val);
+const uint32_t clr_ble_ng = Adafruit_NeoPixel::ColorHSV(65535 * 5 / 6, 255, val);
+const uint32_t clr_side_ok = Adafruit_NeoPixel::ColorHSV(65535 * 4 / 6, 255, val);
+const uint32_t clr_side_ng = Adafruit_NeoPixel::ColorHSV(65535 * 1 / 6, 255, val);
+const uint32_t clr_emacs_on = Adafruit_NeoPixel::ColorHSV(65535 * 4 / 6, 255, val);
+const uint32_t clr_emacs_off = Adafruit_NeoPixel::ColorHSV(65535 * 3 / 6, 255, val);
 
 KeyReport key_report = {0};
 
@@ -169,6 +170,20 @@ void loop() {
   // return;
   static int cnt = 0;
   cnt += 1;
+  {  // ble
+    const bool ble_conn = GetKeybStatus().GetStatus(EKeybStatusBit::Ble);
+    if (ble_kbrd.isConnected()) {
+      if (ble_conn == false) {
+        GetKeybStatus().SetStatus(EKeybStatusBit::Ble, true);
+        LOG_INFO("BLE: Connected");
+      }
+    } else {
+      if (ble_conn) {
+        GetKeybStatus().SetStatus(EKeybStatusBit::Ble, false);
+        LOG_INFO("BLE: Disconnecteds");
+      }
+    }
+  }
   if (true) {  // board LED
     static status_t last_status = -1;
     const KeybStatus curr_status = GetKeybStatus();
@@ -224,19 +239,8 @@ void loop() {
     }
     key_report = proc_nkro.send_key(kev);
 
-    const bool ble_conn = GetKeybStatus().GetStatus(EKeybStatusBit::Ble);
-    if (ble_kbrd.isConnected()) {
-      if (ble_conn == false) {
-        GetKeybStatus().SetStatus(EKeybStatusBit::Ble, true);
-        LOG_INFO("BLE: Connected");
-      }
+    if (GetKeybStatus().GetStatus(EKeybStatusBit::Ble)) {
       ble_kbrd.sendReport(&key_report);
-      // if ((cnt & 0xff) == 0) ble_kbrd.print("a");
-    } else {
-      if (ble_conn) {
-        GetKeybStatus().SetStatus(EKeybStatusBit::Ble, false);
-        LOG_INFO("BLE: Disconnecteds");
-      }
     }
   }
   delay(1);
