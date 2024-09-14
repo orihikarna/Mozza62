@@ -1,5 +1,6 @@
 #include "key_scanner.hpp"
 
+#include "keyb_status.hpp"
 #include "log.h"
 #include "util.hpp"
 
@@ -81,6 +82,15 @@ inline uint8_t get_rot_bit(uint8_t side, uint16_t val, int8_t rot) {
 
 }  // namespace
 
+void KeyScanner::init() {
+  mcp_inited_.fill(false);
+  mcp_init();
+
+  scan_row_ = 0;
+  key_state_.fill(0);
+  rot_state_.fill(0);
+}
+
 void KeyScanner::mcp_init() {
   // Wire.setClock(400000);
   for (uint8_t side = 0; side < kNumSides; ++side) {
@@ -91,15 +101,21 @@ void KeyScanner::mcp_init() {
     // mcp_[side].enable();
     delay(1);
 
-    mcp_[side].begin_I2C(mcp_addr[side]);
+    LOG_DUMP("[side=%d] begin_I2C()", side);
+    if (mcp_[side].begin_I2C(mcp_addr[side]) == false) {
+      LOG_WARN("[side=%d] begin_I2C() failed", side);
+      continue;
+    }
     for (uint8_t pin = 0; pin < 16; ++pin) {
       const uint8_t mode = (mcp_pin_inout[side] & (uint16_t(1) << pin)) ? OUTPUT : INPUT;
+      // LOG_DUMP("[side=%d] set pin mode for pin = %d", side, pin);
       mcp_[side].pinMode(pin, mode);
     }
     // if (mcp_[side].set_ctrl_reg(0b00100000) == false) { continue; }
-    // LOG_DEBUG("(mcp_init) side = %d", side);
     mcp_inited_[side] = true;
   }
+  GetKeybStatus().SetStatus(EKeybStatusBit::Left, mcp_inited_[0]);
+  GetKeybStatus().SetStatus(EKeybStatusBit::Right, mcp_inited_[1]);
 }
 
 uint16_t KeyScanner::mcp_get_col(uint8_t side) {
@@ -132,15 +148,6 @@ void KeyScanner::mcp_set_row(uint8_t row) {
       }
     }
   }
-}
-
-void KeyScanner::init() {
-  mcp_inited_.fill(false);
-  mcp_init();
-
-  scan_row_ = 0;
-  key_state_.fill(0);
-  rot_state_.fill(0);
 }
 
 void KeyScanner::scan(KeyEventBuffer *fifo) {

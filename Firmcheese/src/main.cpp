@@ -156,6 +156,13 @@ KeyEventBuffer kevb_layer(keva_layer.data(), keva_layer.size());
 KeyEventBuffer kevb_emacs(keva_emacs.data(), keva_emacs.size());
 KeyEventBuffer kevb_unmod(keva_unmod.data(), keva_unmod.size());
 
+const uint32_t clr_ble_ok = Adafruit_NeoPixel::Color(0, 0, 255);
+const uint32_t clr_ble_ng = Adafruit_NeoPixel::Color(255, 0, 255);
+const uint32_t clr_side_ok = Adafruit_NeoPixel::Color(0, 0, 255);
+const uint32_t clr_side_ng = Adafruit_NeoPixel::Color(0, 255, 255);
+const uint32_t clr_emacs_on = Adafruit_NeoPixel::Color(0, 0, 255);
+const uint32_t clr_emacs_off = Adafruit_NeoPixel::Color(0, 255, 255);
+
 KeyReport key_report = {0};
 
 void loop() {
@@ -180,9 +187,14 @@ void loop() {
         // matrix_strip.setPixelColor(n, clr);
         matrix_strip.setPixelColor(n, 0);
       }
-      matrix_strip.setPixelColor(0, 0, 0, (curr_status.GetStatus(EKeybStatusBit::Ble)) ? 255 : 0);
-      const bool is_emacs = curr_status.GetStatus(EKeybStatusBit::Emacs);
-      matrix_strip.setPixelColor(1, (is_emacs) ? 0 : 255, (is_emacs) ? 255 : 0, 0);
+      matrix_strip.setPixelColor(
+          0, (curr_status.GetStatus(EKeybStatusBit::Ble)) ? clr_ble_ok : clr_ble_ng);
+      matrix_strip.setPixelColor(
+          1, (curr_status.GetStatus(EKeybStatusBit::Left)) ? clr_side_ok : clr_side_ng);
+      matrix_strip.setPixelColor(
+          2, (curr_status.GetStatus(EKeybStatusBit::Right)) ? clr_side_ok : clr_side_ng);
+      matrix_strip.setPixelColor(
+          3, (curr_status.GetStatus(EKeybStatusBit::Emacs)) ? clr_emacs_on : clr_emacs_off);
       matrix_strip.show();
 #endif
     }

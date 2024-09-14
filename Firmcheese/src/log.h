@@ -12,8 +12,9 @@
 
 // default log level
 #ifndef LOG_LEVEL
-#define LOG_LEVEL LL_DEBUG
-// #define LOG_LEVEL LL_INFO
+// #define LOG_LEVEL LL_DEBUG
+#define LOG_LEVEL LL_INFO
+// #define LOG_LEVEL LL_WARN
 // #define LOG_LEVEL LL_ERROR
 // #define LOG_LEVEL LL_NONE
 #endif
@@ -37,6 +38,12 @@
 #define LOG_INFO(fmt, ...) _LOG_PRINTF(fmt, "INFO", ##__VA_ARGS__)
 #else
 #define LOG_INFO(fmt, ...)
+#endif
+
+#if defined(LOG_GLOBAL_ENABLE) && LOG_LEVEL <= LL_WARN
+#define LOG_WARN(fmt, ...) _LOG_PRINTF(fmt, "WARN", ##__VA_ARGS__)
+#else
+#define LOG_WARN(fmt, ...)
 #endif
 
 #if defined(LOG_GLOBAL_ENABLE) && LOG_LEVEL <= LL_ERROR
