@@ -274,7 +274,9 @@ KeyProcEmacs::KeyProcEmacs()
           {KC_LALT, ETHS_Released, 0},
           {KC_RALT, ETHS_Released, 0},
       }}) {
-  assert(mod_taps_.size() == 4);
+  if (mod_taps_.size() != 4) {
+    LOG_ERROR("mod_taps_.size = %d, but not 4", mod_taps_.size());
+  }
 }
 
 void KeyProcEmacs::init() { GetKeybStatus().SetStatus(EKeybStatusBit::Emacs, true); }

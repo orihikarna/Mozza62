@@ -20,4 +20,4 @@ struct KeyEvent {
   inline bool isPressed() const { return event_ == EKeyEvent::Pressed; }
 };
 
-using KeyEventBuffer = RingBuffer<KeyEvent>;
+using KeyEventBuffer = RingBufferT<KeyEvent>;

@@ -5,7 +5,7 @@
 #include "log.h"
 
 template <typename T>
-class RingBuffer {
+class RingBufferT {
  public:
   using size_t = uint8_t;
   using ssize_t = int8_t;
@@ -18,7 +18,7 @@ class RingBuffer {
   size_t max_used_size_ = 0;
 
  public:
-  RingBuffer(T* buff, size_t size) : buff_(buff), size_(size) {}
+  RingBufferT(T* buff, size_t size) : buff_(buff), size_(size) {}
 
   size_t getMaxUsedSize() const { return max_used_size_; }
 

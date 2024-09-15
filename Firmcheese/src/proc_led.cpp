@@ -16,6 +16,10 @@
 #include "proc_led.hpp"
 #include "util.hpp"
 
+#ifdef abs
+#undef abs
+#endif
+
 struct KeyGeometry {
   KeyGeometry(float x, float y, float angle)
       : x(round(x)),

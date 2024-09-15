@@ -1,11 +1,9 @@
 #pragma once
 
-#include <BleKeyboard.h>
-#include <qmk/keycode.h>
-
 #include <algorithm>
 #include <array>
 
+#include "blehid.hpp"
 #include "key_event.hpp"
 #include "log.h"
 #include "util.hpp"
@@ -32,7 +30,7 @@ class KeyProcNkro {
     */
   }
 
-  KeyReport send_key(const KeyEvent& kev) {
+  KeyboardReport send_key(const KeyEvent& kev) {
     LOG_DUMP("kev.code_: %04x, event = %d", kev.code_, kev.event_);
     if (is_modifier(kev.code_)) {                   // modifier keys
       const uint8_t mod_mask = MOD_BIT(kev.code_);  // 1 << (kev.code_ - KC_LCTRL);
@@ -73,7 +71,7 @@ class KeyProcNkro {
         }
       }
     }
-    KeyReport kbrd;
+    KeyboardReport kbrd;
     {
       kbrd.reserved = 0;
       kbrd.modifiers = mods_;

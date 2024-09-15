@@ -205,7 +205,7 @@ void KeyScanner::scan(KeyEventBuffer *fifo) {
         if (rot_bits == 0) {
           // released
           rot_state_[side] = 0;
-        } else if (rot_state_[side] | rot_bits == 3) {
+        } else if ((rot_state_[side] | rot_bits) == 3) {
           dir = rot_state_[side];
         }
       }

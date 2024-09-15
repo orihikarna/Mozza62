@@ -1,7 +1,7 @@
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_NeoPixel.h>
 #include <Arduino.h>
-#include <BleKeyboard.h>
+#include <Wire.h>
 
 #include <array>
 
@@ -111,12 +111,13 @@ KeyProcEmacs proc_emacs;
 KeyProcUnmod proc_unmod;
 KeyProcNkro proc_nkro;
 
-BleKeyboard ble_kbrd("Mozza62 keyb");
+// BleKeyboard ble_kbrd("Mozza62 keyb");
+BleConnectorNRF ble_kbrd;
 
 void setup() {
   // Serial.begin(9600);
   Serial.begin(115200);
-  // while (!Serial) delay(100);
+  while (!Serial) delay(10);
 
 #ifdef BOARD_M5ATOM
   Wire.begin(25, 21, 100000UL);
@@ -164,7 +165,7 @@ const uint32_t clr_side_ng = Adafruit_NeoPixel::ColorHSV(65535 * 1 / 6, 255, val
 const uint32_t clr_emacs_on = Adafruit_NeoPixel::ColorHSV(65535 * 4 / 6, 255, val);
 const uint32_t clr_emacs_off = Adafruit_NeoPixel::ColorHSV(65535 * 3 / 6, 255, val);
 
-KeyReport key_report = {0};
+KeyboardReport kbrd_report = {0};
 
 void loop() {
   // return;
@@ -237,10 +238,10 @@ void loop() {
     if (kev.event_ == EKeyEvent::Pressed) {
       LOG_DUMP("%d, %d, %u", kev.code_, kev.event_, kev.tick_ms_);
     }
-    key_report = proc_nkro.send_key(kev);
+    kbrd_report = proc_nkro.send_key(kev);
 
     if (GetKeybStatus().GetStatus(EKeybStatusBit::Ble)) {
-      ble_kbrd.sendReport(&key_report);
+      ble_kbrd.sendKeyboardReport(kbrd_report);
     }
   }
   delay(1);
