@@ -3,8 +3,13 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#ifdef BOARD_XIAO_BLE
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
 #include <array>
 
+#include "board_led.hpp"
 #include "key_event.hpp"
 #include "key_scanner.hpp"
 #include "keyb_status.hpp"
@@ -14,17 +19,6 @@
 #include "proc_nkro.hpp"
 #include "proc_unmod.hpp"
 #include "ringbuf.hpp"
-
-#ifdef BOARD_XIAO_BLE
-#include <Adafruit_TinyUSB.h>  // for Serial
-constexpr std::array<int, 3> leds = {LED_RED, LED_BLUE, LED_GREEN};
-#endif
-
-#ifdef BOARD_M5ATOM
-#define LED_PIN_MATRIX 27
-constexpr uint16_t NUM_MATRIX_LEDS = 25;
-Adafruit_NeoPixel matrix_strip(NUM_MATRIX_LEDS, LED_PIN_MATRIX, NEO_GRB + NEO_KHZ800);
-#endif
 
 KeybStatus &GetKeybStatus() {
   static KeybStatus keyb_status;
@@ -114,6 +108,13 @@ KeyProcNkro proc_nkro;
 // BleKeyboard ble_kbrd("Mozza62 keyb");
 BleConnectorNRF ble_kbrd;
 
+#ifdef BOARD_XIAO_BLE
+BoardLED_Xiao brd_led;
+#endif
+#ifdef BOARD_M5ATOM
+BoardLED_M5Atom brd_led;
+#endif
+
 void setup() {
   Serial.begin(115200);
   // while (!Serial) delay(10); // wait for serial monitor...
@@ -124,17 +125,8 @@ void setup() {
 
   scan_I2C();
 
-  if (true) {  // LED
-#ifdef BOARD_XIAO_BLE
-    for (auto led : leds) {
-      pinMode(led, OUTPUT);
-    }
-#endif
-#ifdef BOARD_M5ATOM
-    matrix_strip.begin();
-#endif
-  }
   g_config_data.init();
+  brd_led.begin();
   scanner.init();
   proc_led.init();
   proc_layer.init();
@@ -156,19 +148,11 @@ KeyEventBuffer kevb_layer(keva_layer.data(), keva_layer.size());
 KeyEventBuffer kevb_emacs(keva_emacs.data(), keva_emacs.size());
 KeyEventBuffer kevb_unmod(keva_unmod.data(), keva_unmod.size());
 
-constexpr uint8_t val = 128;
-const uint32_t clr_ble_ok = Adafruit_NeoPixel::ColorHSV(65535 * 4 / 6, 255, val);
-const uint32_t clr_ble_ng = Adafruit_NeoPixel::ColorHSV(65535 * 5 / 6, 255, val);
-const uint32_t clr_side_ok = Adafruit_NeoPixel::ColorHSV(65535 * 4 / 6, 255, val);
-const uint32_t clr_side_ng = Adafruit_NeoPixel::ColorHSV(65535 * 1 / 6, 255, val);
-const uint32_t clr_emacs_on = Adafruit_NeoPixel::ColorHSV(65535 * 4 / 6, 255, val);
-const uint32_t clr_emacs_off = Adafruit_NeoPixel::ColorHSV(65535 * 3 / 6, 255, val);
-
 KeyboardReport kbrd_report = {0};
 
 void loop() {
   // return;
-  static int cnt = 0;
+  static uint16_t cnt = 0;
   cnt += 1;
   {  // ble
     const bool ble_conn = GetKeybStatus().GetStatus(EKeybStatusBit::Ble);
@@ -189,29 +173,7 @@ void loop() {
     const KeybStatus curr_status = GetKeybStatus();
     if (last_status != curr_status.GetAllStatus()) {
       last_status = curr_status.GetAllStatus();
-#ifdef BOARD_XIAO_BLE
-      for (auto led : leds) {
-        digitalWrite(led, HIGH);
-      }
-      digitalWrite(leds[cnt % leds.size()], LOW);
-#endif
-#ifdef BOARD_M5ATOM
-      for (uint16_t n = 0; n < NUM_MATRIX_LEDS; ++n) {
-        // const uint16_t hue = ((4 * cnt + n * 4) & 255) << 8;
-        // const uint32_t clr = Adafruit_NeoPixel::ColorHSV(hue, 255, 20);
-        // matrix_strip.setPixelColor(n, clr);
-        matrix_strip.setPixelColor(n, 0);
-      }
-      matrix_strip.setPixelColor(
-          0, (curr_status.GetStatus(EKeybStatusBit::Ble)) ? clr_ble_ok : clr_ble_ng);
-      matrix_strip.setPixelColor(
-          1, (curr_status.GetStatus(EKeybStatusBit::Left)) ? clr_side_ok : clr_side_ng);
-      matrix_strip.setPixelColor(
-          2, (curr_status.GetStatus(EKeybStatusBit::Right)) ? clr_side_ok : clr_side_ng);
-      matrix_strip.setPixelColor(
-          3, (curr_status.GetStatus(EKeybStatusBit::Emacs)) ? clr_emacs_on : clr_emacs_off);
-      matrix_strip.show();
-#endif
+      brd_led.update(cnt, curr_status);
     }
   }
   if (true) {  // key scan

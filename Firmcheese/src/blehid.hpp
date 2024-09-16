@@ -75,7 +75,12 @@ class BleConnectorNRF {
     Bluefruit.Advertising.addService(blehid_);
 
     // There is enough room for the dev name in the advertising packet
-    Bluefruit.Advertising.addName();
+    // Bluefruit.Advertising.addName();
+    {
+      const char name[] = "Mozz62 kbrd";
+      const uint8_t len = sizeof(name);
+      Bluefruit.Advertising.addData(BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, name, len);
+    }
 
     /* Start Advertising
      * - Enable auto advertising if disconnected
