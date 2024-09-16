@@ -40,7 +40,7 @@ class BleConnectorNRF {
 
     // Configure and Start Device Information Service
     bledis_.setManufacturer("Adafruit Industries");
-    bledis_.setModel(KBRD_NAME);
+    bledis_.setModel("Bluefruit Feather 52");
     bledis_.begin();
 
     /* Start BLE HID
