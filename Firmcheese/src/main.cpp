@@ -115,9 +115,8 @@ KeyProcNkro proc_nkro;
 BleConnectorNRF ble_kbrd;
 
 void setup() {
-  // Serial.begin(9600);
   Serial.begin(115200);
-  while (!Serial) delay(10);
+  // while (!Serial) delay(10); // wait for serial monitor...
 
 #ifdef BOARD_M5ATOM
   Wire.begin(25, 21, 100000UL);
