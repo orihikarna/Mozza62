@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #include <array>
+#include <cstdint>
 
 #include "keyb_status.hpp"
 
@@ -14,13 +15,14 @@ class BoardLED {
 };
 
 #ifdef BOARD_XIAO_BLE
+
 class BoardLED_Xiao : public BoardLED {
  protected:
-  static const std::array<uint8_t, 3> xiao_leds = {LED_RED, LED_BLUE, LED_GREEN};
+  const std::array<int8_t, 3> xiao_leds_{LED_RED, LED_BLUE, LED_GREEN};
 
  public:
   void begin() override {
-    for (auto led : xiao_leds) {
+    for (auto led : xiao_leds_) {
       pinMode(led, OUTPUT);
     }
   }
@@ -46,7 +48,7 @@ class BoardLED_Xiao : public BoardLED {
     }
     const bool blink = ((cnt % period) < (period >> 1));
     for (uint8_t n = 0; n < 3; ++n) {
-      digitalWrite(xiao_leds[n], (blink && (clr & (1 << n))) ? HIGH : LOW);
+      digitalWrite(xiao_leds_[n], (blink && (clr & (1 << n))) ? HIGH : LOW);
     }
   }
 };
