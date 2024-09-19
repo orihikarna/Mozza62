@@ -1,3 +1,4 @@
+# print("exec(open('place_and_route.py').read())")
 import importlib
 import json
 import math
