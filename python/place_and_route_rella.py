@@ -113,7 +113,7 @@ def place_mods():
 
 
 w_pwr, r_pwr = 0.5, 1.2  # power
-w_led, r_led = 0.4, 2.0  # LED dat
+w_led, r_led = 0.4, 3.0  # LED dat
 w_dat, r_dat = 0.3, 2.0  # row / col
 
 
@@ -121,6 +121,17 @@ def wire():
     rj45 = "J1"
     xiao_l = "J3"
     xiao_r = "J4"
+    # intra RJ45
+    kad.wire_mod_pads(
+        [
+            (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.4), 0], 90, r_led), "B.Cu"),
+            (rj45, "3", rj45, "15", w_pwr, (Dird, [(-90, 1.4), 0], 90, r_led), "B.Cu"),
+            (rj45, "4", rj45, "16", w_pwr, (Dird, [(+90, 1.6), 0], 90, r_led), "F.Cu"),
+            (rj45, "7", rj45, "19", w_pwr, (Dird, [(-90, 1.6), 0], 90, r_led), "F.Cu"),
+            (rj45, "8", rj45, "14", w_pwr, (Strt), "In2.Cu"),
+        ]
+    )
+    # LED
     kad.wire_mod_pads(
         [
             (rj45, "24", "R4", "2", w_led, (Dird, [(-90, 1.4), 0], 0, r_led), "B.Cu"),
@@ -130,13 +141,24 @@ def wire():
             (xiao_r, "3", "R4", "1", w_led, (Dird, 0, 90, r_led), "B.Cu"),
         ]
     )
+    # RJ45 - xiao_r
     kad.wire_mod_pads(
         [
-            (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.4), 0], 90, r_led), "B.Cu"),
-            (rj45, "3", rj45, "15", w_pwr, (Dird, [(-90, 1.4), 0], 90, r_led), "B.Cu"),
-            (rj45, "4", rj45, "16", w_pwr, (Dird, [(+90, 1.6), 0], 90, r_led), "F.Cu"),
-            (rj45, "7", rj45, "19", w_pwr, (Dird, [(-90, 1.6), 0], 90, r_led), "F.Cu"),
-            (rj45, "8", rj45, "14", w_pwr, (Strt), "In2.Cu"),
+            (xiao_r, "1", rj45, "4", w_pwr, (Dird, 45, 90), "F.Cu"),
+            (xiao_r, "2", rj45, "2", w_pwr, (ZgZg, 0, 45), "In2.Cu"),
+            (xiao_r, "3", rj45, "6", w_pwr, (ZgZg, 0, 45), "In2.Cu"),
+            (xiao_r, "4", rj45, "9", w_led, (Dird, [(180, 1.4), 90], 90, r_led), "In1.Cu"),
+            (xiao_r, "5", rj45, "11", w_led, (ZgZg, 0, 45), "In1.Cu"),
+            (xiao_r, "7", rj45, "21", w_led, (ZgZg, 0, 45), "In1.Cu"),
+        ]
+    )
+    # RJ45 - xiao_l
+    kad.wire_mod_pads(
+        [
+            (xiao_l, "1", rj45, "1", w_pwr, (Dird, -45, 90), "F.Cu"),
+            (xiao_l, "2", rj45, "13", w_dat, (Dird, 0, [(-90, 1.8), 0], r_led), "In2.Cu"),
+            (xiao_l, "3", rj45, "5", w_dat, (ZgZg, 0, 45), "In1.Cu"),
+            (xiao_l, "3", rj45, "17", w_dat, (Dird, 0, [(-90, 2.8), 0], r_led), "In2.Cu"),
         ]
     )
     # GND
