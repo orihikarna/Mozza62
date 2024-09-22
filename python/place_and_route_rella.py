@@ -82,16 +82,16 @@ def draw_edge_cuts(board):
 
 def place_mods():
     kad.move_mods(
-        (114.3, 88.9 - 0),
+        (114, 90),
         0,
         [
             ("J1", (0, 0), 0),
             (
                 None,
-                (11.754, 2.54 * 1.1 - 2.54 * 3),
+                (12, 2.54 * 1.1 - 2.54 * 3),
                 0,
                 [
-                    ("U1", (-18.114, 1.296 + 2.54 * 3 - 40), 90),
+                    # ("U1", (-18.114, 1.296 + 2.54 * 3 - 0), 90),
                     ("J3", (0, +2.54 * 3), 90),
                     ("J4", (0, -2.54 * 3), 90),
                 ],
@@ -120,29 +120,43 @@ def place_mods():
     )
 
 
-w_pwr, r_pwr = 0.7, 1.2  # power
-w_led, r_led = 0.5, 3.0  # LED dat
+w_pwr, r_pwr = 0.7, 1.5  # power
+w_led, r_led = 0.5, 1.2  # LED dat
 w_dat, r_dat = 0.4, 0.7  # row / col
+
+r_tri = 0.7
 
 
 def wire_mod():
     rj45 = "J1"
     xiao_l = "J3"
     xiao_r = "J4"
+    via_left = kad.add_via_relative(rj45, "20", (-1.4, 0), via_size_pwr)
     # intra RJ45
+    via_3v3_1 = kad.add_via_relative(rj45, "18", (0, -1.4 - 0.6), via_size_pwr)
+    via_3v3_2 = kad.add_via_relative(rj45, "18", (-2.03, -1.4 ), via_size_pwr)
     kad.wire_mod_pads(
         [
-            (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.4), 0], 90, r_led), "B.Cu"),
-            (rj45, "4", rj45, "16", w_pwr, (Dird, [(+90, 1.6), 0], 90, r_led), "F.Cu"),
+            (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.4), 0], 90, r_tri), "B.Cu"),
+            (rj45, "6", rj45, via_3v3_1, w_pwr, (Dird, [(+90, 1.4), 0], 90, r_tri), "B.Cu"),
+            (rj45, "18", rj45, via_3v3_1, w_pwr, (Strt), "B.Cu"),
             (rj45, "8", rj45, "14", w_pwr, (Strt), "In2.Cu"),
         ]
     )
     # RJ45 - xiao_r
+    via_5vd = kad.add_via_relative(rj45, "4", (0, -3.8), via_size_pwr)
     kad.wire_mod_pads(
         [
-            (xiao_r, "1", rj45, "4", w_pwr, (Dird, 45, 90), "F.Cu"),
-            (xiao_r, "2", rj45, "2", w_pwr, (ZgZg, 0, 45), "In2.Cu"),
-            (xiao_r, "3", rj45, "6", w_pwr, (ZgZg, 0, 45), "In2.Cu"),
+            # 5VD
+            (xiao_r, "1", rj45, via_5vd, w_pwr, (Dird, [(180, 1.6), 90], 90), "F.Cu"),
+            (rj45, "4", rj45, via_5vd, w_pwr, (Strt), "F.Cu"),
+            (rj45, "16", rj45, via_5vd, w_pwr, (Dird, [(+90, 1.6), 0], 90, r_led), "F.Cu"),
+            (rj45, "16", rj45, "4", w_pwr, (Dird, [(+90, 1.6), 0], 90, r_led), "F.Cu"),
+            # GND
+            (xiao_r, "2", rj45, "2", w_pwr, (ZgZg, 0, 20), "In2.Cu"),
+            # 3V3
+            (xiao_r, "3", rj45, "6", w_pwr, (ZgZg, 0, 20), "In2.Cu"),
+            # LED
             (xiao_r, "4", rj45, "9", w_led, (Dird, [(180, 1.4), 90], 90, r_led), "In1.Cu"),
             (xiao_r, "5", rj45, "11", w_led, (ZgZg, 0, 45), "In1.Cu"),
             (xiao_r, "7", rj45, "21", w_led, (ZgZg, 0, 45), "In1.Cu"),
@@ -151,10 +165,10 @@ def wire_mod():
     # RJ45 - xiao_l
     kad.wire_mod_pads(
         [
-            (xiao_l, "1", rj45, "1", w_dat, (Dird, -45, 90), "F.Cu"),
-            (xiao_l, "2", rj45, "13", w_dat, (Dird, 0, [(-90, 1.8), 0], r_led), "In2.Cu"),
-            (xiao_l, "3", rj45, "5", w_dat, (ZgZg, 0, 45), "In1.Cu"),
-            (xiao_l, "4", rj45, "23", w_dat, (Dird, [(0, 2), -45], [(-90, 2), 0]), "In1.Cu"),
+            (xiao_l, "1", rj45, "1", w_dat, (Dird, -45, 90), "In1.Cu"),
+            (xiao_l, "2", rj45, "13", w_dat, (Dird, [(0, 2.6), 90], 90, r_led), "In1.Cu"),
+            # NRST
+            (xiao_l, "3", rj45, "5", w_dat, (ZgZg, 0, 45), "In2.Cu"),
             (xiao_l, "3", rj45, "17", w_dat, (Dird, 0, [(-90, 2.8), 0], r_led), "In2.Cu"),
             # SCK
             (rj45, "3", rj45, "15", w_dat, (Dird, [(-90, 1.6), 0], 90, r_dat), "B.Cu"),
@@ -173,9 +187,12 @@ def wire_mod():
             (rj45, "22", "R3", "2", w_led, (Dird, [(90, 0.0), 0], 0, r_led), "B.Cu"),
             (rj45, "12", "R2", "2", w_led, (Dird, [(90, 1.25), 0], 0, r_led), "B.Cu"),
             (rj45, "10", "R1", "2", w_led, (Dird, [(90, 2.00), 0], 0, r_led), "B.Cu"),
-            (rj45, "18", "R4", "1", w_led, (Dird, 90, 90, 0.7), "B.Cu"),
-            (rj45, "18", "R3", "1", w_led, (Dird, 90, 90, 0.7), "B.Cu"),
-            ("R3", "1", "R4", "1", w_led, (Strt), "B.Cu"),
+            (rj45, via_3v3_1, "R4", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
+            (rj45, via_3v3_1, "R3", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
+            ("R3", "1", "R4", "1", w_pwr, (Strt), "B.Cu"),
+            # LED4
+            (rj45, "23", rj45, via_left, w_led, (ZgZg, 90, 30), "In1.Cu"),
+            (rj45, via_left, xiao_l, "4", w_led, (Dird, [(-90, 1.5), -60], [(0, 1.8), 90], r_led), "In1.Cu"),
         ]
     )
     # I2C
@@ -185,10 +202,14 @@ def wire_mod():
             (rj45, "15", "R12", "1", w_dat, (Dird, 90, 90, r_led), "B.Cu"),
             ("R11", "2", "R12", "2", w_dat, (Strt), "B.Cu"),
             # 3V3
-            (rj45, "18", "R11", "2", w_dat, (Dird, [(90, 1.5), (180, 2.03 + 1.5), (-90, 1.5 + 0.5), -60], [(90, 2.0), 0], r_dat), "B.Cu"),
+            (rj45, "18", rj45, via_3v3_2, w_dat, (Dird, 90, 0, r_dat), "B.Cu"),
+            (rj45, via_3v3_1, rj45, via_3v3_2, w_dat, (Dird, 90, 0, r_dat), "B.Cu"),
+            (rj45, via_3v3_2, rj45, via_left, w_dat, (Dird, 0, 90, r_dat), "B.Cu"),
+            (rj45, via_left, "R11", "2", w_dat, (Dird, [(-90, 1.5), -60], [(90, 2.0), 0], r_led), "B.Cu"),
         ]
     )
-    # pcb.Delete(wire_via_gnd)
+    for via in [via_5vd, via_3v3_1, via_3v3_2, via_left]:
+        pcb.Delete(via)
 
     # I2C address
     mod_exp = "U1"
