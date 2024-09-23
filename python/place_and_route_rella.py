@@ -24,8 +24,9 @@ LinearRound = kad.LinearRound
 # in mm
 VIA_Size = [(1.2, 0.6), (1.15, 0.5), (0.92, 0.4), (0.8, 0.3)]
 
-mod_props = {}
-
+via_size_pwr = VIA_Size[1]
+via_size_dat = VIA_Size[2]
+via_size_gnd = VIA_Size[3]
 
 Cu_layers = ["F.Cu", "B.Cu", "In1.Cu", "In2.Cu"]
 
@@ -34,9 +35,7 @@ pcb = pcbnew.GetBoard()
 GND = pcb.FindNet("GND")
 VCC = pcb.FindNet("3V3")
 
-via_size_pwr = VIA_Size[1]
-via_size_dat = VIA_Size[2]
-via_size_gnd = VIA_Size[3]
+board_org = (114, 90)
 
 
 def add_zone(net_name, layer_name, rect):
@@ -51,44 +50,15 @@ def add_zone(net_name, layer_name, rect):
     # zone.Hatch()
 
 
-def draw_edge_cuts(board):
-    def make_corners(key_cnrs):
-        corners = []
-        for mod, offset, dangle, cnr_type, prms in key_cnrs:
-            if False:
-                pos = kad.calc_pos_from_mod(mod, offset)
-                angle = kad.get_mod_angle(mod)
-            else:
-                _pos, angle, layer = mod_props[mod]
-                vec = offset
-                if layer == "B.Cu":
-                    vec = (vec[0], -vec[1])
-                pos = vec2.mult(mat2.rotate(angle), vec, _pos)
-            corners.append([(pos, -angle + dangle), cnr_type, prms])
-        return corners
-
-    width = 0.12
-
-    # region outer edge
-    Radius = Ly
-    cnrs = [
-        ((vec2.add(board_org, (Lx * (-2 + 1 / 2), -Ly)), +120), Round, [Radius]),
-        ((vec2.add(board_org, (0, Ly)), 0), Round, [Radius]),
-        ((vec2.add(board_org, (Lx * (+2 - 1 / 2), -Ly)), -120), Round, [Radius]),
-        ((vec2.add(board_org, (0, -Ly * 2)), 180), Round, [Radius]),
-    ]
-    kad.draw_closed_corners(cnrs, "Edge.Cuts", width)
-
-
 def place_mods():
     kad.move_mods(
-        (114, 90),
+        board_org,
         0,
         [
             ("J1", (0, 0), 0),
             (
                 None,
-                (12, 2.54 * 1.1 - 2.54 * 3),
+                (12, 3.8 - 2.54 * 3),
                 0,
                 [
                     # ("U1", (-18.114, 1.296 + 2.54 * 3 - 0), 90),
@@ -98,13 +68,13 @@ def place_mods():
             ),
             (
                 None,
-                (-10.4, -8.4),
+                (-10.4, -9.6),
                 0,
                 [
-                    ("R4", (1.524 * 0, 0), 90),
-                    ("R1", (1.524 * 1, 0), 90),
-                    ("R2", (1.524 * 2, 0), 90),
-                    ("R3", (1.524 * 3, 0), 90),
+                    ("R4", (1.524 * 0, 0), -90),
+                    ("R1", (1.524 * 1, 0), -90),
+                    ("R2", (1.524 * 2, 0), -90),
+                    ("R3", (1.524 * 3, 0), -90),
                 ],
             ),
             (
@@ -134,7 +104,7 @@ def wire_mod():
     via_left = kad.add_via_relative(rj45, "20", (-1.4, 0), via_size_pwr)
     # intra RJ45
     via_3v3_1 = kad.add_via_relative(rj45, "18", (0, -1.4 - 0.6), via_size_pwr)
-    via_3v3_2 = kad.add_via_relative(rj45, "18", (-2.03, -1.4 ), via_size_pwr)
+    via_3v3_2 = kad.add_via_relative(rj45, "18", (-2.03, -1.4), via_size_pwr)
     kad.wire_mod_pads(
         [
             (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.4), 0], 90, r_tri), "B.Cu"),
@@ -157,9 +127,9 @@ def wire_mod():
             # 3V3
             (xiao_r, "3", rj45, "6", w_pwr, (ZgZg, 0, 20), "In2.Cu"),
             # LED
-            (xiao_r, "4", rj45, "9", w_led, (Dird, [(180, 1.4), 90], 90, r_led), "In1.Cu"),
-            (xiao_r, "5", rj45, "11", w_led, (ZgZg, 0, 45), "In1.Cu"),
-            (xiao_r, "7", rj45, "21", w_led, (ZgZg, 0, 45), "In1.Cu"),
+            (xiao_r, "4", rj45, "9", w_led, (Dird, -45, [(-90, 1.4), 0], r_led), "In1.Cu"),
+            (xiao_r, "5", rj45, "11", w_led, (Dird, -45, 90), "In1.Cu"),
+            (xiao_r, "7", rj45, "21", w_led, (Dird, -45, 90), "In1.Cu"),
         ]
     )
     # RJ45 - xiao_l
@@ -183,10 +153,10 @@ def wire_mod():
     # LED
     kad.wire_mod_pads(
         [
-            (rj45, "24", "R4", "2", w_led, (Dird, [(90, 1.25), 0], 0, r_led), "B.Cu"),
-            (rj45, "22", "R3", "2", w_led, (Dird, [(90, 0.0), 0], 0, r_led), "B.Cu"),
-            (rj45, "12", "R2", "2", w_led, (Dird, [(90, 1.25), 0], 0, r_led), "B.Cu"),
-            (rj45, "10", "R1", "2", w_led, (Dird, [(90, 2.00), 0], 0, r_led), "B.Cu"),
+            (rj45, "24", "R4", "2", w_led, (Dird, 90, [(0, 1.25), 90], r_led), "B.Cu"),
+            (rj45, "22", "R3", "2", w_led, (Dird, 90, [(0, 0.0), 90], r_led), "B.Cu"),
+            (rj45, "12", "R2", "2", w_led, (Dird, 90, [(0, 1.25), 90], r_led), "B.Cu"),
+            (rj45, "10", "R1", "2", w_led, (Dird, 90, [(0, 2.00), 90], r_led), "B.Cu"),
             (rj45, via_3v3_1, "R4", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
             (rj45, via_3v3_1, "R3", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
             ("R3", "1", "R4", "1", w_pwr, (Strt), "B.Cu"),
@@ -211,39 +181,6 @@ def wire_mod():
     for via in [via_5vd, via_3v3_1, via_3v3_2, via_left]:
         pcb.Delete(via)
 
-    # I2C address
-    mod_exp = "U1"
-    pad_addr = "11"
-    # via_exp_addr1 = kad.add_via_relative(mod_exp, pad_addr, (0, 4.7), via_size_dat)
-    # via_exp_addr2 = kad.add_via_relative(mod_exp, pad_addr, (0, 8.2), via_size_pwr)
-
-    # VCC / GND / Nrst vias
-    # wire_via_exp_vcc = kad.add_via(
-    # kad.calc_pos_from_pad(mod_exp, pad_addr, (0, 8.2)), VCC, via_size_dat
-    # )
-    # kad.wire_mod_pads(
-    #     [
-    #         (mod_cap, "1", mod_exp, "5", w_exp, (Dird, 90, [(180, 1.25), 50], 1)),
-    #         (mod_cap, "2", mod_exp, "6", w_exp, (Dird, 90, [(180, 1.25), 90], 0.5)),
-    #         (
-    #             mod_cap,
-    #             "1",
-    #             mod_cap,
-    #             via_exp_cap_vcc[mod_cap],
-    #             w_exp,
-    #             (Dird, 90, 0, 1),
-    #         ),
-    #         (
-    #             mod_cap,
-    #             "2",
-    #             mod_cap,
-    #             via_exp_cap_gnd[mod_cap],
-    #             w_exp,
-    #             (Dird, 90, 0, 1),
-    #         ),
-    #     ]
-    # )
-
 
 # References
 def set_text_prop(text, pos, angle, offset_length, offset_angle, text_angle):
@@ -256,6 +193,23 @@ def set_text_prop(text, pos, angle, offset_length, offset_angle, text_angle):
         text.SetPosition(pnt.to_unit(vec2.round(pos_text, 3), True))
         text.SetTextAngle(text_angle * 10)
         text.SetKeepUpright(False)
+
+
+def draw_edge_cuts():
+    width = 0.12
+
+    Radius = 2
+    Lx = 32
+    Ly = 2.54 * 7
+    Oy = vec2.add(kad.get_mod_pos("J3"), kad.get_mod_pos("J4"))[1] / 2
+    _org = (board_org[0], Oy)
+    cnrs = [
+        ((vec2.add(_org, (0, -Ly / 2)), 0), Round, [Radius]),
+        ((vec2.add(_org, (+Lx / 2, 0)), 90), Round, [Radius]),
+        ((vec2.add(_org, (0, +Ly / 2)), 180), Round, [Radius]),
+        ((vec2.add(_org, (-Lx / 2, 0)), 270), Round, [Radius]),
+    ]
+    kad.draw_closed_corners(cnrs, "Edge.Cuts", width)
 
 
 def set_refs(board):
@@ -324,6 +278,7 @@ def set_refs(board):
 def main():
     place_mods()
     wire_mod()
+    draw_edge_cuts()
 
     # mod_props = load_mod_props()
     # board_org = vec2.add(mod_props['SW54'][0], vec2.scale(keysw_unit, (-1.1, 0.27)))
@@ -332,7 +287,6 @@ def main():
     #     add_boundary_gnd_vias()
 
     # set_refs(board)
-    # draw_edge_cuts(board)
     # place_screw_holes(board)
 
     # draw rule area
@@ -366,7 +320,7 @@ def main():
 
 
 if __name__ == "__main__":
-    # kad.removeDrawings()
+    kad.removeDrawings()
     kad.removeTracksAndVias()
     main()
     pcbnew.Refresh()
