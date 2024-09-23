@@ -103,14 +103,13 @@ def wire_mod():
     xiao_r = "J4"
     via_left = kad.add_via_relative(rj45, "20", (-1.4, 0), via_size_pwr)
     # intra RJ45
-    via_3v3_1 = kad.add_via_relative(rj45, "18", (0, -1.4 - 0.6), via_size_pwr)
+    via_3v3_1 = kad.add_via_relative(rj45, "18", (-3, -6.6), via_size_pwr)
     via_3v3_2 = kad.add_via_relative(rj45, "18", (-2.03, -1.4), via_size_pwr)
     kad.wire_mod_pads(
         [
+            # 3V3
             (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.4), 0], 90, r_tri), "B.Cu"),
-            (rj45, "6", rj45, via_3v3_1, w_pwr, (Dird, [(+90, 1.4), 0], 90, r_tri), "B.Cu"),
-            (rj45, "18", rj45, via_3v3_1, w_pwr, (Strt), "B.Cu"),
-            (rj45, "8", rj45, "14", w_pwr, (Strt), "In2.Cu"),
+            (rj45, "18", rj45, via_3v3_1, w_pwr, (Dird, 90, 0, r_pwr), "In2.Cu"),
         ]
     )
     # RJ45 - xiao_r
@@ -153,10 +152,10 @@ def wire_mod():
     # LED
     kad.wire_mod_pads(
         [
-            (rj45, "24", "R4", "2", w_led, (Dird, 90, [(0, 1.25), 90], r_led), "B.Cu"),
-            (rj45, "22", "R3", "2", w_led, (Dird, 90, [(0, 0.0), 90], r_led), "B.Cu"),
-            (rj45, "12", "R2", "2", w_led, (Dird, 90, [(0, 1.25), 90], r_led), "B.Cu"),
-            (rj45, "10", "R1", "2", w_led, (Dird, 90, [(0, 2.00), 90], r_led), "B.Cu"),
+            (rj45, "24", "R4", "2", w_led, (Dird, 90, [(0, 1.1), 90], r_led), "B.Cu"),
+            (rj45, "22", "R3", "2", w_led, (Dird, 90, [(0, 0.3), 90], r_led), "B.Cu"),
+            (rj45, "12", "R2", "2", w_led, (Dird, 90, [(0, 1.1), 90], r_led), "B.Cu"),
+            (rj45, "10", "R1", "2", w_led, (Dird, 90, [(0, 1.9), 90], r_led), "B.Cu"),
             (rj45, via_3v3_1, "R4", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
             (rj45, via_3v3_1, "R3", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
             ("R3", "1", "R4", "1", w_pwr, (Strt), "B.Cu"),
@@ -173,12 +172,12 @@ def wire_mod():
             ("R11", "2", "R12", "2", w_dat, (Strt), "B.Cu"),
             # 3V3
             (rj45, "18", rj45, via_3v3_2, w_dat, (Dird, 90, 0, r_dat), "B.Cu"),
-            (rj45, via_3v3_1, rj45, via_3v3_2, w_dat, (Dird, 90, 0, r_dat), "B.Cu"),
+            # (rj45, via_3v3_1, rj45, via_3v3_2, w_dat, (Dird, 90, 0, r_dat), "B.Cu"),
             (rj45, via_3v3_2, rj45, via_left, w_dat, (Dird, 0, 90, r_dat), "B.Cu"),
             (rj45, via_left, "R11", "2", w_dat, (Dird, [(-90, 1.5), -60], [(90, 2.0), 0], r_led), "B.Cu"),
         ]
     )
-    for via in [via_5vd, via_3v3_1, via_3v3_2, via_left]:
+    for via in [via_5vd, via_3v3_2, via_left]:
         pcb.Delete(via)
 
 
