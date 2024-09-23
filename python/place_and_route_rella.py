@@ -198,7 +198,7 @@ def draw_edge_cuts():
     width = 0.12
 
     Radius = 2
-    Lx = 32
+    Lx = 31.5
     Ly = 2.54 * 7
     Oy = vec2.add(kad.get_mod_pos("J3"), kad.get_mod_pos("J4"))[1] / 2
     _org = (board_org[0], Oy)
