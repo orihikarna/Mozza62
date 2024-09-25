@@ -101,29 +101,29 @@ def wire_mod():
     rj45 = "J1"
     xiao_l = "J3"
     xiao_r = "J4"
-    via_left = kad.add_via_relative(rj45, "20", (-1.4, 0), via_size_pwr)
+    via_left = kad.add_via_relative(rj45, "20", (-1.6, 0), via_size_pwr)
     # intra RJ45
     via_3v3_1 = kad.add_via_relative(rj45, "18", (0, -7.2), via_size_pwr)
-    via_3v3_2 = kad.add_via_relative(rj45, "18", (-2.03, -1.4), via_size_pwr)
+    via_3v3_2 = kad.add_via_relative(rj45, "18", (-2.03, -1.5), via_size_pwr)
     # RJ45 - xiao_r
     via_5vd = kad.add_via_relative(rj45, "4", (0, -3.8), via_size_pwr)
     kad.wire_mod_pads(
         [
             # 5VD
-            (xiao_r, "1", rj45, via_5vd, w_pwr, (Dird, [(180, 1.6), 90], 90), "F.Cu"),
+            (xiao_r, "1", rj45, via_5vd, w_pwr, (Dird, [(180, 1.5), 90], 90), "F.Cu"),
             # 5VD
             (rj45, "4", rj45, via_5vd, w_pwr, (Strt), "F.Cu"),
-            (rj45, "16", rj45, via_5vd, w_pwr, (Dird, [(+90, 1.6), 0], 90, r_led), "F.Cu"),
-            (rj45, "16", rj45, "4", w_pwr, (Dird, [(+90, 1.6), 0], 90, r_led), "F.Cu"),
+            (rj45, "16", rj45, via_5vd, w_pwr, (Dird, [(+90, 1.5), 0], 90, r_led), "F.Cu"),
+            (rj45, "16", rj45, "4", w_pwr, (Dird, [(+90, 1.5), 0], 90, r_led), "F.Cu"),
             # GND
             (xiao_r, "2", rj45, "2", w_pwr, (ZgZg, 0, 20), "In2.Cu"),
             # 3V3
             (xiao_r, "3", rj45, "6", w_pwr, (ZgZg, 0, 20), "In2.Cu"),
             # 3V3
-            (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.4), 0], 90, r_tri), "B.Cu"),
+            (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.5), 0], 90, r_tri), "B.Cu"),
             (rj45, "18", rj45, via_3v3_1, w_pwr, (Dird, 90, 0, r_pwr), "F.Cu"),
             # LED
-            (xiao_r, "4", rj45, "9", w_led, (Dird, -45, [(-90, 1.4), 0], r_led), "In1.Cu"),
+            (xiao_r, "4", rj45, "9", w_led, (Dird, -45, [(-90, 1.5), 0], r_led), "In1.Cu"),
             (xiao_r, "5", rj45, "11", w_led, (Dird, -45, 90), "In1.Cu"),
             (xiao_r, "7", rj45, "21", w_led, (Dird, -45, 90), "In1.Cu"),
         ]
@@ -131,19 +131,23 @@ def wire_mod():
     # RJ45 - xiao_l
     kad.wire_mod_pads(
         [
+            # LED
             (xiao_l, "1", rj45, "1", w_dat, (Dird, -45, 90), "In1.Cu"),
-            (xiao_l, "2", rj45, "13", w_dat, (Dird, [(0, 2.6), 90], 90, r_led), "In1.Cu"),
+            (xiao_l, "2", rj45, "13", w_dat, (Dird, [(0, 3.6), 90], 90, r_led), "In1.Cu"),
             # NRST
             (xiao_l, "3", rj45, "5", w_dat, (ZgZg, 0, 45), "F.Cu"),
-            (xiao_l, "3", rj45, "17", w_dat, (Dird, 0, [(-90, 2.8), 0], r_led), "In2.Cu"),
+            (xiao_l, "3", rj45, "17", w_dat, (Dird, [(0, 2.4), 90], 90, r_led), "In2.Cu"),
             # SCK
+            (rj45, "15", xiao_l, "6", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "B.Cu"),
+            (rj45, "3", xiao_l, "6", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "B.Cu"),
             (rj45, "3", rj45, "15", w_dat, (Dird, [(-90, 1.6), 0], 90, r_dat), "B.Cu"),
-            (xiao_l, "6", rj45, "3", w_dat, (Dird, 0, [(-90, 1.6), 0], r_dat), "B.Cu"),
-            (xiao_l, "6", rj45, "15", w_dat, (Dird, 0, [(-90, 1.6), 0], r_dat), "B.Cu"),
+            (rj45, "3", "R12", "1", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "B.Cu"),
+            (rj45, "15", "R12", "1", w_dat, (Dird, 90, 90, r_led), "B.Cu"),
             # SDA
-            (rj45, "7", rj45, "19", w_dat, (Dird, [(-90, 1.4), 0], 90, r_dat), "F.Cu"),
-            (xiao_l, "5", rj45, "7", w_dat, (Dird, 0, [(-90, 1.4), 0], r_dat), "F.Cu"),
-            (xiao_l, "5", rj45, "19", w_dat, (Dird, 0, [(-90, 1.4), 0], r_dat), "F.Cu"),
+            (rj45, "7", xiao_l, "5", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "F.Cu"),
+            (rj45, "19", xiao_l, "5", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "F.Cu"),
+            (rj45, "7", rj45, "19", w_dat, (Dird, [(-90, 1.6), 0], 90, r_dat), "F.Cu"),
+            (rj45, "19", "R11", "1", w_dat, (Dird, 90, 90, r_led), "B.Cu"),
         ]
     )
     # LED
@@ -158,23 +162,24 @@ def wire_mod():
             ("R3", "1", "R4", "1", w_pwr, (Strt), "B.Cu"),
             # LED4
             (rj45, "23", rj45, via_left, w_led, (ZgZg, 90, 30), "In1.Cu"),
-            (rj45, via_left, xiao_l, "4", w_led, (Dird, [(-90, 1.5), -60], [(0, 1.8), 90], r_led), "In1.Cu"),
+            (xiao_l, "4", rj45, via_left, w_led, (Dird, [(0, 2.4), 90], [(-90, 1.5), -60], r_led), "In1.Cu"),
         ]
     )
     # I2C
     kad.wire_mod_pads(
         [
-            (rj45, "19", "R11", "1", w_dat, (Dird, 90, 90, r_led), "B.Cu"),
-            (rj45, "15", "R12", "1", w_dat, (Dird, 90, 90, r_led), "B.Cu"),
-            ("R11", "2", "R12", "2", w_dat, (Strt), "B.Cu"),
             # 3V3
             (rj45, "18", rj45, via_3v3_2, w_led, (Dird, 90, 0, r_led), "B.Cu"),
             (rj45, via_3v3_2, rj45, via_left, w_led, (Dird, 0, 90, r_led), "B.Cu"),
-            (rj45, via_left, "R11", "2", w_led, (Dird, [(-90, 1.5), -60], [(90, 2.0), 0], r_led), "B.Cu"),
+            (rj45, via_left, "R11", "2", w_led, (Dird, [(-90, 1.5), -60], 90, r_led), "B.Cu"),
+            ("R11", "2", "R12", "2", w_dat, (Strt), "B.Cu"),
         ]
     )
     for via in [via_5vd, via_3v3_2, via_left]:
         pcb.Delete(via)
+
+    for pad in "123456":
+        kad.add_via(kad.calc_pos_from_pad(xiao_l, pad, (1.2, 2.54/2)), GND, via_size_dat)
 
 
 # References
@@ -193,7 +198,7 @@ def set_text_prop(text, pos, angle, offset_length, offset_angle, text_angle):
 def draw_edge_cuts():
     width = 0.12
 
-    Radius = 2
+    Radius = 1.27
     Lx = 31.5
     Ly = 2.54 * 7
     Oy = vec2.add(kad.get_mod_pos("J3"), kad.get_mod_pos("J4"))[1] / 2
@@ -233,16 +238,16 @@ def set_refs():
                     set_text_prop(item, pos, angle, offset_length, offset_angle, text_angle)
     # J1
     tsz = 0.8
-    angle = kad.get_mod_angle('J1')
-    pads = ['RGB', 'GND', 'SCK', '5VD', 'nRST', '3V3', 'SDA', 'GND']
+    angle = kad.get_mod_angle("J1")
+    pads = ["RGB", "GND", "SCK", "5VD", "nRST", "3V3", "SDA", "GND"]
     for idx, pad in enumerate(pads):
         pad = pad[:-1]
-        pos = kad.calc_pos_from_pad('J1', f'{idx+1}', (0, 1.6 * (1 if (idx+1) % 2 == 1 else -1) ))
-        kad.add_text(pos, angle, pad, 'F.SilkS', (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
-        kad.add_text(pos, angle, pad, 'B.SilkS', (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
-        pos = kad.calc_pos_from_pad('J1', f'{idx+13}', (0, 1.6 * (1 if (idx+1) % 2 == 1 else -1) ))
-        kad.add_text(pos, angle, pad, 'F.SilkS', (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
-        kad.add_text(pos, angle, pad, 'B.SilkS', (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+        pos = kad.calc_pos_from_pad("J1", f"{idx+1}", (0, 1.6 * (1 if (idx + 1) % 2 == 1 else -1)))
+        kad.add_text(pos, angle, pad, "F.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+        kad.add_text(pos, angle, pad, "B.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+        pos = kad.calc_pos_from_pad("J1", f"{idx+13}", (0, 1.6 * (1 if (idx + 1) % 2 == 1 else -1)))
+        kad.add_text(pos, angle, pad, "F.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+        kad.add_text(pos, angle, pad, "B.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
 
 
 def main():
@@ -253,7 +258,6 @@ def main():
 
     # mod_props = load_mod_props()
     # board_org = vec2.add(mod_props['SW54'][0], vec2.scale(keysw_unit, (-1.1, 0.27)))
-
 
     # draw rule area
     # if board in [Board.Spacer, Board.Middle, Board.Bottom]:
