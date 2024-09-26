@@ -56,12 +56,14 @@ def place_mods():
         0,
         [
             ("J1", (0, 0), 0),
+            ("C1", (9.4, -6.2), 180),
+            ("C2", (2.4, -4.9), -90),
             (
                 None,
                 (12, 3.8 - 2.54 * 3),
                 0,
                 [
-                    # ("U1", (-18.114, 1.296 + 2.54 * 3 - 0), 90),
+                    ("U1", (-18.114, 1.296 + 2.54 * 3 - 0), 90),
                     ("J3", (0, +2.54 * 3), 90),
                     ("J4", (0, -2.54 * 3), 90),
                 ],
@@ -123,7 +125,7 @@ def wire_mod():
             (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.5), 0], 90, r_tri), "B.Cu"),
             (rj45, "18", rj45, via_3v3_1, w_pwr, (Dird, 90, 0, r_pwr), "F.Cu"),
             # LED
-            (xiao_r, "4", rj45, "9", w_led, (Dird, -45, [(-90, 1.5), 0], r_led), "In1.Cu"),
+            (xiao_r, "4", rj45, "9", w_led, (Dird, -45, [(-135, 2.0), (180, 1.7), (135, 2.0), 0], r_led), "In1.Cu"),
             (xiao_r, "5", rj45, "11", w_led, (Dird, -45, 90), "In1.Cu"),
             (xiao_r, "7", rj45, "21", w_led, (Dird, -45, 90), "In1.Cu"),
         ]
@@ -156,7 +158,7 @@ def wire_mod():
             (rj45, "24", "R4", "2", w_led, (Dird, 90, [(0, 1.0), 90], r_led), "B.Cu"),
             (rj45, "22", "R3", "2", w_led, (Dird, 90, [(0, 0.2), 90], r_led), "B.Cu"),
             (rj45, "12", "R2", "2", w_led, (Dird, 90, [(0, 1.0), 90], r_led), "B.Cu"),
-            (rj45, "10", "R1", "2", w_led, (Dird, 90, [(0, 1.8), 90], r_led), "B.Cu"),
+            (rj45, "10", "R1", "2", w_led, (Dird, 90, [(0, 1.8), (-90, 10), (-135, 0.8 * 1.414), 90], r_led), "B.Cu"),
             (rj45, via_3v3_1, "R4", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
             (rj45, via_3v3_1, "R3", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
             ("R3", "1", "R4", "1", w_pwr, (Strt), "B.Cu"),
@@ -198,8 +200,8 @@ def set_text_prop(text, pos, angle, offset_length, offset_angle, text_angle):
 def draw_edge_cuts():
     width = 0.12
 
-    Radius = 1.27
-    Lx = 31.5
+    Radius = 0.64
+    Lx = 33
     Ly = 2.54 * 7
     Oy = vec2.add(kad.get_mod_pos("J3"), kad.get_mod_pos("J4"))[1] / 2
     _org = (board_org[0], Oy)
