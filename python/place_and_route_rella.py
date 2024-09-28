@@ -56,14 +56,14 @@ def place_mods():
         0,
         [
             ("J1", (0, 0), 0),
-            ("C1", (9.4, -6.2), 180),
+            ("C1", (9.4, -6.2), 0),
             ("C2", (2.4, -4.9), -90),
             (
                 None,
                 (12, 3.8 - 2.54 * 3),
                 0,
                 [
-                    ("U1", (-18.114, 1.296 + 2.54 * 3 - 0), 90),
+                    # ("U1", (-18.114, 1.296 + 2.54 * 3 - 0), 90),
                     ("J3", (0, +2.54 * 3), 90),
                     ("J4", (0, -2.54 * 3), 90),
                 ],
@@ -81,11 +81,11 @@ def place_mods():
             ),
             (
                 None,
-                (-9.398, 1.27),
+                (-9.3, 0.0),
                 0,
                 [
-                    ("R11", (0, 0), -90),
-                    ("R12", (1.524 * 2, 0), -90),
+                    ("R11", (0, -0.74), 0),
+                    ("R12", (0.9125 * 2, 0.74), 180),
                 ],
             ),
         ],
@@ -143,13 +143,13 @@ def wire_mod():
             (rj45, "15", xiao_l, "6", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "B.Cu"),
             (rj45, "3", xiao_l, "6", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "B.Cu"),
             (rj45, "3", rj45, "15", w_dat, (Dird, [(-90, 1.6), 0], 90, r_dat), "B.Cu"),
-            (rj45, "3", "R12", "1", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "B.Cu"),
-            (rj45, "15", "R12", "1", w_dat, (Dird, 90, 90, r_led), "B.Cu"),
+            (rj45, "3", "R12", "1", w_dat, (Dird, [(-90, 1.6), 0], 90, r_dat), "B.Cu"),
+            (rj45, "15", "R12", "1", w_dat, (Dird, 90, 0, r_led), "B.Cu"),
             # SDA
             (rj45, "7", xiao_l, "5", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "F.Cu"),
             (rj45, "19", xiao_l, "5", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "F.Cu"),
             (rj45, "7", rj45, "19", w_dat, (Dird, [(-90, 1.6), 0], 90, r_dat), "F.Cu"),
-            (rj45, "19", "R11", "1", w_dat, (Dird, 90, 90, r_led), "B.Cu"),
+            (rj45, "19", "R11", "1", w_dat, (Dird, 90, 0, r_led), "B.Cu"),
         ]
     )
     # LED
@@ -173,28 +173,23 @@ def wire_mod():
             # 3V3
             (rj45, "18", rj45, via_3v3_2, w_led, (Dird, 90, 0, r_led), "B.Cu"),
             (rj45, via_3v3_2, rj45, via_left, w_led, (Dird, 0, 90, r_led), "B.Cu"),
-            (rj45, via_left, "R11", "2", w_led, (Dird, [(-90, 1.5), -60], 90, r_led), "B.Cu"),
+            (rj45, via_left, "R11", "2", w_led, (Dird, [(-90, 1.5), -60], 0, r_led), "B.Cu"),
             ("R11", "2", "R12", "2", w_dat, (Strt), "B.Cu"),
+        ]
+    )
+    # C1/2
+    kad.wire_mod_pads(
+        [
+            ("C1", "2", rj45, "2", w_pwr, (Dird, 45, 90), "B.Cu"),
+            ("C1", "1", rj45, "4", w_pwr, (Dird, 135, 90), "B.Cu"),
+            ("C2", "2", rj45, "8", w_pwr, (Dird, 45, 0), "B.Cu"),
         ]
     )
     for via in [via_5vd, via_3v3_2, via_left]:
         pcb.Delete(via)
 
     for pad in "123456":
-        kad.add_via(kad.calc_pos_from_pad(xiao_l, pad, (1.2, 2.54/2)), GND, via_size_dat)
-
-
-# References
-def set_text_prop(text, pos, angle, offset_length, offset_angle, text_angle):
-    if text_angle == None:
-        text.SetVisible(False)
-    else:
-        text.SetTextSize(pcbnew.wxSizeMM(1.0, 1.0))
-        text.SetTextThickness(pcbnew.FromMM(0.18))
-        pos_text = vec2.scale(offset_length, vec2.rotate(-(offset_angle + angle)), pos)
-        text.SetPosition(pnt.to_unit(vec2.round(pos_text, 3), True))
-        text.SetTextAngle(text_angle * 10)
-        text.SetKeepUpright(False)
+        kad.add_via(kad.calc_pos_from_pad(xiao_l, pad, (1.2, 2.54 / 2)), GND, via_size_dat)
 
 
 def draw_edge_cuts():
@@ -214,6 +209,21 @@ def draw_edge_cuts():
     kad.draw_closed_corners(cnrs, "Edge.Cuts", width)
 
 
+# References
+def set_text_prop(text, pos, angle, offset_length, offset_angle, text_angle):
+    if text_angle == None:
+        text.SetVisible(False)
+    else:
+        # tsz = 1.0
+        tsz = 0.9
+        text.SetTextSize(pcbnew.wxSizeMM(tsz, tsz))
+        text.SetTextThickness(pcbnew.FromMM(0.18))
+        pos_text = vec2.scale(offset_length, vec2.rotate(-(offset_angle + angle)), pos)
+        text.SetPosition(pnt.to_unit(vec2.round(pos_text, 3), True))
+        text.SetTextAngle(text_angle * 10)
+        text.SetKeepUpright(False)
+
+
 def set_refs():
     # hide value texts
     # for mod in pcb.GetFootprints():
@@ -224,8 +234,10 @@ def set_refs():
         (3.2, 90, 0, ["J1"]),
         (2.4, 0, -90, ["R1", "R3"]),
         (2.4, 180, 90, ["R2", "R4"]),
-        (1.4, -90, 180, ["R11"]),
-        (1.4, -90, 180, ["R12"]),
+        (1.8, -135, 180, ["R11"]),
+        (3.2, 180, 0, ["R12"]),
+        (1.6, 90, 0, ["C1"]),
+        (1.6, -90, 180, ["C2"]),
     ]
     for offset_length, offset_angle, text_angle, mod_names in refs:
         for mod_name in mod_names:
@@ -238,16 +250,54 @@ def set_refs():
             for item in mod.GraphicalItems():
                 if type(item) is pcbnew.FP_TEXT and item.GetShownText() == ref.GetShownText():
                     set_text_prop(item, pos, angle, offset_length, offset_angle, text_angle)
-    # J1
     tsz = 0.8
+
+    # J1
     angle = kad.get_mod_angle("J1")
-    pads = ["RGB", "GND", "SCK", "5VD", "nRST", "3V3", "SDA", "GND"]
+    # pads = ["RGB", "GND", "SCK", "5VD", "nRST", "3V3", "SDA", "GND"]
+    pads = ["FC", "GD", "SC", "5V", "nR", "3V", "SD", "GD"]
     for idx, pad in enumerate(pads):
-        pad = pad[:-1]
+        _pad = pad
+        # Right
+        if pad == "FC":
+            _pad = pad + "1"
         pos = kad.calc_pos_from_pad("J1", f"{idx+1}", (0, 1.6 * (1 if (idx + 1) % 2 == 1 else -1)))
+        kad.add_text(pos, angle, _pad, "F.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+        if idx in [1]:
+            pos = kad.calc_pos_from_pad("J1", "2", (2.0, 0))
+        elif idx in [3]:
+            pos = kad.calc_pos_from_pad("J1", "6", (0.5, -2.8))
+        kad.add_text(pos, angle, _pad, "B.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+        # Left
+        if pad == "FC":
+            _pad = pad + "2"
+        pos = kad.calc_pos_from_pad("J1", f"{idx+13}", (0, 1.6 * (1 if (idx + 1) % 2 == 1 else -1)))
+        if idx in [4, 6]:
+            pos = vec2.add(pos, (-4, -1.6))
+        kad.add_text(pos, angle, _pad, "F.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+        kad.add_text(pos, angle, _pad, "B.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+
+    # J1
+    angle = kad.get_mod_angle("J1") - 180
+    pads = [(9, "D1"), (11, "D2"), (21, "D3"), (23, "D4")]
+    for idx, (pin, pad) in enumerate(pads):
+        pos = kad.calc_pos_from_pad("J1", f"{pin}", (0, 1.6))
         kad.add_text(pos, angle, pad, "F.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
         kad.add_text(pos, angle, pad, "B.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
-        pos = kad.calc_pos_from_pad("J1", f"{idx+13}", (0, 1.6 * (1 if (idx + 1) % 2 == 1 else -1)))
+
+    # J3
+    angle = kad.get_mod_angle("J3") - 90
+    pads = ["FC1", "FC2", "nR", "D4", "SD", "SC", "x"]
+    for idx, pad in enumerate(pads):
+        pos = kad.calc_pos_from_pad("J3", f"{idx+1}", (1.6, 0))
+        kad.add_text(pos, angle, pad, "F.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+        kad.add_text(pos, angle, pad, "B.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
+
+    # J4
+    angle = kad.get_mod_angle("J4") + 90
+    pads = ["5V", "GD", "3V", "D1", "D2", "x", "D3"]
+    for idx, pad in enumerate(pads):
+        pos = kad.calc_pos_from_pad("J4", f"{idx+1}", (-1.1, -1.27))
         kad.add_text(pos, angle, pad, "F.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
         kad.add_text(pos, angle, pad, "B.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
 
