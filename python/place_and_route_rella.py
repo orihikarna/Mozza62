@@ -134,11 +134,11 @@ def wire_mod():
     kad.wire_mod_pads(
         [
             # LED
-            (xiao_l, "1", rj45, "1", w_dat, (Dird, -45, 90), "In1.Cu"),
+            (xiao_l, "1", rj45, "1", w_dat, (Dird, [(0, 2), -45], 90), "In1.Cu"),
             (xiao_l, "2", rj45, "13", w_dat, (Dird, [(0, 3.6), 90], 90, r_led), "In1.Cu"),
             # NRST
             (xiao_l, "3", rj45, "5", w_dat, (ZgZg, 0, 45), "F.Cu"),
-            (xiao_l, "3", rj45, "17", w_dat, (Dird, [(0, 2.4), 90], 90, r_led), "In2.Cu"),
+            (xiao_l, "3", rj45, "17", w_dat, (Dird, [(0, 3.0), 90], 90, r_led), "In1.Cu"),
             # SCK
             (rj45, "15", xiao_l, "6", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "B.Cu"),
             (rj45, "3", xiao_l, "6", w_dat, (Dird, [(-90, 1.6), 0], 0, r_dat), "B.Cu"),
