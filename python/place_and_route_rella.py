@@ -108,19 +108,19 @@ def wire_mod():
     via_3v3_1 = kad.add_via_relative(rj45, "18", (0, -7.2), via_size_pwr)
     via_3v3_2 = kad.add_via_relative(rj45, "18", (-2.03, -1.5), via_size_pwr)
     # RJ45 - xiao_r
-    via_5vd = kad.add_via_relative(rj45, "4", (0, -3.8), via_size_pwr)
+    via_5vd = kad.add_via_relative(rj45, "2", (0, -3.8), via_size_pwr)
     kad.wire_mod_pads(
         [
             # 5VD
-            (xiao_r, "1", rj45, via_5vd, w_pwr, (Dird, [(180, 1.5), 90], 90), "F.Cu"),
+            (xiao_r, "1", rj45, via_5vd, w_pwr, (Dird, 45, 90), "F.Cu"),
             # 5VD
-            (rj45, "4", rj45, via_5vd, w_pwr, (Strt), "F.Cu"),
+            (rj45, "4", rj45, via_5vd, w_pwr, (Dird, [(+90, 1.5), 0], 90), "F.Cu"),
             (rj45, "16", rj45, via_5vd, w_pwr, (Dird, [(+90, 1.5), 0], 90, r_led), "F.Cu"),
             (rj45, "16", rj45, "4", w_pwr, (Dird, [(+90, 1.5), 0], 90, r_led), "F.Cu"),
             # GND
-            (xiao_r, "2", rj45, "2", w_pwr, (ZgZg, 0, 20), "In2.Cu"),
+            (xiao_r, "2", rj45, "2", w_pwr, (Dird, -45, 90), "In2.Cu"),
             # 3V3
-            (xiao_r, "3", rj45, "6", w_pwr, (ZgZg, 0, 20), "In2.Cu"),
+            (xiao_r, "3", rj45, "6", w_pwr, (Dird, 45, 90), "In2.Cu"),
             # 3V3
             (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.5), 0], 90, r_tri), "B.Cu"),
             (rj45, "18", rj45, via_3v3_1, w_pwr, (Dird, 90, 0, r_pwr), "F.Cu"),
@@ -158,7 +158,7 @@ def wire_mod():
             (rj45, "24", "R4", "2", w_led, (Dird, 90, [(0, 1.0), 90], r_led), "B.Cu"),
             (rj45, "22", "R3", "2", w_led, (Dird, 90, [(0, 0.2), 90], r_led), "B.Cu"),
             (rj45, "12", "R2", "2", w_led, (Dird, 90, [(0, 1.0), 90], r_led), "B.Cu"),
-            (rj45, "10", "R1", "2", w_led, (Dird, 90, [(0, 1.8), (-90, 10), (-135, 0.8 * 1.414), 90], r_led), "B.Cu"),
+            (rj45, "10", "R1", "2", w_led, (Dird, 0, [(0, 1.8), (-90, 10), (-135, 0.8 * 1.414), (-90, 2.4), -135], r_led), "B.Cu"),
             (rj45, via_3v3_1, "R4", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
             (rj45, via_3v3_1, "R3", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
             ("R3", "1", "R4", "1", w_pwr, (Strt), "B.Cu"),
@@ -173,8 +173,8 @@ def wire_mod():
             # 3V3
             (rj45, "18", rj45, via_3v3_2, w_led, (Dird, 90, 0, r_led), "B.Cu"),
             (rj45, via_3v3_2, rj45, via_left, w_led, (Dird, 0, 90, r_led), "B.Cu"),
-            (rj45, via_left, "R11", "2", w_led, (Dird, [(-90, 1.5), -60], 0, r_led), "B.Cu"),
-            ("R11", "2", "R12", "2", w_dat, (Strt), "B.Cu"),
+            (rj45, via_left, "R12", "2", w_led, (Dird, [(-90, 1.5), -60], 0, r_led), "B.Cu"),
+            ("R11", "2", "R12", "2", w_led, (Strt), "B.Cu"),
         ]
     )
     # C1/2
