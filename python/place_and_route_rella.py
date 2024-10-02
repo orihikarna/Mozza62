@@ -35,32 +35,23 @@ pcb = pcbnew.GetBoard()
 GND = pcb.FindNet("GND")
 VCC = pcb.FindNet("3V3")
 
-board_org = (114, 90)
-
-
-def add_zone(net_name, layer_name, rect):
-    settings = pcb.GetZoneSettings()
-    settings.m_ZoneClearance = pcbnew.FromMils(12)
-    pcb.SetZoneSettings(settings)
-
-    zone = kad.add_zone(rect, layer_name, net_name)
-    zone.SetMinThickness(pcbnew.FromMils(16))
-    # zone.SetThermalReliefGap( pcbnew.FromMils( 12 ) )
-    zone.SetThermalReliefSpokeWidth(pcbnew.FromMils(16))
-    # zone.Hatch()
+board_width = 33
+board_height = 2.54 * 7
+board_size = (board_width, board_height)
+board_orig = (100, 80)
 
 
 def place_mods():
     kad.move_mods(
-        board_org,
+        board_orig,
         0,
         [
-            ("J1", (0, 0), 0),
-            ("C1", (9.4, -6.2), 0),
-            ("C2", (2.4, -4.9), -90),
+            ("J1", (0, 3.82), 0),
+            ("C1", (9.4, -2.38), 0),
+            ("C2", (2.4, -1.08), -90),
             (
                 None,
-                (12, 3.8 - 2.54 * 3),
+                (12, 0),
                 0,
                 [
                     # ("U1", (-18.114, 1.296 + 2.54 * 3 - 0), 90),
@@ -70,7 +61,7 @@ def place_mods():
             ),
             (
                 None,
-                (-10.4, -9.4),
+                (-10.4, -5.58),
                 0,
                 [
                     ("R4", (1.524 * 0, 0), -90),
@@ -81,7 +72,7 @@ def place_mods():
             ),
             (
                 None,
-                (-9.3, 0.0),
+                (-9.3, 3.82),
                 0,
                 [
                     ("R11", (-0.2175, -0.74), 0),
@@ -205,15 +196,13 @@ def draw_edge_cuts():
     width = 0.12
 
     Radius = 0.64
-    Lx = 33
-    Ly = 2.54 * 7
     Oy = vec2.add(kad.get_mod_pos("J3"), kad.get_mod_pos("J4"))[1] / 2
-    _org = (board_org[0], Oy)
+    _org = (board_orig[0], Oy)
     cnrs = [
-        ((vec2.add(_org, (0, -Ly / 2)), 0), Round, [Radius]),
-        ((vec2.add(_org, (+Lx / 2, 0)), 90), Round, [Radius]),
-        ((vec2.add(_org, (0, +Ly / 2)), 180), Round, [Radius]),
-        ((vec2.add(_org, (-Lx / 2, 0)), 270), Round, [Radius]),
+        ((vec2.add(_org, (0, -board_height / 2)), 0), Round, [Radius]),
+        ((vec2.add(_org, (+board_width / 2, 0)), 90), Round, [Radius]),
+        ((vec2.add(_org, (0, +board_height / 2)), 180), Round, [Radius]),
+        ((vec2.add(_org, (-board_width / 2, 0)), 270), Round, [Radius]),
     ]
     kad.draw_closed_corners(cnrs, "Edge.Cuts", width)
 
@@ -311,43 +300,38 @@ def set_refs():
         kad.add_text(pos, angle, pad, "B.SilkS", (tsz, tsz), 0.15, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
 
 
+def add_zone(net_name, layer_name, rect):
+    settings = pcb.GetZoneSettings()
+    settings.m_ZoneClearance = pcbnew.FromMils(13)
+    pcb.SetZoneSettings(settings)
+
+    zone = kad.add_zone(rect, layer_name, net_name)
+    zone.SetMinThickness(pcbnew.FromMils(13))
+    zone.SetThermalReliefGap(pcbnew.FromMils(13))
+    # zone.Hatch()
+
+
 def main():
     place_mods()
     wire_mod()
     draw_edge_cuts()
     set_refs()
 
-    # mod_props = load_mod_props()
-    # board_org = vec2.add(mod_props['SW54'][0], vec2.scale(keysw_unit, (-1.1, 0.27)))
-
-    # draw rule area
-    # if board in [Board.Spacer, Board.Middle, Board.Bottom]:
-    #     draw_rule_area(board)
-
     # logo
     # for mod, angle in [('G1', -30), ('G2', 150)]:
     #     if kad.get_mod(mod) is not None:
     #         kad.move_mods((175.5, 34.5), 0, [(mod, (0, 0), angle)])
 
-    # board size
-    # left = int(math.floor(board_org[0]-Lx-Ly))
-    # rght = int(math.ceil(board_org[0]+Lx+Ly))
-    # top = int(math.floor(board_org[1]-2*Ly))
-    # btm = int(math.ceil(board_org[1]+Ly))
-    # width = rght - left
-    # height = btm - top
-    # print(f'PCB size = {width}x{height} ({2*(Lx+Ly):.4f} x {3*Ly:.4f})')
-
     # zones
-    # rect = kad.make_rect((width, height), (left, top))
-    # for layer in Cu_layers:
-    #     add_zone('GND', layer, rect)
+    rect = kad.make_rect(vec2.scale(1.2, board_size), vec2.scale(-0.5 * 1.2, board_size, board_orig))
+    for layer in Cu_layers:
+        add_zone("GND", layer, rect)
 
     # name
-    # kad.add_text((board_org[0], btm - 5), 0,
+    # kad.add_text((board_orig[0], btm - 5), 0,
     #                 f'Mozza62 {boardname} by orihikarna\n ver1.0 2023/06/18',
     #                 'F.Silkscreen', (2.0, 2.0), 0.4, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
-    # kad.add_text((board_org[0] - 15, btm - 13), -6, 'R*1 = 10k\nR*2 = 4k7\nCD* = 33n', 'B.Silkscreen', (1.2, 1.2), 0.3)
+    # kad.add_text((board_orig[0] - 15, btm - 13), -6, 'R*1 = 10k\nR*2 = 4k7\nCD* = 33n', 'B.Silkscreen', (1.2, 1.2), 0.3)
 
 
 if __name__ == "__main__":
