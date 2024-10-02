@@ -95,7 +95,7 @@ def wire_mod():
     xiao_l = "J3"
     xiao_r = "J4"
     # intra RJ45
-    via_3v3_1 = kad.add_via_relative(rj45, "18", (0, -7.2), via_size_pwr)
+    via_3v3_led = kad.add_via(kad.calc_pos_from_pad(rj45, "23", (0.6, -1.8)), VCC, via_size_pwr)
     via_3v3_2 = kad.add_via_relative(rj45, "18", (-2.03, -1.5), via_size_pwr)
     # RJ45 - xiao_r
     via_5vd = kad.add_via_relative(rj45, "2", (0, -3.8), via_size_pwr)
@@ -113,7 +113,7 @@ def wire_mod():
             (xiao_r, "3", rj45, "6", w_pwr, (Dird, 45, 90), "In2.Cu"),
             # 3V3
             (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.5), 0], 90, r_tri), "B.Cu"),
-            (rj45, "18", rj45, via_3v3_1, w_pwr, (Dird, 90, 0, r_pwr), "F.Cu"),
+            (rj45, "18", rj45, via_3v3_led, w_pwr, (Dird, 90, -45, r_pwr), "F.Cu"),
             # LED
             (xiao_r, "4", rj45, "9", w_led, (Dird, -45, [(-135, 2.0), (180, 1.7), (135, 2.0), 0], r_led), "In1.Cu"),
             (xiao_r, "5", rj45, "11", w_led, (Dird, -45, 90), "In1.Cu"),
@@ -127,7 +127,7 @@ def wire_mod():
         [
             # Full colr LED
             (xiao_l, "1", rj45, "1", w_dat, (Dird, [(0, 2), -45], 90), "In1.Cu"),
-            (xiao_l, "2", rj45, "13", w_dat, (Dird, [(0, 3.2), 90], [(0, 5.5), -45], r_led), "In1.Cu"),
+            (xiao_l, "2", rj45, "13", w_dat, (Dird, [(0, 3.2), 90], [(0, 5.6), -45], r_led), "In1.Cu"),
             # NRST
             (xiao_l, "3", rj45, "5", w_dat, (ZgZg, 0, 45), "F.Cu"),
             (xiao_l, "3", rj45, "17", w_dat, (Dird, [(0, 2.2), 90], 90, r_led), "In2.Cu"),
@@ -149,16 +149,16 @@ def wire_mod():
     kad.wire_mod_pads(
         [
             # LED1/2/3
-            (rj45, "24", "R4", "2", w_led, (Dird, 90, [(0, 0.8), 90], r_led), "B.Cu"),
+            (rj45, "24", "R4", "2", w_led, (Dird, 90, [(0, 1.6), 90], r_led), "B.Cu"),
             (rj45, "22", "R3", "2", w_led, (Dird, 90, [(0, 0.0), 90], r_led), "B.Cu"),
-            (rj45, "12", "R2", "2", w_led, (Dird, 90, [(0, 0.8), 90], r_led), "B.Cu"),
-            (rj45, "10", "R1", "2", w_led, (Dird, 0, [(0, 1.6), (-90, 10), (-135, 0.8 * 1.414), (-90, 2.4), -135], r_led), "B.Cu"),
+            (rj45, "12", "R2", "2", w_led, (Dird, 90, [(0, 1.0), 90], r_led), "B.Cu"),
+            (rj45, "10", "R1", "2", w_led, (Dird, 0, [(0, 1.8), (-90, 10), (-135, 0.8 * 1.414), (-90, 2.4), -135], r_led), "B.Cu"),
             # LED4
             (rj45, "23", rj45, via_left, w_led, (ZgZg, 90, 30), "In1.Cu"),
             (xiao_l, "4", rj45, via_left, w_led, (Dird, [(0, 2.2), 90], [(-90, 1.0), -65], r_led), "In1.Cu"),
             # 3V3
-            (rj45, via_3v3_1, "R4", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
-            (rj45, via_3v3_1, "R3", "1", w_pwr, (Dird, 90, 90, r_tri), "B.Cu"),
+            (rj45, via_3v3_led, "R4", "1", w_pwr, (Dird, -45, 90, r_tri), "B.Cu"),
+            ("R4", "1", "R3", "1", w_pwr, (Strt), "B.Cu"),
             ("R3", "1", "R4", "1", w_pwr, (Strt), "B.Cu"),
         ]
     )
@@ -184,12 +184,16 @@ def wire_mod():
         pcb.Delete(via)
 
     # gnd vias
-    for pad in "123456":
-        kad.add_via(kad.calc_pos_from_pad(xiao_l, pad, (1.2, 2.54 / 2)), GND, via_size_dat)
+    for pad in "1234567":
+        kad.add_via(kad.calc_pos_from_pad(xiao_l, pad, (1.2, -2.54 / 2)), GND, via_size_dat)
     for pad in ["1", "3", "5"]:
         kad.add_via(kad.calc_pos_from_pad(rj45, pad, (-2.02 / 2, 1.4)), GND, via_size_dat)
     for pad in ["15", "17"]:
         kad.add_via(kad.calc_pos_from_pad(rj45, pad, (+2.02 / 2, 1.4)), GND, via_size_dat)
+    kad.add_via(kad.calc_pos_from_pad(rj45, "24", (+2.29/2, +1.2)), GND, via_size_dat)
+    kad.add_via(kad.calc_pos_from_pad(rj45, "24", (+2.29/2, -1.2)), GND, via_size_dat)
+    kad.add_via(kad.calc_pos_from_pad(rj45, "10", (+2.29/2, -1.2)), GND, via_size_dat)
+    kad.add_via(kad.calc_pos_from_pad(rj45, "20", (-2.8, 0)), GND, via_size_dat)
 
 
 def draw_edge_cuts():
@@ -302,7 +306,7 @@ def set_refs():
 
 def add_zone(net_name, layer_name, rect):
     settings = pcb.GetZoneSettings()
-    settings.m_ZoneClearance = pcbnew.FromMils(13)
+    settings.m_ZoneClearance = pcbnew.FromMils(12)
     pcb.SetZoneSettings(settings)
 
     zone = kad.add_zone(rect, layer_name, net_name)
