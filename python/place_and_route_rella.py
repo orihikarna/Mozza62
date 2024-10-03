@@ -94,9 +94,7 @@ def wire_mod():
     rj45 = "J1"
     xiao_l = "J3"
     xiao_r = "J4"
-    # intra RJ45
     via_3v3_led = kad.add_via(kad.calc_pos_from_pad(rj45, "23", (0.6, -1.8)), VCC, via_size_pwr)
-    via_3v3_2 = kad.add_via_relative(rj45, "18", (-2.03, -1.5), via_size_pwr)
     # RJ45 - xiao_r
     via_5vd = kad.add_via_relative(rj45, "2", (0, -3.8), via_size_pwr)
     kad.wire_mod_pads(
@@ -108,14 +106,14 @@ def wire_mod():
             (rj45, "16", rj45, via_5vd, w_pwr, (Dird, [(+90, 1.5), 0], 90, r_led), "F.Cu"),
             (rj45, "16", rj45, "4", w_pwr, (Dird, [(+90, 1.5), 0], 90, r_led), "F.Cu"),
             # GND
-            (xiao_r, "2", rj45, "2", w_pwr, (Dird, -45, 90), "In2.Cu"),
+            # (xiao_r, "2", rj45, "2", w_pwr, (Dird, -45, 90), "In2.Cu"),
             # 3V3
-            (xiao_r, "3", rj45, "6", w_pwr, (Dird, 45, 90), "In2.Cu"),
+            (xiao_r, "3", rj45, "6", w_pwr, (ZgZg, 0, 30), "In2.Cu"),
             # 3V3
             (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.5), 0], 90, r_tri), "B.Cu"),
             (rj45, "18", rj45, via_3v3_led, w_pwr, (Dird, 90, -45, r_pwr), "F.Cu"),
-            # LED
-            (xiao_r, "4", rj45, "9", w_led, (Dird, -45, [(-135, 2.0), (180, 1.7), (135, 2.0), 0], r_led), "In1.Cu"),
+            # LED1/2/3
+            (xiao_r, "4", rj45, "9", w_led, (Dird, -45, [(-135, 2.0), (180, 1.7), (135, 3.0), 0], r_led), "In1.Cu"),
             (xiao_r, "5", rj45, "11", w_led, (Dird, -45, 90), "In1.Cu"),
             (xiao_r, "7", rj45, "21", w_led, (Dird, -45, 90), "In1.Cu"),
         ]
@@ -144,32 +142,30 @@ def wire_mod():
             (rj45, "19", "R11", "1", w_dat, (Dird, 90, 0, r_dat), "B.Cu"),
         ]
     )
-    # LED
+    # I2C 3V3
     via_left = kad.add_via_relative(rj45, "20", (-1.6, 0), via_size_pwr)
+    kad.wire_mod_pads(
+        [
+            (rj45, "18", rj45, via_left, w_led, (Dird, [(90, 1.5), 0], 90, r_led), "B.Cu"),
+            (rj45, via_left, "R12", "2", w_led, (Dird, [(-90, 0.4), (-60, 3.2), 90], 0, r_led), "B.Cu"),
+            ("R11", "2", "R12", "2", w_led, (ZgZg, 90, 45), "B.Cu"),
+        ]
+    )
+    # LED
     kad.wire_mod_pads(
         [
             # LED1/2/3
             (rj45, "24", "R4", "2", w_led, (Dird, 90, [(0, 1.6), 90], r_led), "B.Cu"),
             (rj45, "22", "R3", "2", w_led, (Dird, 90, [(0, 0.0), 90], r_led), "B.Cu"),
             (rj45, "12", "R2", "2", w_led, (Dird, 90, [(0, 1.0), 90], r_led), "B.Cu"),
-            (rj45, "10", "R1", "2", w_led, (Dird, 0, [(0, 1.8), (-90, 10), (-135, 0.8 * 1.414), (-90, 2.4), -135], r_led), "B.Cu"),
+            (rj45, "10", "R1", "2", w_led, (Dird, 0, [(0, 1.8), (-90, 10), (-135, 0.8 * 1.414), (-90, 3.2), -135], r_led), "B.Cu"),
             # LED4
             (rj45, "23", rj45, via_left, w_led, (ZgZg, 90, 30), "In1.Cu"),
-            (xiao_l, "4", rj45, via_left, w_led, (Dird, [(0, 2.2), 90], [(-90, 1.0), -65], r_led), "In1.Cu"),
+            (xiao_l, "4", rj45, via_left, w_led, (Dird, [(0, 2.2), 90], [(-90, 0.4), -60], r_led), "In1.Cu"),
             # 3V3
             (rj45, via_3v3_led, "R4", "1", w_pwr, (Dird, -45, 90, r_tri), "B.Cu"),
             ("R4", "1", "R3", "1", w_pwr, (Strt), "B.Cu"),
             ("R3", "1", "R4", "1", w_pwr, (Strt), "B.Cu"),
-        ]
-    )
-    # I2C
-    kad.wire_mod_pads(
-        [
-            # 3V3
-            (rj45, "18", rj45, via_3v3_2, w_led, (Dird, 90, 0, r_led), "B.Cu"),
-            (rj45, via_3v3_2, rj45, via_left, w_led, (Dird, 0, 90, r_led), "B.Cu"),
-            (rj45, via_left, "R12", "2", w_led, (Dird, [(-90, 1.0), -65], 0, r_led), "B.Cu"),
-            ("R11", "2", "R12", "2", w_led, (ZgZg, 90, 45), "B.Cu"),
         ]
     )
     # C1/2
@@ -180,7 +176,7 @@ def wire_mod():
             ("C2", "2", rj45, "8", w_pwr, (Dird, 45, 0), "B.Cu"),
         ]
     )
-    for via in [via_5vd, via_3v3_2, via_left, via_sda, via_sck]:
+    for via in [via_5vd, via_left, via_sda, via_sck]:
         pcb.Delete(via)
 
     # gnd vias
@@ -194,6 +190,8 @@ def wire_mod():
     kad.add_via(kad.calc_pos_from_pad(rj45, "24", (+2.29/2, -1.2)), GND, via_size_dat)
     kad.add_via(kad.calc_pos_from_pad(rj45, "10", (+2.29/2, -1.2)), GND, via_size_dat)
     kad.add_via(kad.calc_pos_from_pad(rj45, "20", (-2.8, 0)), GND, via_size_dat)
+    kad.add_via(kad.calc_pos_from_pad(rj45, "20", (0, 6.4)), GND, via_size_dat)
+    kad.add_via(kad.calc_pos_from_pad(rj45, "11", (1.8, 0)), GND, via_size_dat)
 
 
 def draw_edge_cuts():
