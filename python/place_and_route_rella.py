@@ -158,7 +158,7 @@ def wire_mod():
             (rj45, "24", "R4", "2", w_led, (Dird, 90, [(0, 1.6), 90], r_led), "B.Cu"),
             (rj45, "22", "R3", "2", w_led, (Dird, 90, [(0, 0.0), 90], r_led), "B.Cu"),
             (rj45, "12", "R2", "2", w_led, (Dird, 90, [(0, 1.0), 90], r_led), "B.Cu"),
-            (rj45, "10", "R1", "2", w_led, (Dird, 0, [(0, 1.8), (-90, 10), (-135, 0.8 * 1.414), (-90, 3.2), -135], r_led), "B.Cu"),
+            (rj45, "10", "R1", "2", w_led, (Dird, 0, [(0, 1.8), (-90, 10), (-135, 0.5 * 1.414), (-90, 3.2), -135], r_led), "B.Cu"),
             # LED4
             (rj45, "23", rj45, via_left, w_led, (ZgZg, 90, 30), "In1.Cu"),
             (xiao_l, "4", rj45, via_left, w_led, (Dird, [(0, 2.2), 90], [(-90, 0.4), -60], r_led), "In1.Cu"),
@@ -186,9 +186,9 @@ def wire_mod():
         kad.add_via(kad.calc_pos_from_pad(rj45, pad, (-2.02 / 2, 1.4)), GND, via_size_dat)
     for pad in ["15", "17"]:
         kad.add_via(kad.calc_pos_from_pad(rj45, pad, (+2.02 / 2, 1.4)), GND, via_size_dat)
-    kad.add_via(kad.calc_pos_from_pad(rj45, "24", (+2.29/2, +1.2)), GND, via_size_dat)
-    kad.add_via(kad.calc_pos_from_pad(rj45, "24", (+2.29/2, -1.2)), GND, via_size_dat)
-    kad.add_via(kad.calc_pos_from_pad(rj45, "10", (+2.29/2, -1.2)), GND, via_size_dat)
+    kad.add_via(kad.calc_pos_from_pad(rj45, "24", (+2.29 / 2, +1.2)), GND, via_size_dat)
+    kad.add_via(kad.calc_pos_from_pad(rj45, "24", (+2.29 / 2, -1.2)), GND, via_size_dat)
+    kad.add_via(kad.calc_pos_from_pad(rj45, "10", (+2.29 / 2, -1.2)), GND, via_size_dat)
     kad.add_via(kad.calc_pos_from_pad(rj45, "20", (-2.8, 0)), GND, via_size_dat)
     kad.add_via(kad.calc_pos_from_pad(rj45, "20", (0, 6.4)), GND, via_size_dat)
     kad.add_via(kad.calc_pos_from_pad(rj45, "11", (1.8, 0)), GND, via_size_dat)
