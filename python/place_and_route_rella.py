@@ -113,7 +113,7 @@ def wire_mod():
             (rj45, "6", rj45, "18", w_pwr, (Dird, [(+90, 1.5), 0], 90, r_tri), "B.Cu"),
             (rj45, "18", rj45, via_3v3_led, w_pwr, (Dird, 90, -45, r_pwr), "F.Cu"),
             # LED1/2/3
-            (xiao_r, "4", rj45, "9", w_led, (Dird, -45, [(-135, 2.0), (180, 1.7), (135, 3.0), 0], r_led), "In1.Cu"),
+            (xiao_r, "4", rj45, "9", w_led, (Dird, -45, [(-135, 2.0), (180, 1.7), (135, 2.0), 0], r_led), "In1.Cu"),
             (xiao_r, "5", rj45, "11", w_led, (Dird, -45, 90), "In1.Cu"),
             (xiao_r, "7", rj45, "21", w_led, (Dird, -45, 90), "In1.Cu"),
         ]
@@ -320,20 +320,17 @@ def main():
     set_refs()
 
     # logo
-    # for mod, angle in [('G1', -30), ('G2', 150)]:
-    #     if kad.get_mod(mod) is not None:
-    #         kad.move_mods((175.5, 34.5), 0, [(mod, (0, 0), angle)])
+    for mod, angle in [("G1", 180)]:
+        if kad.get_mod(mod) is not None:
+            kad.move_mods((90, 87), 0, [(mod, (0, 0), angle)])
 
     # zones
-    rect = kad.make_rect(vec2.scale(1.2, board_size), vec2.scale(-0.5 * 1.2, board_size, board_orig))
+    rect = kad.make_rect(vec2.scale(1.1, board_size), vec2.scale(-0.5 * 1.1, board_size, board_orig))
     for layer in Cu_layers:
         add_zone("GND", layer, rect)
 
     # name
-    # kad.add_text((board_orig[0], btm - 5), 0,
-    #                 f'Mozza62 {boardname} by orihikarna\n ver1.0 2023/06/18',
-    #                 'F.Silkscreen', (2.0, 2.0), 0.4, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
-    # kad.add_text((board_orig[0] - 15, btm - 13), -6, 'R*1 = 10k\nR*2 = 4k7\nCD* = 33n', 'B.Silkscreen', (1.2, 1.2), 0.3)
+    kad.add_text((105, 84.4), 0, f"orihikarna 24/10/05", "B.Silkscreen", (0.8, 0.8), 0.4, pcbnew.GR_TEXT_HJUSTIFY_CENTER, pcbnew.GR_TEXT_VJUSTIFY_CENTER)
 
 
 if __name__ == "__main__":
