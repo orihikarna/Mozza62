@@ -1,11 +1,10 @@
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_NeoPixel.h>
-#include <Arduino.h>
-#include <Wire.h>
-
 #ifdef BOARD_XIAO_BLE
 #include <Adafruit_TinyUSB.h>  // for Serial
 #endif
+#include <Arduino.h>
+#include <Wire.h>
 
 #include <array>
 
@@ -105,14 +104,17 @@ KeyProcEmacs proc_emacs;
 KeyProcUnmod proc_unmod;
 KeyProcNkro proc_nkro;
 
-// BleKeyboard ble_kbrd("Mozza62 keyb");
-BleConnectorNRF ble_kbrd;
-
 #ifdef BOARD_XIAO_BLE
+BleConnectorNRF ble_kbrd;
 BoardLED_Xiao brd_led;
 #endif
 #ifdef BOARD_M5ATOM
+// BleKeyboard ble_kbrd("Mozza62 keyb");
 BoardLED_M5Atom brd_led;
+#endif
+#ifdef BOARD_XIAO_ESP32
+BleConnectorESP32 ble_kbrd;
+BoardLED_XiaoEsp32 brd_led;
 #endif
 
 void setup() {

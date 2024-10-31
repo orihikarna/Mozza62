@@ -14,6 +14,33 @@ class BoardLED {
   virtual void update(uint16_t cnt, const KeybStatus& status) = 0;
 };
 
+#ifdef BOARD_XIAO_ESP32
+
+class BoardLED_XiaoEsp32 : public BoardLED {
+ protected:
+  const std::array<int8_t, 1> xiao_leds_{15};
+  const std::array<int8_t, 4> rj45_leds_{D10, D9, D7, D3};
+
+ public:
+  void begin() override {
+    for (auto led : xiao_leds_) {
+      pinMode(led, OUTPUT_OPEN_DRAIN);
+    }
+    for (auto led : rj45_leds_) {
+      pinMode(led, OUTPUT_OPEN_DRAIN);
+    }
+  }
+  void update(uint16_t cnt, const KeybStatus& status) override {
+    const bool blink = (cnt & (1 << 4)) ? true : false;
+    digitalWrite(rj45_leds_[0], (blink || status.GetStatus(EKeybStatusBit::Ble)) ? LOW : HIGH);
+    digitalWrite(rj45_leds_[1], (blink || status.GetStatus(EKeybStatusBit::Left)) ? LOW : HIGH);
+    digitalWrite(rj45_leds_[2], (blink || status.GetStatus(EKeybStatusBit::Right)) ? LOW : HIGH);
+    digitalWrite(rj45_leds_[3], (blink || status.GetStatus(EKeybStatusBit::Emacs)) ? LOW : HIGH);
+    digitalWrite(xiao_leds_[0], (blink) ? LOW : HIGH);
+  }
+};
+#endif
+
 #ifdef BOARD_XIAO_BLE
 
 class BoardLED_Xiao : public BoardLED {

@@ -1,5 +1,10 @@
 #include <string>
 
+#ifdef BOARD_XIAO_ESP32
+#define LED_PIN_LEFT D0
+#define LED_PIN_RIGHT D1
+#endif
+
 #ifdef BOARD_XIAO_BLE
 #include <Adafruit_TinyUSB.h>  // for Serial
 #define LED_PIN_LEFT D0

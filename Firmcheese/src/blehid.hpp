@@ -10,7 +10,7 @@ struct KeyboardReport {
   uint8_t keys[6];
 };
 
-#ifdef BOARD_M5ATOM
+#if defined(BOARD_M5ATOM) || defined(BOARD_XIAO_ESP32)
 #include <BleKeyboard.h>
 
 class BleConnectorESP32 {
@@ -21,7 +21,13 @@ class BleConnectorESP32 {
   BleConnectorESP32() : ble_kbrd_(KBRD_NAME) {};
 
   void begin() { ble_kbrd_.begin(); };
-  bool isConnected() const { return ble_kbrd_.isConnected(); }
+  bool isConnected() { return ble_kbrd_.isConnected(); }
+
+  bool sendKeyboardReport(const KeyboardReport& kbrd_report) {
+    KeyReport report = *reinterpret_cast<const KeyReport*>(&kbrd_report);
+    ble_kbrd_.sendReport(&report);
+    return true;
+  }
 };
 #endif
 
