@@ -18,7 +18,7 @@ class BoardLED {
 
 class BoardLED_XiaoEsp32 : public BoardLED {
  protected:
-  const std::array<int8_t, 1> xiao_leds_{15};
+  const std::array<int8_t, 1> xiao_leds_{21};
   const std::array<int8_t, 4> rj45_leds_{D10, D9, D7, D3};
 
  public:
