@@ -11,7 +11,7 @@
 class BoardLED {
  public:
   virtual void begin() = 0;
-  virtual void update(uint16_t cnt, const KeybStatus& status) = 0;
+  virtual void update(bool blink, const KeybStatus& status) = 0;
 };
 
 #ifdef BOARD_XIAO_ESP32
@@ -25,18 +25,19 @@ class BoardLED_XiaoEsp32 : public BoardLED {
   void begin() override {
     for (auto led : xiao_leds_) {
       pinMode(led, OUTPUT_OPEN_DRAIN);
+      digitalWrite(led, LOW);
     }
     for (auto led : rj45_leds_) {
       pinMode(led, OUTPUT_OPEN_DRAIN);
+      digitalWrite(led, LOW);
     }
   }
-  void update(uint16_t cnt, const KeybStatus& status) override {
-    const bool blink = (cnt & (1 << 4)) ? true : false;
+  void update(bool blink, const KeybStatus& status) override {
+    digitalWrite(xiao_leds_[0], (blink) ? LOW : HIGH);
     digitalWrite(rj45_leds_[0], (blink || status.GetStatus(EKeybStatusBit::Ble)) ? LOW : HIGH);
     digitalWrite(rj45_leds_[1], (blink || status.GetStatus(EKeybStatusBit::Left)) ? LOW : HIGH);
     digitalWrite(rj45_leds_[2], (blink || status.GetStatus(EKeybStatusBit::Right)) ? LOW : HIGH);
     digitalWrite(rj45_leds_[3], (blink || status.GetStatus(EKeybStatusBit::Emacs)) ? LOW : HIGH);
-    digitalWrite(xiao_leds_[0], (blink) ? LOW : HIGH);
   }
 };
 #endif
