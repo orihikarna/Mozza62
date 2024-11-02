@@ -173,7 +173,7 @@ void loop() {
   if (true) {  // board LED
     static bool last_blink = false;
     static status_t last_status = -1;
-    const bool curr_blink = ((cnt & (1 << 7)) == 0);
+    const bool curr_blink = ((millis() & (1 << 9)) == 0);
     const KeybStatus curr_status = GetKeybStatus();
     if (last_status != curr_status.GetAllStatus() || last_blink != curr_blink) {
       last_status = curr_status.GetAllStatus();

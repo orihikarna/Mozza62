@@ -23,6 +23,7 @@ class KeyScanner {
  private:
   std::array<Adafruit_MCP23X17, kNumSides> mcp_;
   std::array<bool, kNumSides> mcp_inited_;
+  std::array<uint32_t, kNumSides> mcp_disconnected_ms_;
 
   void mcp_init();
   uint16_t mcp_get_col(uint8_t side);
@@ -37,9 +38,7 @@ class KeyScanner {
  public:
   void init();
   void scan(KeyEventBuffer *evbuf);
-  inline bool is_pressed(uint8_t swidx) const {
-    return key_state_[swidx] & static_cast<int>(ESwitchState::IsPressed);
-  }
+  inline bool is_pressed(uint8_t swidx) const { return key_state_[swidx] & static_cast<int>(ESwitchState::IsPressed); }
   inline uint8_t *getSwitchStateData() { return key_state_.data(); }
 
  private:

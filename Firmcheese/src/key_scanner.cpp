@@ -72,18 +72,15 @@ constexpr uint8_t rot_keys[kNumSides][kNumRots] = {
     {RRA, RRB},
 };
 
-inline uint8_t get_col_bit(uint8_t side, uint16_t val, int8_t col) {
-  return (val >> mcp_col_bits[side][col]) & 1;
-}
+inline uint8_t get_col_bit(uint8_t side, uint16_t val, int8_t col) { return (val >> mcp_col_bits[side][col]) & 1; }
 
-inline uint8_t get_rot_bit(uint8_t side, uint16_t val, int8_t rot) {
-  return (val >> mcp_rot_bits[side][rot]) & 1;
-}
+inline uint8_t get_rot_bit(uint8_t side, uint16_t val, int8_t rot) { return (val >> mcp_rot_bits[side][rot]) & 1; }
 
 }  // namespace
 
 void KeyScanner::init() {
   mcp_inited_.fill(false);
+  mcp_disconnected_ms_.fill(0);
   mcp_init();
 
   scan_row_ = 0;
@@ -93,13 +90,19 @@ void KeyScanner::init() {
 
 void KeyScanner::mcp_init() {
   // Wire.setClock(400000);
+  const uint32_t now_ms = millis();
   for (uint8_t side = 0; side < kNumSides; ++side) {
     if ((mcp_enabled_mask_ & (1 << side)) == 0) continue;
     if (mcp_inited_[side]) continue;
-    // mcp_[side].disable();
-    // delay(1);
-    // mcp_[side].enable();
-    delay(1);
+    if (mcp_disconnected_ms_[side] == 0) {
+      mcp_disconnected_ms_[side] = now_ms;
+      continue;
+    }
+    constexpr uint32_t recovery_wait_ms = 2000;
+    if (now_ms - mcp_disconnected_ms_[side] < recovery_wait_ms) {
+      continue;
+    }
+    mcp_disconnected_ms_[side] = 0;
 
     LOG_DUMP("[side=%d] begin_I2C()", side);
     if (mcp_[side].begin_I2C(mcp_addr[side]) == false) {
@@ -126,7 +129,7 @@ uint16_t KeyScanner::mcp_get_col(uint8_t side) {
     if (mcp_inited_[side]) {
       col = mcp_[side].readGPIOAB();
       if (col == 0xffff) {
-        LOG_DEBUG("col = 0x%04x", col);
+        LOG_ERROR("side = %d, col = 0x%04x", side, col);
         mcp_inited_[side] = false;
         col = 0;
       }
