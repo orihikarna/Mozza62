@@ -11,7 +11,8 @@ kbd_name = 'hermit62'
 anti_alias_scaling = 4
 
 fontpath = "/System/Library/Fonts/Courier.ttc"
-font = ImageFont.truetype( fontpath, size = 28 * anti_alias_scaling )
+fontsize = 28 * anti_alias_scaling
+font = ImageFont.truetype( fontpath, size = fontsize )
 
 def vec2( x, y ):
     return np.array( [x, y] )
@@ -45,7 +46,11 @@ def get_key_image( size, radius, name, fill ):
     rect.paste( corner.rotate( 180 ), (mx + w - radius, my + h - radius) )
     rect.paste( corner.rotate( 270 ), (mx + w - radius, my) )
     # name
-    tw, th = draw.textsize( name, font )
+    lines = name.split("\n")
+    tw = 0
+    for line in lines:
+        tw = max(tw, draw.textlength( line, font ))
+    th = fontsize * len(lines)
     draw.text( (sz / 2 - tw / 2, sz / 2 - th / 2), name, "DarkSlateGrey", font )
     return rect, sz
 
@@ -175,7 +180,7 @@ class keyboard_layout:
 
         xsize = int( round( size[0] / anti_alias_scaling ) )
         ysize = int( round( size[1] / anti_alias_scaling ) )
-        image = image.resize( (xsize, ysize), Image.ANTIALIAS )
+        image = image.resize( (xsize, ysize), Image.BILINEAR )
         image.save( path )
 
     def write_scad( self, path: str, unit: float, arc_pnts ):
@@ -339,8 +344,8 @@ def make_kbd_layout( unit, output_type ):
 
     # Left hand
     thumbsL = ["Alt", "Ctrl", "Lower"]
-    col_Gui = ["Shift", "Tab", "Win"]
-    col_Tab = ["", "Caps", "Prt", "ESC"]
+    col_Gui = ["Shift", "Prt", "Win"]
+    col_Tab = ["", "Tab", "Caps", "ESC"]
     col_Z = ["Z", "A", "Q", "!\n1"]
     col_X = ["X", "S", "W", "\"\n2"]
     col_C = ["C", "D", "E", "#\n3"]
