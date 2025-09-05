@@ -47,12 +47,12 @@ Adafruit_MCP23X17 mcp;
 
 void scan_test_setup() {
   uint16_t pin_inout = 0;
-  if (false) {  // left
-    mcp.begin_I2C(0x21);
-    pin_inout = 0xd802;  // in = 0, out = 1
-  } else {               // right
-    mcp.begin_I2C(0x20);
-    pin_inout = 0x8036;  // in = 0, out = 1
+  if (false) {
+    mcp.begin_I2C(0x21);  // left
+    pin_inout = 0xd802;   // in = 0, out = 1
+  } else {
+    mcp.begin_I2C(0x20);  // rightt
+    pin_inout = 0x8036;   // in = 0, out = 1
   }
   for (uint8_t pin = 0; pin < 16; ++pin) {
     mcp.pinMode(pin, (pin_inout & (1 << pin)) ? OUTPUT : INPUT);
