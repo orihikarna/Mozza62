@@ -166,7 +166,7 @@ void loop() {
     } else {
       if (ble_conn) {
         GetKeybStatus().SetStatus(EKeybStatusBit::Ble, false);
-        LOG_INFO("BLE: Disconnecteds");
+        LOG_INFO("BLE: Disconnected");
       }
     }
   }
