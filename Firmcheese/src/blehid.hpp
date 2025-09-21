@@ -16,16 +16,47 @@ struct KeyboardReport {
 #include <BleKeyboard.h>
 
 #if defined(BOARD_XIAO_ESP32)
+#include <NimBLEDevice.h>
+
+class MozzaBleKeyboard : public BleKeyboard {
+ public:
+  MozzaBleKeyboard() : BleKeyboard(KBRD_NAME, MANUFACTURER) {}
+
+  uint32_t onPassKeyRequest() override {
+    LOG_INFO("onPassKeyRequest");
+    return 6262;
+  }
+  bool onConfirmPIN(uint32_t pin) override {
+    LOG_INFO("onConfirmPIN, pin = %d", pin);
+    return true;
+  }
+  void onAuthenticationComplete(ble_gap_conn_desc* desc) override {
+    LOG_INFO("onAuthenticationComplete, addr = %s", desc->peer_id_addr.val[0]);
+  }
+  void onConnect(NimBLEServer* pServer) override {
+    BleKeyboard::onConnect(pServer);
+    NimBLEDevice::stopAdvertising();
+    LOG_INFO("onConnect");
+  }
+  void onDisconnect(NimBLEServer* pServer) override {
+    BleKeyboard::onDisconnect(pServer);
+    NimBLEDevice::startAdvertising();
+    LOG_INFO("onDisconnect");
+  }
+};
+
 class BleConnectorESP32 {
  private:
-  BleKeyboard ble_kbrd_;
+  MozzaBleKeyboard ble_kbrd_;
 
  public:
-  BleConnectorESP32() : ble_kbrd_(KBRD_NAME, MANUFACTURER) {};
-
   void begin() {
     LOG_INFO("BleConnectorESP32::begin");
     ble_kbrd_.begin();
+#ifdef USE_NIMBLE
+    // NimBLEDevice::setSecurityIOCap(BLE_HS_IO_KEYBOARD_ONLY);
+    NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
+#endif
   };
   bool isConnected() { return ble_kbrd_.isConnected(); }
 
@@ -34,6 +65,31 @@ class BleConnectorESP32 {
     ble_kbrd_.sendReport(&report);
     return true;
   }
+
+#ifdef USE_NIMBLE
+  void enumBonds() {
+    LOG_INFO("passkey = %d", NimBLEDevice::getSecurityPasskey());
+
+    const size_t num_white = NimBLEDevice::getWhiteListCount();
+    LOG_INFO("ble num white list = %d", num_white);
+    for (int i = 0; i < num_white; ++i) {
+      const NimBLEAddress addr = NimBLEDevice::getWhiteListAddress(i);
+      LOG_INFO("ble white %d, addr = %s", i, addr.toString().c_str());
+    }
+
+    const int num_bonds = NimBLEDevice::getNumBonds();
+    LOG_INFO("ble num bonds = %d", num_bonds);
+    for (int i = 0; i < num_bonds; ++i) {
+      const NimBLEAddress addr = NimBLEDevice::getBondedAddress(i);
+      LOG_INFO("ble bond %d, addr = %s", i, addr.toString().c_str());
+    }
+  }
+
+  void deleteAllBonds() {
+    LOG_INFO("ble delete all bonds");
+    NimBLEDevice::deleteAllBonds();
+  }
+#endif
 };
 
 #elif defined(BOARD_XIAO_ESP32_NIMBLE)

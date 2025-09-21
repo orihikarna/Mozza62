@@ -205,10 +205,10 @@ void loop() {
       LOG_DUMP("%d, %d, %u", kev.code_, kev.event_, kev.tick_ms_);
       // LOG_INFO("key code = %d, 0x%04x", kev.code_, kev.code_);
       if (kev.code_ == KC_ENTER) {
-        // ble_kbrd.enumBonds();
+        ble_kbrd.enumBonds();
       }
       if (kev.code_ == KC_DELETE) {
-        // ble_kbrd.deleteAllBonds();
+        ble_kbrd.deleteAllBonds();
       }
     }
     kbrd_report = proc_nkro.send_key(kev);
