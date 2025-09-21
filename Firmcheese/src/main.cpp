@@ -112,7 +112,7 @@ BoardLED_Xiao brd_led;
 // BleKeyboard ble_kbrd("Mozza62 keyb");
 BoardLED_M5Atom brd_led;
 #endif
-#ifdef BOARD_XIAO_ESP32
+#if defined(BOARD_XIAO_ESP32) || defined(BOARD_XIAO_ESP32_NIMBLE)
 BleConnectorESP32 ble_kbrd;
 BoardLED_XiaoEsp32 brd_led;
 #endif
@@ -205,7 +205,7 @@ void loop() {
       LOG_DUMP("%d, %d, %u", kev.code_, kev.event_, kev.tick_ms_);
       // LOG_INFO("key code = %d, 0x%04x", kev.code_, kev.code_);
       if (kev.code_ == KC_ENTER) {
-        ble_kbrd.enumBonds();
+        // ble_kbrd.enumBonds();
       }
       if (kev.code_ == KC_DELETE) {
         // ble_kbrd.deleteAllBonds();

@@ -1,6 +1,6 @@
 #include <string>
 
-#ifdef BOARD_XIAO_ESP32
+#if defined(BOARD_XIAO_ESP32) || defined(BOARD_XIAO_ESP32_NIMBLE)
 #define LED_PIN_LEFT D0
 #define LED_PIN_RIGHT D1
 #endif

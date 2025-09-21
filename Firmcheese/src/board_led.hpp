@@ -14,7 +14,7 @@ class BoardLED {
   virtual void update(bool blink, const KeybStatus& status) = 0;
 };
 
-#ifdef BOARD_XIAO_ESP32
+#if defined(BOARD_XIAO_ESP32) || defined(BOARD_XIAO_ESP32_NIMBLE)
 
 class BoardLED_XiaoEsp32 : public BoardLED {
  protected:

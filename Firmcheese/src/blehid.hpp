@@ -12,8 +12,31 @@ struct KeyboardReport {
   uint8_t keys[6];
 };
 
-#if defined(BOARD_M5ATOM) || defined(BOARD_XIAO_ESP32)
+#if defined(BOARD_M5ATOM) || defined(BOARD_XIAO_ESP32) || defined(BOARD_XIAO_ESP32_NIMBLE)
 #include <BleKeyboard.h>
+
+#if defined(BOARD_XIAO_ESP32)
+class BleConnectorESP32 {
+ private:
+  BleKeyboard ble_kbrd_;
+
+ public:
+  BleConnectorESP32() : ble_kbrd_(KBRD_NAME, MANUFACTURER) {};
+
+  void begin() {
+    LOG_INFO("BleConnectorESP32::begin");
+    ble_kbrd_.begin();
+  };
+  bool isConnected() { return ble_kbrd_.isConnected(); }
+
+  bool sendKeyboardReport(const KeyboardReport& kbrd_report) {
+    KeyReport report = *reinterpret_cast<const KeyReport*>(&kbrd_report);
+    ble_kbrd_.sendReport(&report);
+    return true;
+  }
+};
+
+#elif defined(BOARD_XIAO_ESP32_NIMBLE)
 #include <NimBLEDevice.h>
 
 class MozzaBleKeyboard : public BleKeyboard {
@@ -28,16 +51,14 @@ class MozzaBleKeyboard : public BleKeyboard {
     LOG_INFO("onConfirmPassKey, pin = %d", pin);
   }
   void onAuthenticationComplete(NimBLEConnInfo& connInfo) override {
-    LOG_INFO("onAuthenticationComplete, addr = %s",
-             connInfo.getAddress().toString().c_str());
+    LOG_INFO("onAuthenticationComplete, addr = %s", connInfo.getAddress().toString().c_str());
   }
   void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
     BleKeyboard::onConnect(pServer, connInfo);
     NimBLEDevice::stopAdvertising();
     LOG_INFO("onConnect");
   }
-  void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo,
-                    int reason) override {
+  void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
     BleKeyboard::onDisconnect(pServer, connInfo, reason);
     NimBLEDevice::startAdvertising();
     LOG_INFO("onDisconnect, reason = %d, 0x%04x", reason, reason);
@@ -96,6 +117,7 @@ class BleConnectorESP32 {
   }
 };
 #endif
+#endif
 
 #ifdef BOARD_XIAO_BLE
 #include <bluefruit.h>
@@ -152,8 +174,7 @@ class BleConnectorNRF {
     {
       const char name[] = "Mozz62 kbrd";
       const uint8_t len = sizeof(name);
-      Bluefruit.Advertising.addData(BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, name,
-                                    len);
+      Bluefruit.Advertising.addData(BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, name, len);
     }
 
     /* Start Advertising
@@ -168,18 +189,14 @@ class BleConnectorNRF {
      */
     Bluefruit.Advertising.restartOnDisconnect(true);
     Bluefruit.Advertising.setInterval(32, 244);  // in unit of 0.625 ms
-    Bluefruit.Advertising.setFastTimeout(30);  // number of seconds in fast mode
-    Bluefruit.Advertising.start(
-        0);  // 0 = Don't stop advertising after n seconds
+    Bluefruit.Advertising.setFastTimeout(30);    // number of seconds in fast mode
+    Bluefruit.Advertising.start(0);              // 0 = Don't stop advertising after n seconds
   }
 
-  bool isConnected() const {
-    return Bluefruit.connected(Bluefruit.connHandle());
-  }
+  bool isConnected() const { return Bluefruit.connected(Bluefruit.connHandle()); }
 
   bool sendKeyboardReport(const KeyboardReport& kbrd_report) {
-    hid_keyboard_report_t report =
-        *reinterpret_cast<const hid_keyboard_report_t*>(&kbrd_report);
+    hid_keyboard_report_t report = *reinterpret_cast<const hid_keyboard_report_t*>(&kbrd_report);
     return blehid_.keyboardReport(&report);
   }
 };
