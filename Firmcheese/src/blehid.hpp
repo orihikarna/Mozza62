@@ -22,6 +22,7 @@ class MozzaBleKeyboard : public BleKeyboard {
  public:
   MozzaBleKeyboard() : BleKeyboard(KBRD_NAME, MANUFACTURER) {}
 
+#ifdef USE_NIMBLE
   uint32_t onPassKeyRequest() override {
     LOG_INFO("onPassKeyRequest");
     return 6262;
@@ -43,6 +44,7 @@ class MozzaBleKeyboard : public BleKeyboard {
     NimBLEDevice::startAdvertising();
     LOG_INFO("onDisconnect");
   }
+#endif
 };
 
 class BleConnectorESP32 {
@@ -123,23 +125,18 @@ class MozzaBleKeyboard : public BleKeyboard {
 
 class BleConnectorESP32 {
  private:
-  // BleKeyboard ble_kbrd_;
   MozzaBleKeyboard ble_kbrd_;
 
  public:
-  // BleConnectorESP32() : ble_kbrd_(KBRD_NAME) {};
-
   void begin() {
     LOG_INFO("BleConnectorESP32::begin");
     ble_kbrd_.begin();
-    BLEDevice::setSecurityAuth(true, false, false);
+    // BLEDevice::setSecurityAuth(true, false, false);
     // NimBLEDevice::setSecurityIOCap(BLE_HS_IO_KEYBOARD_ONLY);
     NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
     // NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_YESNO);
-    // NimBLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC |
-    //                                  BLE_SM_PAIR_KEY_DIST_ID);
-    // NimBLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC |
-    //                                  BLE_SM_PAIR_KEY_DIST_ID);
+    // NimBLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
+    // NimBLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
   };
   bool isConnected() { return ble_kbrd_.isConnected(); }
 
