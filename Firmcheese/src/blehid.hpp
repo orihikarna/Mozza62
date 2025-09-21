@@ -1,8 +1,10 @@
 #pragma once
 
+#include <log.h>
 #include <qmk/keycode.h>
 
 #define KBRD_NAME "Mozza62 keyb"
+#define MANUFACTURER "orihikarna"
 
 struct KeyboardReport {
   uint8_t modifiers;
@@ -12,21 +14,85 @@ struct KeyboardReport {
 
 #if defined(BOARD_M5ATOM) || defined(BOARD_XIAO_ESP32)
 #include <BleKeyboard.h>
+#include <NimBLEDevice.h>
+
+class MozzaBleKeyboard : public BleKeyboard {
+ public:
+  MozzaBleKeyboard() : BleKeyboard(KBRD_NAME, MANUFACTURER) {}
+
+  uint32_t onPassKeyDisplay() override {
+    LOG_INFO("onPassKeyDisplay");
+    return 6262;
+  }
+  void onConfirmPassKey(NimBLEConnInfo& connInfo, uint32_t pin) override {
+    LOG_INFO("onConfirmPassKey, pin = %d", pin);
+  }
+  void onAuthenticationComplete(NimBLEConnInfo& connInfo) override {
+    LOG_INFO("onAuthenticationComplete, addr = %s",
+             connInfo.getAddress().toString().c_str());
+  }
+  void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
+    BleKeyboard::onConnect(pServer, connInfo);
+    NimBLEDevice::stopAdvertising();
+    LOG_INFO("onConnect");
+  }
+  void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo,
+                    int reason) override {
+    BleKeyboard::onDisconnect(pServer, connInfo, reason);
+    NimBLEDevice::startAdvertising();
+    LOG_INFO("onDisconnect, reason = %d, 0x%04x", reason, reason);
+  }
+};
 
 class BleConnectorESP32 {
  private:
-  BleKeyboard ble_kbrd_;
+  // BleKeyboard ble_kbrd_;
+  MozzaBleKeyboard ble_kbrd_;
 
  public:
-  BleConnectorESP32() : ble_kbrd_(KBRD_NAME) {};
+  // BleConnectorESP32() : ble_kbrd_(KBRD_NAME) {};
 
-  void begin() { ble_kbrd_.begin(); };
+  void begin() {
+    LOG_INFO("BleConnectorESP32::begin");
+    ble_kbrd_.begin();
+    BLEDevice::setSecurityAuth(true, false, false);
+    // NimBLEDevice::setSecurityIOCap(BLE_HS_IO_KEYBOARD_ONLY);
+    NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
+    // NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_YESNO);
+    // NimBLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC |
+    //                                  BLE_SM_PAIR_KEY_DIST_ID);
+    // NimBLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC |
+    //                                  BLE_SM_PAIR_KEY_DIST_ID);
+  };
   bool isConnected() { return ble_kbrd_.isConnected(); }
 
   bool sendKeyboardReport(const KeyboardReport& kbrd_report) {
     KeyReport report = *reinterpret_cast<const KeyReport*>(&kbrd_report);
     ble_kbrd_.sendReport(&report);
     return true;
+  }
+
+  void enumBonds() {
+    LOG_INFO("passkey = %d", NimBLEDevice::getSecurityPasskey());
+
+    const size_t num_white = NimBLEDevice::getWhiteListCount();
+    LOG_INFO("ble num white list = %d", num_white);
+    for (int i = 0; i < num_white; ++i) {
+      const NimBLEAddress addr = NimBLEDevice::getWhiteListAddress(i);
+      LOG_INFO("ble white %d, addr = %s", i, addr.toString().c_str());
+    }
+
+    const int num_bonds = NimBLEDevice::getNumBonds();
+    LOG_INFO("ble num bonds = %d", num_bonds);
+    for (int i = 0; i < num_bonds; ++i) {
+      const NimBLEAddress addr = NimBLEDevice::getBondedAddress(i);
+      LOG_INFO("ble bond %d, addr = %s", i, addr.toString().c_str());
+    }
+  }
+
+  void deleteAllBonds() {
+    LOG_INFO("ble delete all bonds");
+    NimBLEDevice::deleteAllBonds();
   }
 };
 #endif
@@ -52,9 +118,10 @@ class BleConnectorNRF {
     /* Start BLE HID
      * Note: Apple requires BLE device must have min connection interval >= 20m
      * ( The smaller the connection interval the faster we could send data).
-     * However for HID and MIDI device, Apple could accept min connection interval
-     * up to 11.25 ms. Therefore BLEHidAdafruit::begin() will try to set the min and max
-     * connection interval to 11.25  ms and 15 ms respectively for best performance.
+     * However for HID and MIDI device, Apple could accept min connection
+     * interval up to 11.25 ms. Therefore BLEHidAdafruit::begin() will try to
+     * set the min and max connection interval to 11.25  ms and 15 ms
+     * respectively for best performance.
      */
     blehid_.begin();
 
@@ -85,28 +152,34 @@ class BleConnectorNRF {
     {
       const char name[] = "Mozz62 kbrd";
       const uint8_t len = sizeof(name);
-      Bluefruit.Advertising.addData(BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, name, len);
+      Bluefruit.Advertising.addData(BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, name,
+                                    len);
     }
 
     /* Start Advertising
      * - Enable auto advertising if disconnected
      * - Interval:  fast mode = 20 ms, slow mode = 152.5 ms
      * - Timeout for fast mode is 30 seconds
-     * - Start(timeout) with timeout = 0 will advertise forever (until connected)
+     * - Start(timeout) with timeout = 0 will advertise forever (until
+     * connected)
      *
      * For recommended advertising interval
      * https://developer.apple.com/library/content/qa/qa1931/_index.html
      */
     Bluefruit.Advertising.restartOnDisconnect(true);
     Bluefruit.Advertising.setInterval(32, 244);  // in unit of 0.625 ms
-    Bluefruit.Advertising.setFastTimeout(30);    // number of seconds in fast mode
-    Bluefruit.Advertising.start(0);              // 0 = Don't stop advertising after n seconds
+    Bluefruit.Advertising.setFastTimeout(30);  // number of seconds in fast mode
+    Bluefruit.Advertising.start(
+        0);  // 0 = Don't stop advertising after n seconds
   }
 
-  bool isConnected() const { return Bluefruit.connected(Bluefruit.connHandle()); }
+  bool isConnected() const {
+    return Bluefruit.connected(Bluefruit.connHandle());
+  }
 
   bool sendKeyboardReport(const KeyboardReport& kbrd_report) {
-    hid_keyboard_report_t report = *reinterpret_cast<const hid_keyboard_report_t*>(&kbrd_report);
+    hid_keyboard_report_t report =
+        *reinterpret_cast<const hid_keyboard_report_t*>(&kbrd_report);
     return blehid_.keyboardReport(&report);
   }
 };
