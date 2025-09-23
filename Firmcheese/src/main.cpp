@@ -4,10 +4,12 @@
 #include <Adafruit_TinyUSB.h>  // for Serial
 #endif
 #include <Arduino.h>
+#include <USB.h>
 #include <Wire.h>
 
 #include <array>
 
+#include "_USBHIDKeyboard.h"
 #include "board_led.hpp"
 #include "key_event.hpp"
 #include "key_scanner.hpp"
@@ -115,6 +117,7 @@ BoardLED_M5Atom brd_led;
 #if defined(BOARD_XIAO_ESP32) || defined(BOARD_XIAO_ESP32_NIMBLE)
 BleConnectorESP32 ble_kbrd;
 BoardLED_XiaoEsp32 brd_led;
+USBHIDKeyboard Keyboard;
 #endif
 
 void setup() {
@@ -137,6 +140,7 @@ void setup() {
   proc_nkro.init();
   // NScanTest::scan_test_setup();
 
+  Keyboard.begin();
   ble_kbrd.begin();
 }
 
@@ -215,6 +219,8 @@ void loop() {
 
     if (GetKeybStatus().GetStatus(EKeybStatusBit::Ble)) {
       ble_kbrd.sendKeyboardReport(kbrd_report);
+    } else {
+      Keyboard.sendReport(reinterpret_cast<KeyReport *>(&kbrd_report));
     }
   }
   delay(1);
