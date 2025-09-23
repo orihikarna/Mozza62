@@ -56,9 +56,8 @@ constexpr keycode_t macro_mark_cut[] = {C(KC_X), KC_LEFT, KC_RGHT, KC_NO};
 constexpr keycode_t macro_mark_copy[] = {C(KC_C), KC_LEFT, KC_NO};
 
 const keycode_t* macro_seqs[] = {
-    [EMM_OpenLine] = macro_openline,      [EMM_KillLine] = macro_killline,
-    [EMM_SwapChars] = macro_swapchars,    [EMM_KillWord] = macro_killword,
-    [EMM_MarkCancel] = macro_mark_cancel, [EMM_MarkCut] = macro_mark_cut,
+    [EMM_OpenLine] = macro_openline,  [EMM_KillLine] = macro_killline,      [EMM_SwapChars] = macro_swapchars,
+    [EMM_KillWord] = macro_killword,  [EMM_MarkCancel] = macro_mark_cancel, [EMM_MarkCut] = macro_mark_cut,
     [EMM_MarkCopy] = macro_mark_copy,
 };
 }  // namespace
@@ -87,11 +86,11 @@ enum map_table_index {
 };
 
 constexpr uint8_t map_table_none[][MAP_ENTRY_SIZE] = {
-    {MOD_C, KC_Q, MOD_TABLE, EMTI_Default},
+    {MOD_C | MOD_M | MOD_S, KC_Q, MOD_TABLE, EMTI_Default},
 };
 
 constexpr uint8_t map_table_default[][MAP_ENTRY_SIZE] = {
-    {MOD_C, KC_Q, MOD_TABLE, EMTI_None},
+    {MOD_C | MOD_M | MOD_S, KC_Q, MOD_TABLE, EMTI_None},
     {MOD_C, KC_X, MOD_TABLE, EMTI_CxPrefix},
     {MOD_C, KC_SPC, MOD_TABLE, EMTI_MarkSel},
     {MOD_C, KC_G, 0, KC_ESC},               // Esc
@@ -149,7 +148,7 @@ constexpr uint8_t map_table_default[][MAP_ENTRY_SIZE] = {
 };
 
 constexpr uint8_t map_table_cxprefix[][MAP_ENTRY_SIZE] = {
-    {MOD_C, KC_Q, MOD_TABLE, EMTI_None},
+    {MOD_C | MOD_M | MOD_S, KC_Q, MOD_TABLE, EMTI_None},
     {MOD_C, KC_X, MOD_TABLE, EMTI_CxPrefix},  // not to go back to default by chatters of X key
     {MOD_C, KC_S, MOD_C, KC_S},               // save
     {MOD_C, KC_F, MOD_C, KC_O},               // open
@@ -161,7 +160,7 @@ constexpr uint8_t map_table_cxprefix[][MAP_ENTRY_SIZE] = {
 #define MARKSEL_MOVE_TO_DEFAULT_INDEX 8
 
 constexpr uint8_t map_table_marksel[][MAP_ENTRY_SIZE] = {
-    {MOD_C, KC_Q, MOD_TABLE, EMTI_None},
+    {MOD_C | MOD_M | MOD_S, KC_Q, MOD_TABLE, EMTI_None},
     {MOD_C, KC_G, MOD_MACRO, EMM_MarkCancel},
     {MOD_C, KC_W, MOD_MACRO, EMM_MarkCut},   // cut
     {MOD_M, KC_W, MOD_MACRO, EMM_MarkCopy},  // copy
@@ -496,8 +495,7 @@ bool KeyProcEmacs::process(KeyEventBuffer& kevb_in, KeyEventBuffer& kevb_out) {
         for (; index < num_entries; ++index) {
           const SMapEntry* map = (const SMapEntry*)map_table->m_table[index];
           uint8_t any_mods = 0;
-          if (keycode == map->src_code &&
-              match_mods(pressed_mods_, map->src_mods, &any_mods)) {  // found!
+          if (keycode == map->src_code && match_mods(pressed_mods_, map->src_mods, &any_mods)) {  // found!
             map_key(map->dest_mods | any_mods, map->dest_code);
             pressed_keycode_ = keycode;
             mapped = true;
@@ -511,8 +509,7 @@ bool KeyProcEmacs::process(KeyEventBuffer& kevb_in, KeyEventBuffer& kevb_out) {
           map_table_index = next_map_table_index_;
         }
       }
-      if (pressed_keycode_ == KC_NO && mapped == false && map_table_index == EMTI_Default &&
-          pressed_mods_ != 0) {
+      if (pressed_keycode_ == KC_NO && mapped == false && map_table_index == EMTI_Default && pressed_mods_ != 0) {
         if (keycode == KC_TAB) {  // special for Ctl-Tab, Alt-Tab
           const uint8_t mods = (pressed_mods_ & (MOD_MASK_CTRL | MOD_MASK_ALT));
           if (mods) {
@@ -537,7 +534,6 @@ bool KeyProcEmacs::process(KeyEventBuffer& kevb_in, KeyEventBuffer& kevb_out) {
   if (proc == false) {
     kevb_out.push_back(kev);
   }
-  LOG_DEBUG("proc = %d, mapped = %d, unmapped = %d, kev.code_ = %x", proc, mapped, unmapped,
-            kev.code_);
+  LOG_DEBUG("proc = %d, mapped = %d, unmapped = %d, kev.code_ = %x", proc, mapped, unmapped, kev.code_);
   return true;
 }

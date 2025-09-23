@@ -1,5 +1,7 @@
 #pragma once
 
+#include <qmk/keycode_jp.h>
+
 #include <array>
 
 #include "key_event.hpp"
@@ -31,6 +33,7 @@ enum EColor {
 #define CFG_VALUE(kc) ((kc) & 0x0f)
 
 enum custom_keycodes {
+  TGLEMAC = LCTL(LALT(LSFT(KC_Q))),
   // layers
   LayerStart = 0x8000,
   KL_Lowr = LayerStart,
