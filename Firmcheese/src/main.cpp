@@ -1,3 +1,6 @@
+// #define ENABLE_BLE
+#define ENABLE_USB
+
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_NeoPixel.h>
 #ifdef BOARD_XIAO_BLE
@@ -9,7 +12,6 @@
 
 #include <array>
 
-#include "_USBHIDKeyboard.h"
 #include "board_led.hpp"
 #include "key_event.hpp"
 #include "key_scanner.hpp"
@@ -20,6 +22,10 @@
 #include "proc_nkro.hpp"
 #include "proc_unmod.hpp"
 #include "ringbuf.hpp"
+
+#ifdef ENABLE_USB
+#include "_USBHIDKeyboard.h"
+#endif
 
 KeybStatus &GetKeybStatus() {
   static KeybStatus keyb_status;
@@ -115,9 +121,13 @@ BoardLED_Xiao brd_led;
 BoardLED_M5Atom brd_led;
 #endif
 #if defined(BOARD_XIAO_ESP32) || defined(BOARD_XIAO_ESP32_NIMBLE)
-BleConnectorESP32 ble_kbrd;
 BoardLED_XiaoEsp32 brd_led;
+#ifdef ENABLE_BLE
+BleConnectorESP32 ble_kbrd;
+#endif
+#ifdef ENABLE_USB
 USBHIDKeyboard Keyboard;
+#endif
 #endif
 
 void setup() {
@@ -140,8 +150,13 @@ void setup() {
   proc_nkro.init();
   // NScanTest::scan_test_setup();
 
+#ifdef ENABLE_USB
+  USB.begin();
   Keyboard.begin();
+#endif
+#ifdef ENABLE_BLE
   ble_kbrd.begin();
+#endif
 }
 
 std::array<KeyEvent, 12 * 2> keva_input;
@@ -160,6 +175,7 @@ void loop() {
   // return;
   static uint16_t cnt = 0;
   cnt += 1;
+#ifdef ENABLE_BLE
   {  // ble
     const bool ble_conn = GetKeybStatus().GetStatus(EKeybStatusBit::Ble);
     if (ble_kbrd.isConnected()) {
@@ -174,6 +190,7 @@ void loop() {
       }
     }
   }
+#endif
   if (true) {  // board LED
     static bool last_blink = false;
     static status_t last_status = -1;
@@ -207,20 +224,26 @@ void loop() {
     const auto kev = ptr_kevb_out->pop_front();
     if (kev.event_ == EKeyEvent::Pressed) {
       LOG_DUMP("%d, %d, %u", kev.code_, kev.event_, kev.tick_ms_);
-      // LOG_INFO("key code = %d, 0x%04x", kev.code_, kev.code_);
+// LOG_INFO("key code = %d, 0x%04x", kev.code_, kev.code_);
+#ifdef ENABLE_BLE
       if (kev.code_ == KC_ENTER) {
         ble_kbrd.enumBonds();
       }
       if (kev.code_ == KC_DELETE) {
         ble_kbrd.deleteAllBonds();
       }
+#endif
     }
     kbrd_report = proc_nkro.send_key(kev);
 
     if (GetKeybStatus().GetStatus(EKeybStatusBit::Ble)) {
+#ifdef ENABLE_BLE
       ble_kbrd.sendKeyboardReport(kbrd_report);
+#endif
     } else {
+#ifdef ENABLE_USB
       Keyboard.sendReport(reinterpret_cast<KeyReport *>(&kbrd_report));
+#endif
     }
   }
   delay(1);
