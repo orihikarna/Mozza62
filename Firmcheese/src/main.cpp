@@ -1,5 +1,6 @@
-// #define ENABLE_BLE
-#define ENABLE_USB
+#define ENABLE_BLE
+// #define ENABLE_USB
+// #define ENABLE_LED
 
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_NeoPixel.h>
@@ -106,7 +107,9 @@ void scan_test_loop() {
 KeybStatus g_keyb_status;
 KeyScanner scanner;
 
+#ifdef ENABLE_LED
 ProcLed proc_led;
+#endif
 KeyProcLayer proc_layer;
 KeyProcEmacs proc_emacs;
 KeyProcUnmod proc_unmod;
@@ -143,7 +146,9 @@ void setup() {
   g_config_data.init();
   brd_led.begin();
   scanner.init();
+#ifdef ENABLE_LED
   proc_led.init();
+#endif
   proc_layer.init();
   proc_emacs.init();
   proc_unmod.init();
@@ -205,7 +210,9 @@ void loop() {
   if (true) {  // key scan
     // NScanTest::scan_test_loop();
     scanner.scan(&kevb_input);
+#ifdef ENABLE_LED
     proc_led.process(scanner.getSwitchStateData());
+#endif
   }
 
   KeyEventBuffer *ptr_kevb_in = nullptr;

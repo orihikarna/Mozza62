@@ -30,7 +30,7 @@ class KeyProcLayer {
     }
     LOG_DUMP("keycode = 0x%04x, event = %d", keycode, kev_raw.event_);
     if (keycode == SC_REST) {
-      // NVIC_SystemReset();
+      ESP.restart();
     }
     if (ConfigStart <= keycode && keycode < ConfigEnd) {
       g_config_data.apply(keycode);
