@@ -534,6 +534,6 @@ bool KeyProcEmacs::process(KeyEventBuffer& kevb_in, KeyEventBuffer& kevb_out) {
   if (proc == false) {
     kevb_out.push_back(kev);
   }
-  LOG_DEBUG("proc = %d, mapped = %d, unmapped = %d, kev.code_ = %x", proc, mapped, unmapped, kev.code_);
+  LOG_DEBUG("proc = %d, mapped = %d, unmapped = %d, kev.code_ = 0x%04x", proc, mapped, unmapped, kev.code_);
   return true;
 }

@@ -216,7 +216,7 @@ void KeyScanner::scan(KeyEventBuffer *fifo) {
       update_key_state(fifo, rot_keys[side][1], (dir == 1) ? 1 : 0);
     }
   }
-  {
+  if (LOG_LEVEL <= LL_DEBUG) {  // elapsed time
     static uint32_t max_elapsed = 0;
     const uint32_t elapsed = et.getElapsedMicroSec();
     if (max_elapsed < elapsed) {

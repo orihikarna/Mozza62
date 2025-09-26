@@ -21,7 +21,8 @@
 // #define LOG_LEVEL LL_NONE
 #endif
 
-#define _LOG_PRINTF(fmt, level, ...) Serial.printf("[%s][%s:%s(%d)] " fmt "\n", level, __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define _LOG_PRINTF(fmt, level, ...) \
+  Serial.printf("[%s][%s:%s(%d)] " fmt "\n", level, __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
 #if defined(LOG_GLOBAL_ENABLE) && LOG_LEVEL <= LL_DUMP
 #define LOG_DUMP(fmt, ...) _LOG_PRINTF(fmt, "DUMP", ##__VA_ARGS__)

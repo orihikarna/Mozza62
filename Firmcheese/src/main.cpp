@@ -1,6 +1,6 @@
 #define ENABLE_BLE
 // #define ENABLE_USB
-// #define ENABLE_LED
+#define ENABLE_LED
 
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_NeoPixel.h>
@@ -111,8 +111,9 @@ KeyScanner scanner;
 ProcLed proc_led;
 #endif
 KeyProcLayer proc_layer;
+KeyProcUnmod proc_unmod1;
 KeyProcEmacs proc_emacs;
-KeyProcUnmod proc_unmod;
+KeyProcUnmod proc_unmod2;
 KeyProcNkro proc_nkro;
 
 #ifdef BOARD_XIAO_BLE
@@ -150,8 +151,9 @@ void setup() {
   proc_led.init();
 #endif
   proc_layer.init();
+  proc_unmod1.init();
   proc_emacs.init();
-  proc_unmod.init();
+  proc_unmod2.init();
   proc_nkro.init();
   // NScanTest::scan_test_setup();
 
@@ -166,13 +168,15 @@ void setup() {
 
 std::array<KeyEvent, 12 * 2> keva_input;
 std::array<KeyEvent, 12 * 2> keva_layer;
+std::array<KeyEvent, 12 * 2> keva_unmod1;
 std::array<KeyEvent, 12 * 2> keva_emacs;
-std::array<KeyEvent, 6 * 2> keva_unmod;
+std::array<KeyEvent, 12 * 2> keva_unmod2;
 
 KeyEventBuffer kevb_input(keva_input.data(), keva_input.size());
 KeyEventBuffer kevb_layer(keva_layer.data(), keva_layer.size());
+KeyEventBuffer kevb_unmod1(keva_unmod1.data(), keva_unmod1.size());
 KeyEventBuffer kevb_emacs(keva_emacs.data(), keva_emacs.size());
-KeyEventBuffer kevb_unmod(keva_unmod.data(), keva_unmod.size());
+KeyEventBuffer kevb_unmod2(keva_unmod2.data(), keva_unmod2.size());
 
 KeyboardReport kbrd_report = {0};
 
@@ -221,8 +225,9 @@ void loop() {
   // clang-format off
 #define _set_kevb(kevb)  ptr_kevb_in = ptr_kevb_out;  ptr_kevb_out = &(kevb)
   _set_kevb(kevb_layer); while (proc_layer.process(*ptr_kevb_in, *ptr_kevb_out));
+  _set_kevb(kevb_unmod1); while (proc_unmod1.process(*ptr_kevb_in, *ptr_kevb_out));
   _set_kevb(kevb_emacs); while (proc_emacs.process(*ptr_kevb_in, *ptr_kevb_out));
-  _set_kevb(kevb_unmod); while (proc_unmod.process(*ptr_kevb_in, *ptr_kevb_out));
+  _set_kevb(kevb_unmod2); while (proc_unmod2.process(*ptr_kevb_in, *ptr_kevb_out));
 #undef _set_kevb
   // clang-format on
 
