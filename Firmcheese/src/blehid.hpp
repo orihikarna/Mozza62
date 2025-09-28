@@ -4,7 +4,6 @@
 #include <qmk/keycode.h>
 
 #define KBRD_NAME "Mozza62 keyb"
-#define MANUFACTURER "orihikarna"
 
 struct KeyboardReport {
   uint8_t modifiers;
@@ -19,7 +18,7 @@ struct KeyboardReport {
 #if defined(USE_NIMBLE)
 class MozzaBleKeyboard : public BleKeyboard {
  public:
-  MozzaBleKeyboard() : BleKeyboard(KBRD_NAME, MANUFACTURER) {}
+  MozzaBleKeyboard() : BleKeyboard(KBRD_NAME) {}
 
   uint32_t onPassKeyRequest() override {
     LOG_INFO("onPassKeyRequest");
@@ -34,6 +33,7 @@ class MozzaBleKeyboard : public BleKeyboard {
   }
   void onConnect(NimBLEServer* pServer) override {
     BleKeyboard::onConnect(pServer);
+    BLEDevice::startSecurity(desc->conn_handle);
     NimBLEDevice::stopAdvertising();
     LOG_INFO("onConnect");
   }
@@ -48,7 +48,7 @@ class MozzaBleKeyboard : public BleKeyboard {
 
 class MozzaBleKeyboard : public BleKeyboard {
  public:
-  MozzaBleKeyboard() : BleKeyboard(KBRD_NAME, MANUFACTURER) {}
+  MozzaBleKeyboard() : BleKeyboard(KBRD_NAME) {}
 
   uint32_t onPassKeyDisplay() override {
     LOG_INFO("onPassKeyDisplay");
@@ -62,6 +62,7 @@ class MozzaBleKeyboard : public BleKeyboard {
   }
   void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
     BleKeyboard::onConnect(pServer, connInfo);
+    BLEDevice::startSecurity(desc->conn_handle);
     NimBLEDevice::stopAdvertising();
     LOG_INFO("onConnect");
   }
@@ -132,11 +133,19 @@ class BleConnectorNRF52 {
  public:
   void begin() {
     Bluefruit.begin();
+    Bluefruit.setName(KBRD_NAME);
     Bluefruit.setTxPower(4);  // Check bluefruit.h for supported values
 
+    // Bluefruit.Security.setMITM(true);
+    Bluefruit.Security.setPIN("626262");
+    Bluefruit.Security.setIOCaps(true, false, false);
+    Bluefruit.Security.setPairPasskeyCallback(BleConnectorNRF52::onPairingPasskey);
+    Bluefruit.Security.setPairCompleteCallback(BleConnectorNRF52::onPairingCompleted);
+    Bluefruit.Security.setSecuredCallback(BleConnectorNRF52::onConnectionSecured);
+
     // Configure and Start Device Information Service
-    bledis_.setManufacturer("Adafruit Industries");
-    bledis_.setModel("Bluefruit Feather 52");
+    bledis_.setManufacturer("adafruit");
+    bledis_.setModel(KBRD_NAME);
     bledis_.begin();
 
     /* Start BLE HID
@@ -174,7 +183,7 @@ class BleConnectorNRF52 {
     // There is enough room for the dev name in the advertising packet
     // Bluefruit.Advertising.addName();
     {
-      const char name[] = "Mozz62 kbrd";
+      const char name[] = KBRD_NAME;
       const uint8_t len = sizeof(name);
       Bluefruit.Advertising.addData(BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, name, len);
     }
@@ -195,11 +204,42 @@ class BleConnectorNRF52 {
     Bluefruit.Advertising.start(0);              // 0 = Don't stop advertising after n seconds
   }
 
+  static void onConnectionSecured(uint16_t conn_handle) { LOG_INFO("BLE connection secured"); }
+  static bool onPairingPasskey(uint16_t conn_handle, uint8_t const passkey[6], bool match_request) {
+    LOG_INFO("BLE pair process started with passkey %.6s", passkey);
+    if (match_request) {
+      // uint32_t start_time = millis();
+      // while (millis() < start_time + 30000) {
+      //   if (!Bluefruit.connected(conn_handle)) break;
+      // }
+    }
+    LOG_INFO("BLE passkey pair: match_request=%i", match_request);
+    return true;
+  }
+  static void onPairingCompleted(uint16_t conn_handle, uint8_t auth_status) {
+    if (auth_status == BLE_GAP_SEC_STATUS_SUCCESS) {
+      LOG_INFO("BLE pair success");
+    } else {
+      LOG_INFO("BLE pair failed");
+    }
+  }
+
   bool isConnected() const { return Bluefruit.connected(Bluefruit.connHandle()); }
 
   bool sendKeyboardReport(const KeyboardReport& kbrd_report) {
     hid_keyboard_report_t report = *reinterpret_cast<const hid_keyboard_report_t*>(&kbrd_report);
     return blehid_.keyboardReport(&report);
+  }
+
+  static void enumBonds() {
+    bond_print_list(BLE_GAP_ROLE_PERIPH);
+    bond_print_list(BLE_GAP_ROLE_CENTRAL);
+  }
+
+  static void deleteAllBonds() {
+    LOG_INFO("ble delete all bonds");
+    Bluefruit.Periph.clearBonds();
+    Bluefruit.Central.clearBonds();
   }
 };
 

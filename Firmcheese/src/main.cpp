@@ -241,10 +241,10 @@ void loop() {
 // LOG_INFO("key code = %d, 0x%04x", kev.code_, kev.code_);
 #ifdef ENABLE_BLE
       if (kev.code_ == KC_ENTER) {
-        // ble_kbrd.enumBonds();
+        ble_kbrd.enumBonds();
       }
       if (kev.code_ == KC_DELETE) {
-        // ble_kbrd.deleteAllBonds();
+        ble_kbrd.deleteAllBonds();
       }
 #endif
     }
