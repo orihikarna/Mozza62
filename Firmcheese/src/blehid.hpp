@@ -22,7 +22,7 @@ class MozzaBleKeyboard : public BleKeyboard {
 
   uint32_t onPassKeyRequest() override {
     LOG_INFO("onPassKeyRequest");
-    return 6262;
+    return 626262;
   }
   bool onConfirmPIN(uint32_t pin) override {
     LOG_INFO("onConfirmPIN, pin = %d", pin);
@@ -33,7 +33,7 @@ class MozzaBleKeyboard : public BleKeyboard {
   }
   void onConnect(NimBLEServer* pServer) override {
     BleKeyboard::onConnect(pServer);
-    BLEDevice::startSecurity(desc->conn_handle);
+    NimBLEDevice::startSecurity(connInfo.getConnHandle());
     NimBLEDevice::stopAdvertising();
     LOG_INFO("onConnect");
   }
@@ -48,21 +48,22 @@ class MozzaBleKeyboard : public BleKeyboard {
 
 class MozzaBleKeyboard : public BleKeyboard {
  public:
-  MozzaBleKeyboard() : BleKeyboard(KBRD_NAME) {}
+  MozzaBleKeyboard() : BleKeyboard(KBRD_NAME) { NimBLEDevice::setSecurityPasskey(626262); }
 
   uint32_t onPassKeyDisplay() override {
     LOG_INFO("onPassKeyDisplay");
-    return 6262;
+    return 626262;
   }
   void onConfirmPassKey(NimBLEConnInfo& connInfo, uint32_t pin) override {
     LOG_INFO("onConfirmPassKey, pin = %d", pin);
   }
   void onAuthenticationComplete(NimBLEConnInfo& connInfo) override {
-    LOG_INFO("onAuthenticationComplete, addr = %s", connInfo.getAddress().toString().c_str());
+    LOG_INFO("onAuthenticationComplete,, authed = %d, addr = %s", connInfo.isAuthenticated() ? 1 : 0,
+             connInfo.getAddress().toString().c_str());
   }
   void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
     BleKeyboard::onConnect(pServer, connInfo);
-    BLEDevice::startSecurity(desc->conn_handle);
+    NimBLEDevice::startSecurity(connInfo.getConnHandle());
     NimBLEDevice::stopAdvertising();
     LOG_INFO("onConnect");
   }
@@ -82,12 +83,12 @@ class BleConnectorESP32 {
   void begin() {
     LOG_INFO("BleConnectorESP32::begin");
     ble_kbrd_.begin();
-    // BLEDevice::setSecurityAuth(true, false, false);
+    NimBLEDevice::setSecurityAuth(true, true, true);
     // NimBLEDevice::setSecurityIOCap(BLE_HS_IO_KEYBOARD_ONLY);
     NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
     // NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_YESNO);
-    // NimBLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
-    // NimBLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
+    NimBLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
+    NimBLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
   };
   bool isConnected() { return ble_kbrd_.isConnected(); }
 
