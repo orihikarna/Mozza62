@@ -42,7 +42,7 @@ class BoardLED_XiaoEsp32 : public BoardLED {
 };
 #endif
 
-#ifdef BOARD_XIAO_BLE
+#ifdef BOARD_XIAO_NRF52
 
 class BoardLED_Xiao : public BoardLED {
  protected:
@@ -54,7 +54,7 @@ class BoardLED_Xiao : public BoardLED {
       pinMode(led, OUTPUT);
     }
   }
-  void update(uint16_t cnt, const KeybStatus& status) override {
+  void update(bool blink, const KeybStatus& status) override {
     int clr = 0;
     {  // hue == ble, emacs
       if (status.GetStatus(EKeybStatusBit::Ble)) {
@@ -74,7 +74,6 @@ class BoardLED_Xiao : public BoardLED {
       if (status.GetStatus(EKeybStatusBit::Right)) sides += 1;
       period = 100 - sides * 20;
     }
-    const bool blink = ((cnt % period) < (period >> 1));
     for (uint8_t n = 0; n < 3; ++n) {
       digitalWrite(xiao_leds_[n], (blink && (clr & (1 << n))) ? HIGH : LOW);
     }

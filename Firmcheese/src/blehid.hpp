@@ -12,17 +12,15 @@ struct KeyboardReport {
   uint8_t keys[6];
 };
 
-#if defined(BOARD_M5ATOM) || defined(BOARD_XIAO_ESP32) || defined(BOARD_XIAO_ESP32_NIMBLE)
+#if defined(BOARD_M5ATOM) || defined(BOARD_XIAO_ESP32)
 #include <BleKeyboard.h>
-
-#if defined(BOARD_XIAO_ESP32)
 #include <NimBLEDevice.h>
 
+#if defined(USE_NIMBLE)
 class MozzaBleKeyboard : public BleKeyboard {
  public:
   MozzaBleKeyboard() : BleKeyboard(KBRD_NAME, MANUFACTURER) {}
 
-#ifdef USE_NIMBLE
   uint32_t onPassKeyRequest() override {
     LOG_INFO("onPassKeyRequest");
     return 6262;
@@ -44,58 +42,9 @@ class MozzaBleKeyboard : public BleKeyboard {
     NimBLEDevice::startAdvertising();
     LOG_INFO("onDisconnect");
   }
-#endif
 };
 
-class BleConnectorESP32 {
- private:
-  MozzaBleKeyboard ble_kbrd_;
-
- public:
-  void begin() {
-    LOG_INFO("BleConnectorESP32::begin");
-    ble_kbrd_.begin();
-#ifdef USE_NIMBLE
-    // NimBLEDevice::setSecurityIOCap(BLE_HS_IO_KEYBOARD_ONLY);
-    NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
-#endif
-  };
-  bool isConnected() { return ble_kbrd_.isConnected(); }
-
-  bool sendKeyboardReport(const KeyboardReport& kbrd_report) {
-    KeyReport report = *reinterpret_cast<const KeyReport*>(&kbrd_report);
-    ble_kbrd_.sendReport(&report);
-    return true;
-  }
-
-#ifdef USE_NIMBLE
-  void enumBonds() {
-    LOG_INFO("passkey = %d", NimBLEDevice::getSecurityPasskey());
-
-    const size_t num_white = NimBLEDevice::getWhiteListCount();
-    LOG_INFO("ble num white list = %d", num_white);
-    for (int i = 0; i < num_white; ++i) {
-      const NimBLEAddress addr = NimBLEDevice::getWhiteListAddress(i);
-      LOG_INFO("ble white %d, addr = %s", i, addr.toString().c_str());
-    }
-
-    const int num_bonds = NimBLEDevice::getNumBonds();
-    LOG_INFO("ble num bonds = %d", num_bonds);
-    for (int i = 0; i < num_bonds; ++i) {
-      const NimBLEAddress addr = NimBLEDevice::getBondedAddress(i);
-      LOG_INFO("ble bond %d, addr = %s", i, addr.toString().c_str());
-    }
-  }
-
-  void deleteAllBonds() {
-    LOG_INFO("ble delete all bonds");
-    NimBLEDevice::deleteAllBonds();
-  }
-#endif
-};
-
-#elif defined(BOARD_XIAO_ESP32_NIMBLE)
-#include <NimBLEDevice.h>
+#elif defined(USE_ESP32_NIMBLE)
 
 class MozzaBleKeyboard : public BleKeyboard {
  public:
@@ -122,6 +71,7 @@ class MozzaBleKeyboard : public BleKeyboard {
     LOG_INFO("onDisconnect, reason = %d, 0x%04x", reason, reason);
   }
 };
+#endif
 
 class BleConnectorESP32 {
  private:
@@ -170,12 +120,11 @@ class BleConnectorESP32 {
   }
 };
 #endif
-#endif
 
-#ifdef BOARD_XIAO_BLE
+#ifdef BOARD_XIAO_NRF52
 #include <bluefruit.h>
 
-class BleConnectorNRF {
+class BleConnectorNRF52 {
  private:
   BLEDis bledis_;
   BLEHidAdafruit blehid_;

@@ -1,15 +1,17 @@
 #define ENABLE_BLE
 // #define ENABLE_USB
-#define ENABLE_LED
+// #define ENABLE_LED
 
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_NeoPixel.h>
-#ifdef BOARD_XIAO_BLE
+#ifdef BOARD_XIAO_NRF52
 #include <Adafruit_TinyUSB.h>  // for Serial
 #endif
 #include <Arduino.h>
-#include <USB.h>
 #include <Wire.h>
+#ifdef ENABLE_USB
+#include <USB.h>
+#endif
 
 #include <array>
 
@@ -116,8 +118,8 @@ KeyProcEmacs proc_emacs;
 KeyProcUnmod proc_unmod2;
 KeyProcNkro proc_nkro;
 
-#ifdef BOARD_XIAO_BLE
-BleConnectorNRF ble_kbrd;
+#ifdef BOARD_XIAO_NRF52
+BleConnectorNRF52 ble_kbrd;
 BoardLED_Xiao brd_led;
 #endif
 #ifdef BOARD_M5ATOM
@@ -239,10 +241,10 @@ void loop() {
 // LOG_INFO("key code = %d, 0x%04x", kev.code_, kev.code_);
 #ifdef ENABLE_BLE
       if (kev.code_ == KC_ENTER) {
-        ble_kbrd.enumBonds();
+        // ble_kbrd.enumBonds();
       }
       if (kev.code_ == KC_DELETE) {
-        ble_kbrd.deleteAllBonds();
+        // ble_kbrd.deleteAllBonds();
       }
 #endif
     }

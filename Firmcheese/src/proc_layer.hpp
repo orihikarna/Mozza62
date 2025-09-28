@@ -30,7 +30,11 @@ class KeyProcLayer {
     }
     LOG_DUMP("keycode = 0x%04x, event = %d", keycode, kev_raw.event_);
     if (keycode == SC_REST) {
+#if defined(BOARD_XIAO_ESP32) || defined(BOARD_XIAO_ESP32_NIMBLE)
       ESP.restart();
+#elif defined(BOARD_XIAO_NRF52)
+      NVIC_SystemReset();
+#endif
     }
     if (ConfigStart <= keycode && keycode < ConfigEnd) {
       g_config_data.apply(keycode);
