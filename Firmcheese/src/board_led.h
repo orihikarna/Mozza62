@@ -6,7 +6,7 @@
 #include <array>
 #include <cstdint>
 
-#include "keyb_status.hpp"
+#include "keyb_status.h"
 
 class BoardLED {
  public:

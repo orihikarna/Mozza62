@@ -2,9 +2,9 @@
 
 #include <array>
 
-#include "key_event.hpp"
-#include "key_switch.hpp"
-#include "keymaps.hpp"
+#include "key_event.h"
+#include "key_switch.h"
+#include "keymaps.h"
 #include "qmk/keycode_jp.h"
 
 class KeyProcLayer {

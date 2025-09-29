@@ -1,8 +1,8 @@
-#include "proc_emacs.hpp"
+#include "proc_emacs.h"
 
 #include <qmk/keycode_jp.h>
 
-#include "keyb_status.hpp"
+#include "keyb_status.h"
 #include "log.h"
 
 #define USE_JP

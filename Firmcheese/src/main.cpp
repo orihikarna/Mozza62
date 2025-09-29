@@ -1,6 +1,6 @@
 #define ENABLE_BLE
 // #define ENABLE_USB
-// #define ENABLE_LED
+#define ENABLE_LED
 
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_NeoPixel.h>
@@ -15,16 +15,16 @@
 
 #include <array>
 
-#include "board_led.hpp"
-#include "key_event.hpp"
-#include "key_scanner.hpp"
-#include "keyb_status.hpp"
-#include "proc_emacs.hpp"
-#include "proc_layer.hpp"
-#include "proc_led.hpp"
-#include "proc_nkro.hpp"
-#include "proc_unmod.hpp"
-#include "ringbuf.hpp"
+#include "board_led.h"
+#include "key_event.h"
+#include "key_scanner.h"
+#include "keyb_status.h"
+#include "proc_emacs.h"
+#include "proc_layer.h"
+#include "proc_led.h"
+#include "proc_nkro.h"
+#include "proc_unmod.h"
+#include "ringbuf.h"
 
 #ifdef ENABLE_USB
 #include "_USBHIDKeyboard.h"

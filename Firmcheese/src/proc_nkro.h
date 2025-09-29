@@ -3,10 +3,10 @@
 #include <algorithm>
 #include <array>
 
-#include "blehid.hpp"
-#include "key_event.hpp"
+#include "blehid.h"
+#include "key_event.h"
 #include "log.h"
-#include "util.hpp"
+#include "util.h"
 
 class KeyProcNkro {
  private:

@@ -1,4 +1,4 @@
-#include "keymaps.hpp"
+#include "keymaps.h"
 
 #include <qmk/keycode_jp.h>
 

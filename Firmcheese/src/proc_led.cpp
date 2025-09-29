@@ -16,10 +16,10 @@
 #define LED_PIN_RIGHT 22
 #endif
 
-#include "key_scanner.hpp"
-#include "keymaps.hpp"
-#include "proc_led.hpp"
-#include "util.hpp"
+#include "key_scanner.h"
+#include "keymaps.h"
+#include "proc_led.h"
+#include "util.h"
 
 #ifdef abs
 #undef abs

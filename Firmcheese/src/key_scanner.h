@@ -5,8 +5,8 @@
 #include <array>
 #include <cstdint>
 
-#include "key_event.hpp"
-#include "key_switch.hpp"
+#include "key_event.h"
+#include "key_switch.h"
 
 enum ESide {
   Left = 0,

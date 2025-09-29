@@ -2,7 +2,7 @@
 
 #include <Adafruit_NeoPixel.h>
 
-#include "key_switch.hpp"
+#include "key_switch.h"
 
 constexpr uint8_t kNumPixelBytes = 3;
 

@@ -4,8 +4,8 @@
 
 #include <array>
 
-#include "key_event.hpp"
-#include "key_switch.hpp"
+#include "key_event.h"
+#include "key_switch.h"
 
 enum EKeyLayer { Default = 0, Lower, Misc, NumLayers };
 

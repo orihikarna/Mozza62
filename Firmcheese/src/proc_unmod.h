@@ -1,6 +1,6 @@
 #pragma once
 
-#include "key_event.hpp"
+#include "key_event.h"
 #include "log.h"
 
 class KeyProcUnmod {

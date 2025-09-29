@@ -1,8 +1,8 @@
-#include "key_scanner.hpp"
+#include "key_scanner.h"
 
-#include "keyb_status.hpp"
+#include "keyb_status.h"
 #include "log.h"
-#include "util.hpp"
+#include "util.h"
 
 namespace {
 
